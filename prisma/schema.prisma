@@ -1,0 +1,149 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// model User {
+//   id    String @id @default(cuid())
+//   email String @unique
+
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+
+//   password Password?
+//   notes    Note[]
+// }
+
+// model oldUsers {
+//   id                String    @id @default(cuid())
+//   name              String
+//   username          String    @unique
+//   verified          Boolean?
+//   description       String?
+//   profile_image_url String?
+//   followers_count   Int?
+//   following_count   Int?
+//   tweets_count      Int?
+//   created_at        DateTime? @db.Timestamptz(6)
+//   updated_at        DateTime? @db.Timestamptz(6)
+//   // likes             likes[]
+//   // list_followers    list_followers[]
+//   // list_members      list_members[]
+//   // lists             lists[]
+//   // mentions          mentions[]
+//   // rekt              rekt[]
+//   // retweets          retweets[]
+//   // scores            scores[]
+//   // tokens            tokens?
+//   // tweets            tweets[]
+//   streams           streams?  @relation(fields: [streamsId], references: [id])
+//   streamsId         String?
+// }
+
+model users {
+  username                       String    @unique
+  id                             String    @id @unique
+  public_metrics_followers_count Int
+  public_metrics_following_count Int
+  public_metrics_tweet_count     Int
+  public_metrics_listed_count    Int
+  description                    String
+  protected                      Boolean
+  verified                       Boolean
+  created_at                     DateTime
+  url                            String
+  name                           String
+  profile_image_url              String
+  location                       String?
+  pinned_tweet_id                String?
+  streams                        streams[]
+  followers                      follows[] @relation("following")
+  following                      follows[] @relation("follower")
+  tweets                         tweets[]
+}
+
+model follows {
+  follower    users  @relation("follower", fields: [followerId], references: [id])
+  followerId  String
+  following   users  @relation("following", fields: [followingId], references: [id])
+  followingId String
+
+  @@id([followerId, followingId])
+}
+
+model streams {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  seedUsers users[]
+  startTime DateTime
+  endTime   DateTime
+}
+
+model tweets {
+  id                  String   @id @unique
+  author_id           String
+  author              users    @relation(fields: [author_id], references: [id])
+  referenced_tweets   Json? // trying out json https://www.prisma.io/docs/concepts/components/prisma-client/working-with-fields/working-with-json-fields
+  public_metrics      Json
+  // public_metrics_retweet_count Int
+  // public_metrics_reply_count   Int
+  // public_metrics_like_count    Int
+  // public_metrics_quote_count   Int
+  context_annotations Json?
+  entities            Json?
+  attachments         Json?
+  created_at          DateTime
+  reply_settings      String
+  lang                String
+  conversation_id     String
+  in_reply_to_user_id String?
+  text                String
+  source              String
+  possibly_sensitive  Boolean
+}
+
+//https://www.prisma.io/docs/concepts/components/prisma-schema/relations/many-to-many-relations
+// model UsersInStream {
+//   user       users    @relation(fields: [userId], references: [id])
+//   userId     String // relation scalar field (used in the `@relation` attribute above)
+//   stream     streams  @relation(fields: [streamId], references: [id])
+//   streamId   String // relation scalar field (used in the `@relation` attribute above)
+//   assignedAt DateTime @default(now())
+//   assignedBy String
+
+//   @@id([userId, streamId])
+// }
+
+model Post {
+  slug     String @id
+  title    String
+  markdown String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// // model Password {
+// //   hash String
+
+// //   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+// //   userId String @unique
+// // }
+
+// model Note {
+//   id    String @id @default(cuid())
+//   title String
+//   body  String
+
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+
+//   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+//   userId String
+// }
