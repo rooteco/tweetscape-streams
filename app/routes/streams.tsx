@@ -15,39 +15,6 @@ import { flattenTwitterData } from "~/models/streams.server";
 import { getClient } from '~/twitter.server';
 
 import { getStreams } from "~/models/streams.server";
-import type { ActionArgs } from "@remix-run/node";
-
-import { createStream, getStreamByName } from "~/models/streams.server";
-import e from "express";
-
-
-type ActionData =
-    | {
-        streamName: null | string;
-    }
-    | undefined;
-
-export async function action({ request }: ActionArgs) {
-    const formData = await request.formData();
-    const name = formData.get("name");
-    const seedUsers = formData.get("seedUsers");
-
-    let checkStreamName = await getStreamByName({ name: name });
-    console.log("STREAM");
-    console.log(checkStreamName);
-    if (checkStreamName) {
-        let errors: ActionData = {
-            streamName: `stream with name '${name}' already exists, please choose a new name.`
-        }
-        return json<ActionData>(errors);
-    }
-    const startTime = "2022-08-24T13:58:40Z";
-    const endTime = "2022-08-31T13:58:40Z";
-    const stream = await createStream({ name, seedUsers, startTime, endTime });
-    return redirect(`/streams/${stream.name}`);
-}
-
-
 type LoaderData = {
     // this is a handy way to say: "posts is whatever type getStreams resolves to"
     streams: Awaited<ReturnType<typeof getStreams>>;
