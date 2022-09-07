@@ -11,6 +11,8 @@ import { getStream, getStreamTweets, deleteStreamByName, addSeedUserToStream, ge
 import { getUserByUsernameDB, createUser, getUsersFollowedById } from "~/models/user.server";
 import { log } from '~/log.server';
 import { seed } from "prisma/seed";
+import { getClient } from '~/twitter.server';
+
 
 
 export async function loader({ request, params }: LoaderArgs) {
@@ -108,6 +110,9 @@ export const action: ActionFunction = async ({
     }
 
     if (intent === "addSeedUser") {
+
+        const { api, uid, session } = await getClient(request);
+
         for (const seedUser of stream.seedUsers) {
             console.log(`${seedUser.username} == ${seedUserHandle}`);
             if (seedUser.username == seedUserHandle) {
@@ -121,7 +126,7 @@ export const action: ActionFunction = async ({
         let user = await getUserByUsernameDB(seedUserHandle);
         if (user) {
             log.debug(`user ${seedUserHandle} found in our db..`)
-            addSeedUserToStream(stream, user)
+            addSeedUserToStream(api, stream, user)
         } else {
             log.debug(`"${seedUserHandle}") not in db, checking twitter...`);
             log.debug(`Fetching api.v2.userByUsername for @${seedUserHandle}...`);
@@ -132,7 +137,7 @@ export const action: ActionFunction = async ({
                 // add to db, continue
                 log.debug(`found user ${user.username} and adding to db`);
                 user = await createUser(user);
-                addSeedUserToStream(params.streamName, user)
+                addSeedUserToStream(api, params.streamName, user)
             }
             else {
                 //thow?

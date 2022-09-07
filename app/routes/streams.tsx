@@ -11,7 +11,7 @@ import type { LoaderFunction } from '@remix-run/node';
 
 import { commitSession, getSession } from '~/session.server';
 import { TwitterApi } from 'twitter-api-v2';
-import { flattenTwitterData } from "~/models/streams.server";
+import { flattenTwitterData } from "~/twitter.server";
 import { getClient } from '~/twitter.server';
 
 import { getStreams } from "~/models/streams.server";
@@ -28,35 +28,24 @@ export function getUserIdFromSession(session: Session) {
 }
 
 // export async function loader({ request }: LoaderArgs) {
-export const loaderAuth2: LoaderFunction = async ({ request }: LoaderArgs) => {
+export const loader: LoaderFunction = async ({ request }: LoaderArgs) => {
     let streams = await getStreams();
     let user = null;
     const url = new URL(request.url);
     const redirectURI = "http://localhost:3000/streams";
-
-
-
-    // const { session, uid } = await getLoggedInSession(request);
-    // const { api } = await getTwitterClientForUser(uid);
 
     const stateId = url.searchParams.get('state');
     const code = url.searchParams.get('code');
     const session = await getSession(request.headers.get('Cookie'));
     const uid = getUserIdFromSession(session);
     console.log(`UID = ${uid}`);
+
     if (uid) {
         const { api, uid, session } = await getClient(request);
-
-        // console.log("searching users...")
-        // const users = await api.v1.searchUsers("nick");
-        // console.log("SHOW SEARCH OBJECT");
-        // console.log(users.users);
-
         const meData = await api.v2.me({ "user.fields": "created_at,description,entities,id,location,name,pinned_tweet_id,profile_image_url,protected,public_metrics,url,username,verified,withheld", });
         user = meData.data;
     }
-    if (stateId && code) {
-        console.log("STATEID AND CODE MATCHED...");
+    else if (stateId && code) {
         const storedStateId = session.get('stateIdTwitter') as string;
         log.debug(`Checking if state (${stateId}) matches (${storedStateId})...`);
         if (storedStateId === stateId) {
@@ -186,40 +175,8 @@ export default function StreamsPage() {
                     )}
                 </div>
 
-                <div className="flex-1 p-6">
-                    {
-                        user && (
-                            <div>
-                                <h1>Create New Stream</h1>
-                                <Form method="post" className='flex my-8 max-w-sm'>
-                                    <label> Stream Name
-                                        {errors?.streamName ? (
-                                            <em className="text-red-600">{errors.streamName}</em>
-                                        ) : null}
-                                        <input name="name" type="text" className='flex-1 rounded border-2 border-black px-2 py-1' />{" "}
-                                    </label>
-                                    <br />
-                                    <button type="submit" className='ml-2 inline-block rounded border-2 border-black bg-black px-2 py-1 text-white'>Create Stream</button>
-                                </Form>
-                            </div>
-                        )
-                    }
-                    {!user && (
-                        <div>
-                            <p className="pb-4">Choose a stream from the sidebar to explore, or login with twitter to create your own</p>
-                            <div className="flex">
-                                <Link
-                                    className='hover:bg-blue-500 active:bg-blue-600 w-auto mr-1.5 flex truncate items-center text-white text-xs bg-sky-500 rounded px-2 h-6'
-                                    to='/oauth'
-                                >
-                                    <BirdIcon className='shrink-0 w-3.5 h-3.5 mr-1 fill-white' />
-                                    <span>Login with Twitter to Create Streams</span>
-                                </Link>
-                            </div>
-                        </div>
-                    )}
-                    <Outlet />
-                </div>
+
+                <Outlet />
             </main>
         </div>
     );
