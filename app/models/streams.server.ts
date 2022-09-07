@@ -6,14 +6,11 @@ import { log } from '~/log.server';
 import { userInfo } from "os";
 import { createUser } from "~/models/user.server";
 import invariant from "tiny-invariant";
-import { create } from "domain";
-import StreamsPage from "~/routes/streams";
+import { flattenTwitterData } from "~/twitter.server";
 
+// const api = new TwitterApi(process.env.TWITTER_TOKEN as string);
 
-
-const api = new TwitterApi(process.env.TWITTER_TOKEN as string);
-
-export async function getUserFromTwitter(username: string) {
+export async function getUserFromTwitter(api: any, username: string) {
     const { data: user } = await api.v2.userByUsername(
         username,
         {
@@ -63,15 +60,13 @@ export async function getPosts() {
 
 export function createStream({
     name,
-    streamId,
     startTime,
     endTime,
-}: Pick<Stream, "streamId" | "name" | "startTime" | "endTime">) {
+}: Pick<streams, "name" | "startTime" | "endTime">) {
 
     return prisma.streams.create({
         data: {
             name,
-            streamId,
             startTime,
             endTime
         },
@@ -85,24 +80,6 @@ export function deleteStreamByName({
     return prisma.streams.delete({
         where: { name: name },
     });
-}
-
-interface twitterUser extends users {
-    [key: string]: any;
-    // public_metrics_followers_count: Number
-}
-
-export function flattenTwitterData(data: Array<twitterUser>) {
-    for (const obj of data) {
-        obj.username = obj.username.toLowerCase();
-        obj.public_metrics_followers_count = obj.public_metrics.followers_count;
-        obj.public_metrics_following_count = obj.public_metrics.following_count;
-        obj.public_metrics_tweet_count = obj.public_metrics.tweet_count;
-        obj.public_metrics_listed_count = obj.public_metrics.listed_count;
-        delete obj.public_metrics;
-        delete obj.entities;
-    }
-    return data;
 }
 
 export async function removeSeedUserFromStream(
@@ -121,6 +98,7 @@ export async function removeSeedUserFromStream(
 }
 
 async function getTweetsFromAuthorId(
+    api: any,
     id: string,
     startTime: string,
     endTime: string,
@@ -146,7 +124,6 @@ async function getTweetsFromAuthorId(
     return tweets;
 }
 
-
 async function upsertTweet(tweet: tweets) {
     let author_id = tweet.author_id;
     invariant(author_id, "author_id not found on tweet");
@@ -165,6 +142,7 @@ async function upsertTweet(tweet: tweets) {
 };
 
 export async function addSeedUserToStream(
+    api: any,
     stream: streams,
     user: users
 ) {
@@ -244,15 +222,44 @@ export async function addSeedUserToStream(
         console.log(stream.startTime);
         console.log(stream.startTime.toString());
         console.log(stream.startTime.toISOString());
-        let tweets = getTweetsFromAuthorId(
+        let tweets = await getTweetsFromAuthorId(
+            api,
             user.id,
             stream.startTime.toISOString(),
             stream.endTime.toISOString()
         );
-        for (const tweet of (await tweets).data.data) {
+        for (const tweet of tweets.data.data) {
             console.log(`adding tweet ${tweet.id}`)
-            let iTweet = upsertTweet(tweet);
+            upsertTweet(tweet);
         }
+        // for (const tweet of tweets.includes.tweets) {
+        //     upsertTweet(tweet);
+        // }
+        // for (const user of tweets.includes.users) {
+        //     let newUser = flattenTwitterData([user])[0];
+        //     // let addedUser = await createUser(newUser);
+        //     let addedUser = await prisma.users.upsert({
+        //         where: { id: newUser.id },
+        //         create: newUser,
+        //         update: newUser,
+        //     })
+        //     let follow = await prisma.follows.upsert({
+        //         where: {
+        //             followerId_followingId: {
+        //                 followerId: user.id,
+        //                 followingId: newUser.id
+        //             }
+        //         },
+        //         create: {
+        //             followerId: user.id,
+        //             followingId: newUser.id
+        //         },
+        //         update: {
+        //             followerId: user.id,
+        //             followingId: newUser.id
+        //         }
+        //     });
+        // }
         return streamUploaded;
     } catch (e) {
         log.error(`Error fetching tweets: ${JSON.stringify(e, null, 2)}`);

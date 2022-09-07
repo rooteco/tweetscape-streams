@@ -13,12 +13,19 @@ import { log } from '~/log.server';
 import { seed } from "prisma/seed";
 import { getClient } from '~/twitter.server';
 
-
+async function getStreamByNameNeo(name: string) {
+    let res = await fetch(`http://localhost:5000/api/streams/${name}`)
+    let data = await res.json();
+    return data.stream
+}
 
 export async function loader({ request, params }: LoaderArgs) {
     // const userId = await requireUserId(request);
     invariant(params.streamName, "streamName not found");
-    const stream = await getStreamByName({ name: params.streamName });
+    // const stream = await getStreamByName({ name: params.streamName });
+    const stream = await getStreamByNameNeo(params.streamName)
+    console.log('STREAM')
+    console.log(stream)
     if (!stream) {
         throw new Response("Not Found", { status: 404 });
     }
@@ -104,15 +111,13 @@ export const action: ActionFunction = async ({
         return json<ActionData>(errors);
     }
 
-    let stream = await getStreamByName({ name: params.streamName });
+    let stream = await getStreamByNameNeo(params.streamName);
     if (!stream) {
         throw new Response("Not Found", { status: 404 });
     }
 
     if (intent === "addSeedUser") {
-
         const { api, uid, session } = await getClient(request);
-
         for (const seedUser of stream.seedUsers) {
             console.log(`${seedUser.username} == ${seedUserHandle}`);
             if (seedUser.username == seedUserHandle) {
@@ -123,32 +128,49 @@ export const action: ActionFunction = async ({
             }
         }
         seedUserHandle = seedUserHandle.toLowerCase().replace(/^@/, '')
-        let user = await getUserByUsernameDB(seedUserHandle);
-        if (user) {
-            log.debug(`user ${seedUserHandle} found in our db..`)
-            addSeedUserToStream(api, stream, user)
-        } else {
-            log.debug(`"${seedUserHandle}") not in db, checking twitter...`);
-            log.debug(`Fetching api.v2.userByUsername for @${seedUserHandle}...`);
-            let user = await getUserFromTwitter(seedUserHandle);
-            console.log("USER");
-            console.log(user);
-            if (user) {
-                // add to db, continue
-                log.debug(`found user ${user.username} and adding to db`);
-                user = await createUser(user);
-                addSeedUserToStream(api, params.streamName, user)
-            }
-            else {
-                //thow?
-                const errors: ActionData = {
-                    seedUserHandle: `handle '${seedUserHandle}' not found... please check spelling"`
+        console.log("ABOUT TOO MAKE REQEUST...")
+        console.log(`http://localhost:5000/api/streams/${stream.name}/${seedUserHandle}`)
+        const res = await fetch(
+            `http://localhost:5000/api/streams/${stream.name}/${seedUserHandle}`,
+            {
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
                 }
-                return json<ActionData>(errors); // throw error if user is not found;
-            }
-        }
+            })
+        // console.log(await res.text())
 
-        return user;
+        const data = await res.json()
+        console.log("ADDED SEED USER")
+        console.log(data);
+        // let user = await getUserByUsernameDB(seedUserHandle);
+        // if (user) {
+        //     log.debug(`user ${seedUserHandle} found in our db..`)
+        //     addSeedUserToStream(api, stream, user)
+        // } else {
+        //     log.debug(`"${seedUserHandle}") not in db, checking twitter...`);
+        //     log.debug(`Fetching api.v2.userByUsername for @${seedUserHandle}...`);
+        //     let user = await getUserFromTwitter(seedUserHandle);
+        //     console.log("USER");
+        //     console.log(user);
+        //     if (user) {
+        //         // add to db, continue
+        //         log.debug(`found user ${user.username} and adding to db`);
+        //         user = await createUser(user);
+        //         addSeedUserToStream(api, params.streamName, user)
+        //     }
+        //     else {
+        //         //thow?
+        //         const errors: ActionData = {
+        //             seedUserHandle: `handle '${seedUserHandle}' not found... please check spelling"`
+        //         }
+        //         return json<ActionData>(errors); // throw error if user is not found;
+        //     }
+        // }
+        console.log("return value...")
+        console.log(data.user);
+        return data.user;
+
     } else if (intent === "removeSeedUser") {
         let user = await getUserByUsernameDB(seedUserHandle);
         removeSeedUserFromStream(
@@ -245,7 +267,7 @@ export default function StreamDetailsPage() {
         <div className="flex">
             <div>
                 <h2 className="text-2xl font-bold">{stream.name}</h2>
-                <p>start_time: {stream.startTime}, end_time: {stream.endTime}</p>
+                <p>startTime: {stream.startTime}, endTime: {stream.endTime}</p>
                 <hr className="my-4" />
                 <Form
                     method='post'

@@ -22,21 +22,63 @@ type ActionData =
     }
     | undefined;
 
+async function getStreamByNameNeo(name: string) {
+    const res = await fetch(`http://localhost:5000/api/streams/${name}`)
+    const data = await res.json()
+    console.log("-----DATA FOR STREAM----")
+    console.log(data);
+    return data.stream;
+}
+
 export async function action({ request }: ActionArgs) {
     const formData = await request.formData();
     const name = formData.get("name");
 
-    let checkStreamName = await getStreamByName({ name: name });
+    console.log("ABOUT TO CALL");
+    let checkStreamName = await getStreamByNameNeo(name);
+    console.log(checkStreamName);
     if (checkStreamName) {
         let errors: ActionData = {
             streamName: `stream with name '${name}' already exists, please choose a new name.`
         }
         return json<ActionData>(errors);
     }
+
+    const session = await getSession(request.headers.get('Cookie'));
+    const uid = getUserIdFromSession(session);
+    let user = null;
+    if (uid) {
+        const { api, uid, session } = await getClient(request);
+        const meData = await api.v2.me({ "user.fields": "created_at,description,entities,id,location,name,pinned_tweet_id,profile_image_url,protected,public_metrics,url,username,verified,withheld", });
+        user = meData.data;
+    }
+
+    let username = user.username;
     const startTime = "2022-08-24T13:58:40Z";
     const endTime = "2022-08-31T13:58:40Z";
-    const stream = await createStream({ name, startTime, endTime });
-    return redirect(`/streams/${stream.name}`);
+    // const stream = await createStream({ name, startTime, endTime });
+    console.log("POST");
+    console.log({ name, startTime, endTime, username });
+    const res = await fetch(
+        "http://localhost:5000/api/streams/create",
+        {
+            method: "POST",
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                name,
+                startTime,
+                endTime,
+                createdBy: username
+            })
+        }
+    );
+    let data = await res.json();
+    console.log('RETURNED ATA FROM POST API...')
+    console.log(data);
+    return redirect(`/streams/${data.stream.name}`);
 }
 
 
