@@ -25,11 +25,21 @@ export async function getUserFromTwitter(api: any, username: string) {
 }
 
 export async function getStreams() {
-    return prisma.streams.findMany({
-        include: {
-            seedUsers: true
-        }
-    });
+    const session = driver.session()
+    // Create a node within a write transaction
+    const res = await session.readTransaction((tx: any) => {
+        return tx.run(`
+        MATCH (s:Stream )
+        RETURN s`,
+        )
+    })
+    // Get the `p` value from the first record
+    const singleRecord = res.records[0]
+    const streams = res.records.map((row: Record) => {
+        return row.get('s')
+    })
+    await session.close()
+    return streams;
 }
 
 export function getStream({
