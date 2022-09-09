@@ -7,6 +7,9 @@ import { userInfo } from "os";
 import { createUser } from "~/models/user.server";
 import invariant from "tiny-invariant";
 import { flattenTwitterData } from "~/twitter.server";
+import { driver } from "~/neo4j.server";
+import { Record } from 'neo4j-driver'
+
 
 // const api = new TwitterApi(process.env.TWITTER_TOKEN as string);
 
@@ -68,20 +71,34 @@ export async function getPosts() {
     return prisma.post.findMany();
 }
 
-export function createStream({
-    name,
-    startTime,
-    endTime,
-}: Pick<streams, "name" | "startTime" | "endTime">) {
-
-    return prisma.streams.create({
-        data: {
-            name,
-            startTime,
-            endTime
-        },
-    });
+export async function createStream(name: string, startTime: string, endTime: string, username: string) {
+    const session = driver.session()
+    // Create a node within a write transaction
+    let streamData = {
+        name,
+        startTime,
+        endTime,
+    }
+    console.log('IN CREATESTREAMNEO');
+    console.log(streamData);
+    console.log(username);
+    const res = await session.writeTransaction((tx: any) => {
+        return tx.run(`
+            MATCH (u:User {username: $username}) 
+            MERGE (s:Stream {name: $streamData.name})
+            SET s = $streamData
+            MERGE (u)-[:CREATED]->(s)
+            RETURN s`,
+            { streamData: streamData, username: username }
+        )
+    })
+    // Get the `p` value from the first record
+    const singleRecord = res.records[0]
+    const node = singleRecord.get("s")
+    await session.close()
+    return node;
 }
+
 
 
 export function deleteStreamByName({
