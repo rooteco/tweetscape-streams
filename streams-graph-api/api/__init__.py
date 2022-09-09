@@ -11,8 +11,8 @@ from api.exceptions.notfound import NotFoundException
 from .exceptions.badrequest import BadRequestException
 from .exceptions.validation import ValidationException
 
-# from .neo4j import init_driver
-from .py2neo_init import init_graph
+from .neo4j import init_driver
+# from .py2neo_init import init_graph
 
 from .routes.users import user_routes
 from .routes.streams import stream_routes
@@ -44,16 +44,16 @@ def create_app(test_config=None):
         pass
 
     with app.app_context():
-        init_graph(
-            app.config.get('NEO4J_URI'),
-            app.config.get('NEO4J_USERNAME'),
-            app.config.get('NEO4J_PASSWORD'),
-        )
-        # init_driver(
+        # init_graph(
         #     app.config.get('NEO4J_URI'),
         #     app.config.get('NEO4J_USERNAME'),
         #     app.config.get('NEO4J_PASSWORD'),
         # )
+        init_driver(
+            app.config.get('NEO4J_URI'),
+            app.config.get('NEO4J_USERNAME'),
+            app.config.get('NEO4J_PASSWORD'),
+        )
 
 
     # JWT

@@ -1,5 +1,6 @@
 import os
 from twarc import Twarc2
+import pandas as pd
 from py2neo import Node
 from py2neo.bulk import merge_nodes, merge_relationships
 from tweet_processing import pull_tweets
@@ -93,8 +94,8 @@ class UsersDao:
     The constructor expects an instance of the Neo4j Driver, which will be
     used to interact with Neo4j.
     """
-    def __init__(self, graph):
-        self.graph = graph
+    def __init__(self, driver):
+        self.driver = driver
 
     """
      This method should return a paginated list of movies ordered by the `sort`
@@ -103,11 +104,11 @@ class UsersDao:
 
      If a user_id value is suppled, a `favorite` boolean property should be returned to
      signify whether the user has added the movie to their "My Favorites" list.
-    """
+    """        
 
     def add_user_node(self, user_data):
         user = Node("TwitterUser", **user_data)
-        self.graph.merge(user)
+        self.graph.merge(user, "TwitterUser", "username")
         return user
 
     def add_users_followed_by(self, user_node):
@@ -176,14 +177,20 @@ class UsersDao:
         )
 
     def add_full_user(self, username):
-        seed_user = "nicktorba"
-        user = twarc_client.user_lookup(users=[seed_user], usernames=True)
+        user = next(twarc_client.user_lookup(users=[username], usernames=True))
         user_data = DataFrameConverter("users").process(user["data"])[user_fields].to_dict("records")[0]
         userNode = self.add_user_node(user_data)
         self.add_users_followed_by(userNode)
         self.add_tweets_from(userNode)
         return userNode
 
+    def get_user_tweets(self, userNode):
+        tweets_query = f"""
+        MATCH (tweet:Tweet )<-[f:TWEETED]-(user:TwitterUser {{username: '{userNode.get("username")}'}})
+        RETURN user
+        """ 
+        tweets = self.graph.run(tweets_query)
+        return tweets.data()
 
     # tag::all[]
     def all(self, sort, order, limit=6, skip=0, user_id=None):

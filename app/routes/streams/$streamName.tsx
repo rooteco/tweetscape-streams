@@ -15,8 +15,10 @@ import { getClient } from '~/twitter.server';
 
 async function getStreamByNameNeo(name: string) {
     let res = await fetch(`http://localhost:5000/api/streams/${name}`)
+    // console.log("HERE IS THE PROBLEM");
+    // console.log(await res.text());
     let data = await res.json();
-    return data.stream
+    return data
 }
 
 export async function loader({ request, params }: LoaderArgs) {
@@ -24,9 +26,7 @@ export async function loader({ request, params }: LoaderArgs) {
     invariant(params.streamName, "streamName not found");
     // const stream = await getStreamByName({ name: params.streamName });
     const stream = await getStreamByNameNeo(params.streamName)
-    console.log('STREAM')
-    console.log(stream)
-    if (!stream) {
+    if (!stream.stream) {
         throw new Response("Not Found", { status: 404 });
     }
 
@@ -95,9 +95,7 @@ export const action: ActionFunction = async ({
     console.log("intent = ");
     console.log(intent);
     if (intent === "delete") {
-        console.log("TRYING TO DELETE");
         let res = await deleteStreamByName({ name: params.streamName });
-        console.log(res);
         return redirect("/streams");
     }
     let seedUserHandle = formData.get("seedUserHandle");
@@ -129,47 +127,22 @@ export const action: ActionFunction = async ({
         }
         seedUserHandle = seedUserHandle.toLowerCase().replace(/^@/, '')
         console.log("ABOUT TOO MAKE REQEUST...")
-        console.log(`http://localhost:5000/api/streams/${stream.name}/${seedUserHandle}`)
+        console.log(`http://localhost:5000/api/streams/${params.streamName}`)
         const res = await fetch(
-            `http://localhost:5000/api/streams/${stream.name}/${seedUserHandle}`,
+            `http://localhost:5000/api/streams/${params.streamName}`,
             {
+                method: "POST",
                 headers: {
                     'Accept': 'application/json',
                     'Content-Type': 'application/json'
-                }
-            })
-        // console.log(await res.text())
-
-        const data = await res.json()
-        console.log("ADDED SEED USER")
-        console.log(data);
-        // let user = await getUserByUsernameDB(seedUserHandle);
-        // if (user) {
-        //     log.debug(`user ${seedUserHandle} found in our db..`)
-        //     addSeedUserToStream(api, stream, user)
-        // } else {
-        //     log.debug(`"${seedUserHandle}") not in db, checking twitter...`);
-        //     log.debug(`Fetching api.v2.userByUsername for @${seedUserHandle}...`);
-        //     let user = await getUserFromTwitter(seedUserHandle);
-        //     console.log("USER");
-        //     console.log(user);
-        //     if (user) {
-        //         // add to db, continue
-        //         log.debug(`found user ${user.username} and adding to db`);
-        //         user = await createUser(user);
-        //         addSeedUserToStream(api, params.streamName, user)
-        //     }
-        //     else {
-        //         //thow?
-        //         const errors: ActionData = {
-        //             seedUserHandle: `handle '${seedUserHandle}' not found... please check spelling"`
-        //         }
-        //         return json<ActionData>(errors); // throw error if user is not found;
-        //     }
-        // }
-        console.log("return value...")
-        console.log(data.user);
-        return data.user;
+                },
+                body: JSON.stringify({
+                    username: seedUserHandle,
+                })
+            }
+        );
+        const data = await res.text()
+        return redirect(`/streams/${params.streamName}`)
 
     } else if (intent === "removeSeedUser") {
         let user = await getUserByUsernameDB(seedUserHandle);
@@ -186,88 +159,13 @@ export default function StreamDetailsPage() {
     const stream = data.stream;
     const recommended_users = data.recommended_users;
     const tweets = data.tweets;
-    // const tweets = [
-    //     {
-    //         id: '1563398300589387776',
-    //         author_id: '1917349034',
-    //         referenced_tweets: [[Object]],
-    //         public_metrics: { like_count: 0, quote_count: 0, reply_count: 1, retweet_count: 0 },
-    //         context_annotations: null,
-    //         entities: { mentions: [Array] },
-    //         attachments: null,
-    //         created_at: "2022 - 08 - 27T05: 29: 36.000Z",
-    //         reply_settings: 'everyone',
-    //         lang: 'de',
-    //         conversation_id: '1563397284036939777',
-    //         in_reply_to_user_id: '1917349034',
-    //         text: '@rcsaxe @mtg_ds @Chord_O_Calls @lordtupperware @mistermetronome @Marshall_LR @lsv Also cc @twoduckcubed!',
-    //         source: 'Twitter Web App',
-    //         possibly_sensitive: false,
-    //         author: {
-    //             username: 'rhyslindmark',
-    //             id: '1917349034',
-    //             public_metrics_followers_count: 5342,
-    //             public_metrics_following_count: 1646,
-    //             public_metrics_tweet_count: 10216,
-    //             public_metrics_listed_count: 229,
-    //             description: 'Co-building the Wisdom Age @roote_. Hiring https://t.co/mYM8pbcD4v. Prev @mitDCI @medialab. @EthereumDenver co-founder. Newsletter on solarpunk pluralism in bio 👇',
-    //             protected: false,
-    //             verified: false,
-    //             created_at: "2013 - 09 - 29T15: 01: 58.000Z",
-    //             url: 'https://t.co/9fWmqYPH37',
-    //             name: 'Rhys Lindmark',
-    //             profile_image_url: 'https://pbs.twimg.com/profile_images/1558280191083827200/J0myxG6i_normal.jpg',
-    //             location: 'San Francisco Bay Area, CA',
-    //             pinned_tweet_id: '1271229547053150208'
-    //         }
-    //     },
-    //     {
-    //         id: '1563397299723575296',
-    //         author_id: '1917349034',
-    //         referenced_tweets: [[Object]],
-    //         public_metrics: { like_count: 0, quote_count: 0, reply_count: 1, retweet_count: 0 },
-    //         context_annotations: null,
-    //         entities: { urls: [Array] },
-    //         attachments: { media_keys: [Array] },
-    //         created_at: "2022 - 08 - 27T05: 25: 37.000Z",
-    //         reply_settings: 'everyone',
-    //         lang: 'en',
-    //         conversation_id: '1563397284036939777',
-    //         in_reply_to_user_id: '1917349034',
-    //         text: '7/ This is the brilliant idea behind the Limited Grades project. \n' +
-    //             '\n' +
-    //             "It turns 17Lands GIH WR's into a tier list.\n" +
-    //             '\n' +
-    //             `Unfortunately, there's no easy "export" button, so you can't retroactively "score" using Limited Grades.\n` +
-    //             '\n' +
-    //             'https://t.co/EuhIayup2a https://t.co/v4kbSWiKmt',
-    //         source: 'Twitter Web App',
-    //         possibly_sensitive: false,
-    //         author: {
-    //             username: 'rhyslindmark',
-    //             id: '1917349034',
-    //             public_metrics_followers_count: 5342,
-    //             public_metrics_following_count: 1646,
-    //             public_metrics_tweet_count: 10216,
-    //             public_metrics_listed_count: 229,
-    //             description: 'Co-building the Wisdom Age @roote_. Hiring https://t.co/mYM8pbcD4v. Prev @mitDCI @medialab. @EthereumDenver co-founder. Newsletter on solarpunk pluralism in bio 👇',
-    //             protected: false,
-    //             verified: false,
-    //             created_at: "2013 - 09 - 29T15: 01: 58.000Z",
-    //             url: 'https://t.co/9fWmqYPH37',
-    //             name: 'Rhys Lindmark',
-    //             profile_image_url: 'https://pbs.twimg.com/profile_images/1558280191083827200/J0myxG6i_normal.jpg',
-    //             location: 'San Francisco Bay Area, CA',
-    //             pinned_tweet_id: '1271229547053150208'
-    //         }
-    //     },
-    // ]
     const errors = useActionData();
+
     return (
         <div className="flex">
             <div>
-                <h2 className="text-2xl font-bold">{stream.name}</h2>
-                <p>startTime: {stream.startTime}, endTime: {stream.endTime}</p>
+                <h2 className="text-2xl font-bold">{stream.stream.name}</h2>
+                <p>startTime: {stream.stream.start_time}, endTime: {stream.stream.end_time}</p>
                 <hr className="my-4" />
                 <Form
                     method='post'

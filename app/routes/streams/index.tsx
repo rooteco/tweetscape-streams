@@ -5,10 +5,11 @@ import { Form, useActionData, Link, useLoaderData } from "@remix-run/react";
 import * as React from "react";
 import BirdIcon from '~/icons/bird';
 import { commitSession, getSession } from '~/session.server';
-import { getClient } from '~/twitter.server';
+import { flattenTwitterData, getClient } from '~/twitter.server';
 
 
 import { createStream, getStreamByName } from "~/models/streams.server";
+import { ApiPartialResponseError } from "twitter-api-v2";
 
 export function getUserIdFromSession(session: Session) {
     const userId = session.get('uid') as string | undefined;
@@ -24,9 +25,9 @@ type ActionData =
 
 async function getStreamByNameNeo(name: string) {
     const res = await fetch(`http://localhost:5000/api/streams/${name}`)
+    console.log("The struggle bus")
+    // console.log(await res.text())
     const data = await res.json()
-    console.log("-----DATA FOR STREAM----")
-    console.log(data);
     return data.stream;
 }
 
@@ -44,21 +45,23 @@ export async function action({ request }: ActionArgs) {
         return json<ActionData>(errors);
     }
 
-    const session = await getSession(request.headers.get('Cookie'));
-    const uid = getUserIdFromSession(session);
+    // const session = await getSession(request.headers.get('Cookie'));
+    // const uid = getUserIdFromSession(session);
+    const { api, uid, session } = await getClient(request);
     let user = null;
-    if (uid) {
-        const { api, uid, session } = await getClient(request);
-        const meData = await api.v2.me({ "user.fields": "created_at,description,entities,id,location,name,pinned_tweet_id,profile_image_url,protected,public_metrics,url,username,verified,withheld", });
-        user = meData.data;
+    if (!uid) {
+        return null
     }
+
+    const meData = await api.v2.me({ "user.fields": "created_at,description,entities,id,location,name,pinned_tweet_id,profile_image_url,protected,public_metrics,url,username,verified,withheld", });
+    user = meData.data;
 
     let username = user.username;
     const startTime = "2022-08-24T13:58:40Z";
     const endTime = "2022-08-31T13:58:40Z";
     // const stream = await createStream({ name, startTime, endTime });
     console.log("POST");
-    console.log({ name, startTime, endTime, username });
+    console.log({ name, startTime, endTime, current_user_data: user });
     const res = await fetch(
         "http://localhost:5000/api/streams/create",
         {
@@ -71,11 +74,13 @@ export async function action({ request }: ActionArgs) {
                 name,
                 startTime,
                 endTime,
-                createdBy: username
+                current_user_data: user
             })
         }
     );
+    console.log(res.status);
     let data = await res.json();
+    console.log(res.status);
     console.log('RETURNED ATA FROM POST API...')
     console.log(data);
     return redirect(`/streams/${data.stream.name}`);
