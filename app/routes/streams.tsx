@@ -30,10 +30,7 @@ export function getUserIdFromSession(session: Session) {
 
 // export async function loader({ request }: LoaderArgs) {
 export const loader: LoaderFunction = async ({ request }: LoaderArgs) => {
-    // let streams = await getStreams();
-    const res = await fetch("http://localhost:5000/api/streams");
-    let streams = await res.json();
-    streams = streams.streams;
+    let streams = await getStreams();
     let user = null;
     const url = new URL(request.url);
     const redirectURI = "http://localhost:3000/streams";
@@ -169,9 +166,9 @@ export default function StreamsPage() {
                                         className={({ isActive }) =>
                                             `block border-b p-4 text-xl ${isActive ? "bg-white" : ""}`
                                         }
-                                        to={stream.name}
+                                        to={stream.properties.name}
                                     >
-                                        📝 {stream.name}
+                                        📝 {stream.properties.name}
                                     </NavLink>
                                 </li>
                             ))}
