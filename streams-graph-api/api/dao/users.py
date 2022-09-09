@@ -145,9 +145,12 @@ class UsersDao:
     
     def add_tweets_from(self, userNode):
         username, df_tweets, df_ref_tweets = pull_tweets(
-            twarc_client, userNode.get("username"), 
+            twarc_client, 
+            userNode.get("username"), 
             extract_features=True, 
-            max_tweets=100, start_time=None, end_time=None
+            max_tweets=100, 
+            start_time=None, 
+            end_time=None
         )
 
         records = df_tweets[tweet_fields].to_dict("records")
