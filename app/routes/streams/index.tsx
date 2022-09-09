@@ -6,10 +6,7 @@ import * as React from "react";
 import BirdIcon from '~/icons/bird';
 import { commitSession, getSession } from '~/session.server';
 import { flattenTwitterData, getClient } from '~/twitter.server';
-
-
 import { createStream, getStreamByName } from "~/models/streams.server";
-import { ApiPartialResponseError } from "twitter-api-v2";
 
 export function getUserIdFromSession(session: Session) {
     const userId = session.get('uid') as string | undefined;
@@ -23,19 +20,18 @@ type ActionData =
     }
     | undefined;
 
-async function getStreamByNameNeo(name: string) {
-    const res = await fetch(`http://localhost:5000/api/streams/${name}`)
-    // console.log("The struggle bus")
-    // console.log(await res.text())
-    const data = await res.json()
-    return data.stream;
-}
+// async function getStreamByNameNeo(name: string) {
+//     const res = await fetch(`http://localhost:5000/api/streams/${name}`)
+//     // console.log("The struggle bus")
+//     // console.log(await res.text())
+//     const data = await res.json()
+//     return data.stream;
+// }
 
 export async function action({ request }: ActionArgs) {
     const formData = await request.formData();
     const name = formData.get("name");
-
-    let checkStreamName = await getStreamByNameNeo(name);
+    let checkStreamName = await getStreamByName(name);
     console.log(checkStreamName);
     if (checkStreamName) {
         let errors: ActionData = {
@@ -56,7 +52,6 @@ export async function action({ request }: ActionArgs) {
     let username = user.username;
     const startTime = "2022-08-24T13:58:40Z";
     const endTime = "2022-08-31T13:58:40Z";
-    // const stream = await createStream({ name, startTime, endTime });
     const stream = await createStream(name, startTime, endTime, username)
     console.log('RETURNED ATA FROM POST API...')
     console.log(stream);

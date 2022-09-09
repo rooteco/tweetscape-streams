@@ -11,8 +11,6 @@ import { driver } from "~/neo4j.server";
 import { Record } from 'neo4j-driver'
 
 
-// const api = new TwitterApi(process.env.TWITTER_TOKEN as string);
-
 export async function getUserFromTwitter(api: any, username: string) {
     const { data: user } = await api.v2.userByUsername(
         username,
@@ -36,8 +34,6 @@ export async function getStreams() {
         RETURN s`,
         )
     })
-    // Get the `p` value from the first record
-    const singleRecord = res.records[0]
     const streams = res.records.map((row: Record) => {
         return row.get('s')
     })
@@ -45,22 +41,31 @@ export async function getStreams() {
     return streams;
 }
 
+export async function getStreamByName(name: string) {
+    const session = driver.session()
+    // Create a node within a write transaction
+    const res = await session.readTransaction((tx: any) => {
+        return tx.run(`
+        MATCH (s:Stream {name: $name} )
+        RETURN s`,
+            { name })
+    })
+    let node;
+    const singleRecord = res.records[0]
+    if (res.records.length > 0) {
+        node = singleRecord.get("s");
+    } else {
+        node = null;
+    }
+    await session.close()
+    return node;
+}
+
 export function getStream({
     id,
 }: Pick<Stream, "id">) {
     return prisma.streams.findFirst({
         where: { id },
-        include: {
-            seedUsers: true
-        }
-    });
-}
-
-export function getStreamByName({
-    name,
-}: Pick<Stream, "name">) {
-    return prisma.streams.findUnique({
-        where: { name: name },
         include: {
             seedUsers: true
         }
@@ -99,14 +104,17 @@ export async function createStream(name: string, startTime: string, endTime: str
     return node;
 }
 
-
-
-export function deleteStreamByName({
-    name,
-}: Pick<Stream, "name">) {
-    return prisma.streams.delete({
-        where: { name: name },
-    });
+export async function deleteStreamByName(name: string) {
+    const session = driver.session()
+    console.log("DETELING");
+    console.log(name);
+    // Create a node within a write transaction
+    const res = await session.readTransaction((tx: any) => {
+        return tx.run(`
+        MATCH (s:Stream {name: $name} )
+        DETACH DELETE s`,
+            { name })
+    })
 }
 
 export async function removeSeedUserFromStream(
