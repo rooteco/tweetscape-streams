@@ -1,9 +1,6 @@
 
-import { prisma } from "~/db.server";
-import type { users, streams, tweets } from "@prisma/client";
 import { TwitterApi, TwitterV2IncludesHelper, UserSearchV1Paginator } from 'twitter-api-v2';
 import { log } from '~/log.server';
-import invariant from "tiny-invariant";
 import { driver } from "~/neo4j.server";
 import { Record } from 'neo4j-driver'
 
@@ -45,6 +42,42 @@ export async function getUserFromTwitter(api: any, username: string) {
         return flattenTwitterUserPublicMetrics([user])[0];
     }
 
+}
+
+
+export async function getTweet(tweetId: string) {
+    const session = driver.session()
+    // Create a node within a write transaction
+    const res = await session.readTransaction((tx: any) => {
+        return tx.run(`
+        MATCH (t:Tweet {id: $tweetId})
+        RETURN t`,
+            { tweetId }
+        )
+    })
+    let tweet;
+    let relNodes;
+    if (res.records.length > 0) {
+        tweet = res.records[0].get("t")
+
+        const relRes = await session.readTransaction((tx: any) => {
+            return tx.run(`
+            MATCH (t:Tweet {id: $tweetId})-[r]-(n)
+            RETURN r,n
+            `,
+                { tweetId }
+            )
+        })
+        relNodes = relRes.records.map((row: any) => {
+            return {
+                "relationship": row.get("r").type,
+                "node": row.get("n").properties
+            }
+        })
+
+    }
+    await session.close()
+    return { tweet, relNodes }
 }
 
 export async function getStreams() {
@@ -95,10 +128,6 @@ export async function getStreamByName(name: string) {
 
     await session.close()
     return { stream: stream, seedUsers: seedUsers };
-}
-
-export async function getPosts() {
-    return prisma.post.findMany();
 }
 
 export async function createStream(name: string, startTime: string, endTime: string, username: string) {
@@ -176,24 +205,6 @@ async function getTweetsFromAuthorId(
     }
     return tweets;
 }
-
-async function upsertTweet(tweet: tweets) {
-    let author_id = tweet.author_id;
-    invariant(author_id, "author_id not found on tweet");
-    // delete tweet.author;
-    const createData = {
-        ...tweet,
-        // author: { this isn't necessary for this one for some reason... probably because 1-to-many
-        //     connect: [{ id: author_id }]
-        // }
-    }
-    return prisma.tweets.upsert({
-        where: { id: tweet.id },
-        create: createData,
-        update: createData,
-    })
-};
-
 
 async function streamContainsUser(username: string, streamName: string) {
     const session = driver.session()
@@ -343,7 +354,9 @@ export async function addSeedUserToStream(
             let newUsers = following.data.data.map((u: any) => {
                 return flattenTwitterUserPublicMetrics([u])[0]
             })
+            console.time("addUsersFollowedBy")
             await addUsersFollowedBy(user.properties.username, newUsers)
+            console.timeEnd("addUsersFollowedBy")
         }
 
         // Add the tweets from stream's date Range to the DB to build a feed
@@ -355,11 +368,16 @@ export async function addSeedUserToStream(
         );
         if (tweets.data.includes.users.length > 0) {
             let includedUsers = flattenTwitterUserPublicMetrics(tweets.data.includes.users);
+            console.log(`pushing ${tweets.data.includes.users.length} users included in tweets from ${user.properties.name}`)
+            console.time("addUsers")
+            await addUsers(includedUsers);
+            console.timeEnd("addUsers")
         }
-        await addUsers(includedUsers);
         if (tweets.data.data.length > 0) {
             console.log(`pushing ${tweets.data.data.length} tweets to graph from ${user.properties.name}`)
+            console.time("addTweetsFrom")
             await addTweetsFrom(flattenTweetPublicMetrics(tweets.data.data));
+            console.timeEnd("addTweetsFrom")
         }
         if (tweets.data.includes.tweets.length > 0) {
             console.log(`pushing ${tweets.data.includes.tweets.length} ref tweets to graph from ${user.properties.name}`)
