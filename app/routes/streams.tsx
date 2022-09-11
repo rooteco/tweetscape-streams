@@ -113,7 +113,6 @@ export default function StreamsPage() {
     const streams = data.streams;
     const user = data.user;
     const errors = useActionData();
-
     console.log(`USER = ${user}`);
     return (
         <div className="flex h-full min-h-screen flex-col">
@@ -161,7 +160,7 @@ export default function StreamsPage() {
                     ) : (
                         <ol>
                             {streams.map((stream: any) => (
-                                <li key={stream.name}>
+                                <li key={stream.properties.name}>
                                     <NavLink
                                         className={({ isActive }) =>
                                             `block border-b p-4 text-xl ${isActive ? "bg-white" : ""}`
