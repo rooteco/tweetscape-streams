@@ -9,32 +9,32 @@ import invariant from "tiny-invariant";
 // import { requireUserId } from "~/session.server";
 // import { useUser } from "~/utils";
 
-import { getTweet } from "~/models/tweets.server";
+import { getTweet } from "~/models/streams.server";
 
-type LoaderData = {
-    // this is a handy way to say: "posts is whatever type getStreams resolves to"
-    tweet: Awaited<ReturnType<typeof getTweet>>;
-}
+// type LoaderData = {
+//     // this is a handy way to say: "posts is whatever type getStreams resolves to"
+//     tweet: Awaited<ReturnType<typeof getTweet>>;
+
+// }
 
 export async function loader({ request, params }: LoaderArgs) {
+    console.log("in tweets laoder")
+    console.log(params.tweetId)
     invariant(params.tweetId, "tweetId not found");
     console.log("LOADING");
     console.log(params.tweetId);
-    let tweet = await getTweet(params.tweetId)
-    // let tweet = json<LoaderData>({
-    //     tweet: getTweet(params.tweetId),
-    // })
-    console.log(Object.keys(tweet));
-    return json(tweet)
+    let { tweet, relNodes } = await getTweet(params.tweetId)
+    return json({ tweet, relNodes });
 };
 
 export default function StreamsPage() {
-    const tweet = useLoaderData<LoaderData>();
+    const { tweet, relNodes } = useLoaderData();
     console.log("-----")
-    console.log(tweet);
+    console.log(relNodes);
     return (
         <div>
-            <pre>{JSON.stringify(tweet, null, 2)}</pre>
+            <pre>{JSON.stringify(tweet.properties, null, 2)}</pre>
+            <pre>{JSON.stringify(relNodes, null, 2)}</pre>
         </div>
     );
 }
