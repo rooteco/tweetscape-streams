@@ -12,6 +12,8 @@ import type { LoaderFunction } from '@remix-run/node';
 import { commitSession, getSession } from '~/session.server';
 import { TwitterApi } from 'twitter-api-v2';
 import { flattenTwitterData } from "~/twitter.server";
+import { flattenTwitterUserPublicMetrics } from "~/models/user.server";
+
 import { getClient } from '~/twitter.server';
 
 import { getStreams } from "~/models/streams.server";
@@ -71,13 +73,12 @@ export const loader: LoaderFunction = async ({ request }: LoaderArgs) => {
             const { data } = await api.v2.me({ "user.fields": "created_at,description,entities,id,location,name,pinned_tweet_id,profile_image_url,protected,public_metrics,url,username,verified,withheld", });
             const context = `${data.name} (@${data.username})`;
             log.info(`Upserting user for ${context}...`);
-            user = flattenTwitterData([data])[0];
+            user = flattenTwitterUserPublicMetrics([data])[0];
             await prisma.users.upsert({
                 where: { id: user.id },
                 create: user,
                 update: user,
             })
-
             log.info(`Upserting token for ${context}...`);
             const token = {
                 user_id: user.id,
@@ -113,7 +114,6 @@ export default function StreamsPage() {
     const streams = data.streams;
     const user = data.user;
     const errors = useActionData();
-    console.log(`USER = ${user}`);
     return (
         <div className="flex h-full min-h-screen flex-col">
             <header className="flex items-center justify-between bg-slate-800 p-4 text-white">
