@@ -7,6 +7,8 @@ import BirdIcon from '~/icons/bird';
 import { commitSession, getSession } from '~/session.server';
 import { flattenTwitterData, getClient } from '~/twitter.server';
 import { createStream, getStreamByName } from "~/models/streams.server";
+import { getUserByUsernameDB, createUserDb } from "~/models/user.server";
+import { flattenTwitterUserPublicMetrics } from "~/models/user.server";
 
 export function getUserIdFromSession(session: Session) {
     const userId = session.get('uid') as string | undefined;
@@ -20,28 +22,16 @@ type ActionData =
     }
     | undefined;
 
-// async function getStreamByNameNeo(name: string) {
-//     const res = await fetch(`http://localhost:5000/api/streams/${name}`)
-//     // console.log("The struggle bus")
-//     // console.log(await res.text())
-//     const data = await res.json()
-//     return data.stream;
-// }
-
 export async function action({ request }: ActionArgs) {
     const formData = await request.formData();
-    const name = formData.get("name");
-    let checkStreamName = await getStreamByName(name);
-    console.log(checkStreamName);
-    if (checkStreamName) {
+    const name: string = formData.get("name");
+    let { stream, seedUsers } = await getStreamByName(name);
+    if (stream) {
         let errors: ActionData = {
             streamName: `stream with name '${name}' already exists, please choose a new name.`
         }
         return json<ActionData>(errors);
     }
-
-    // const session = await getSession(request.headers.get('Cookie'));
-    // const uid = getUserIdFromSession(session);
     const { api, uid, session } = await getClient(request);
     let user = null;
     if (!uid) {
@@ -50,11 +40,13 @@ export async function action({ request }: ActionArgs) {
     const meData = await api.v2.me({ "user.fields": "created_at,description,entities,id,location,name,pinned_tweet_id,profile_image_url,protected,public_metrics,url,username,verified,withheld", });
     user = meData.data;
     let username = user.username;
+    let userDb = await getUserByUsernameDB(username)
+    if (!userDb) {
+        createUserDb(flattenTwitterUserPublicMetrics([user])[0])
+    }
     const startTime = "2022-08-24T13:58:40Z";
     const endTime = "2022-08-31T13:58:40Z";
-    const stream = await createStream(name, startTime, endTime, username)
-    console.log('RETURNED ATA FROM POST API...')
-    console.log(stream);
+    stream = await createStream(name, startTime, endTime, username)
     return redirect(`/streams/${stream.properties.name}`);
 }
 
