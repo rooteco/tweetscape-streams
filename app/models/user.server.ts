@@ -8,14 +8,58 @@ import type { users } from "@prisma/client";
 import { flattenTwitterData } from "~/twitter.server";
 import { log } from '~/log.server';
 
+import { driver } from "~/neo4j.server";
+import { Record } from 'neo4j-driver'
 
 
-export async function getUserById(id: users["id"]) {
-  return prisma.users.findUnique({ where: { id } });
+export function flattenTwitterUserPublicMetrics(data: Array<any>) {
+  for (const obj of data) {
+    obj.username = obj.username.toLowerCase();
+    obj["public_metrics.followers_count"] = obj.public_metrics.followers_count;
+    obj["public_metrics.following_count"] = obj.public_metrics.following_count;
+    obj["public_metrics.tweet_count"] = obj.public_metrics.tweet_count;
+    obj["public_metrics.listed_count"] = obj.public_metrics.listed_count;
+    delete obj.public_metrics;
+    delete obj.entities;
+  }
+  return data;
 }
 
-export async function getUserByUsernameDB(username: users["username"]) {
-  return prisma.users.findUnique({ where: { username } });
+export async function getUserByUsernameDB(username: string) {
+  const session = driver.session()
+  const res = await session.writeTransaction((tx: any) => {
+    return tx.run(`
+      MATCH (u:User {username: $username})
+      RETURN u`,
+      { username: username }
+    )
+  })
+  let node;
+  if (res.records.length == 1) {
+    const singleRecord: Record = res.records[0]
+    node = singleRecord.get("u")
+    return node;
+  } else {
+    node = null;
+  }
+  await session.close()
+  return node;
+}
+
+export async function createUserDb(user: any) {
+  const session = driver.session()
+  const res = await session.writeTransaction((tx: any) => {
+    return tx.run(`
+      MERGE (u:User {username: $user.username})
+      SET u = $user
+      RETURN u`,
+      { user: user }
+    )
+  })
+  const singleRecord: Record = res.records[0]
+  const node = singleRecord.get("u")
+  await session.close()
+  return node;
 }
 
 async function getTweetsFromAuthorId(
@@ -117,20 +161,6 @@ export async function addUserAndRefsToDb(api: any, user: users, startTime: strin
   for (const tweet of tweets.includes.tweets) {
     upsertTweet(tweet);
   }
-
-
-
-
-
-}
-
-export async function createUser(
-  data: users,
-) {
-  data.username = data.username.toLowerCase();
-  return prisma.users.create({
-    data: data
-  });
 }
 
 export async function getUsersFollowedById(id: string) {
