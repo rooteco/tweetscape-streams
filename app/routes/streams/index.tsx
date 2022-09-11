@@ -5,7 +5,7 @@ import { Form, useActionData, Link, useLoaderData } from "@remix-run/react";
 import * as React from "react";
 import BirdIcon from '~/icons/bird';
 import { commitSession, getSession } from '~/session.server';
-import { flattenTwitterData, getClient } from '~/twitter.server';
+import { getClient } from '~/twitter.server';
 import { createStream, getStreamByName } from "~/models/streams.server";
 import { getUserByUsernameDB, createUserDb } from "~/models/user.server";
 import { flattenTwitterUserPublicMetrics } from "~/models/user.server";

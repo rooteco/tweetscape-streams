@@ -6,8 +6,6 @@ import invariant from "tiny-invariant";
 import { getClient } from '~/twitter.server';
 
 
-// import { getTweet } from "~/models/tweets.server";
-
 // type LoaderData = {
 //     // this is a handy way to say: "posts is whatever type getStreams resolves to"
 //     tweet: Awaited<ReturnType<typeof getTweet>>;
