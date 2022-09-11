@@ -2,6 +2,7 @@ import type { ActionArgs, LoaderArgs } from "@remix-run/node";
 import type { ActionFunction } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { Form, useActionData, useCatch, useLoaderData } from "@remix-run/react";
+import { seed } from "prisma/seed";
 import invariant from "tiny-invariant";
 import { TimeAgo } from '~/components/timeago';
 import { getStreamRecommendedUsers, getStreamTweets, deleteStreamByName, addSeedUserToStream, getUserFromTwitter, getStreamByName, removeSeedUserFromStream } from "~/models/streams.server";
@@ -10,6 +11,7 @@ import { getClient } from '~/twitter.server';
 
 
 export async function loader({ request, params }: LoaderArgs) {
+    console.log("IN DATA LOADER")
     // const userId = await requireUserId(request);
     invariant(params.streamName, "streamName not found");
     console.time("getStreamByName")
@@ -21,10 +23,18 @@ export async function loader({ request, params }: LoaderArgs) {
     console.time("getStreamTweets")
     const tweets = await getStreamTweets(stream.properties.name, stream.properties.startTime, stream.properties.endTime);
     console.timeEnd("getStreamTweets")
+
+    let recommendedUsers = [];
+    if (seedUsers.length > 1) {
+        console.time("getStreamRecommendedUsers")
+        recommendedUsers = await getStreamRecommendedUsers(stream.properties.name)
+        console.timeEnd("getStreamRecommendedUsers")
+    }
     return json({
         "stream": stream,
         "seedUsers": seedUsers,
-        "tweets": tweets
+        "tweets": tweets,
+        "recommendedUsers": recommendedUsers
     });
 }
 
@@ -50,7 +60,9 @@ export const action: ActionFunction = async ({
         return redirect("/streams");
     }
     let seedUserHandle: string = formData.get("seedUserHandle");
+    console.time("getStreamByName")
     const { stream, seedUsers } = await getStreamByName(params.streamName);
+    console.timeEnd("getStreamByName")
 
     if (!stream) {
         throw new Response("Not Found", { status: 404 });
@@ -80,7 +92,10 @@ export const action: ActionFunction = async ({
         seedUserHandle = seedUserHandle.toLowerCase().replace(/^@/, '')
         let user = await getUserByUsernameDB(seedUserHandle);
         if (!user) {
+
+            console.time("getUserFromTwitter")
             let user = await getUserFromTwitter(api, seedUserHandle); // This func already flattens the data
+            console.timeEnd("getUserFromTwitter")
             if (!user) {
                 const errors: ActionData = {
                     seedUserHandle: `handle '${seedUserHandle}' not found... please check spelling"`
@@ -88,13 +103,18 @@ export const action: ActionFunction = async ({
                 return json<ActionData>(errors); // throw error if user is not found;
             } else {
                 user = await createUserDb(user)
+                console.time("addSeedUserToStream")
                 addSeedUserToStream(api, stream, user)
+                console.timeEnd("addSeedUserToStream")
             }
         } else {
+            console.time("addSeedUserToStream")
             addSeedUserToStream(api, stream, user)
+            console.timeEnd("addSeedUserToStream")
         }
         console.log("Done adding seed user to stream")
-        return redirect(`/streams/${params.streamName}`)
+        // return redirect(`/streams/${params.streamName}`)
+        return null;
 
     } else if (intent === "removeSeedUser") {
         console.log("IN REMOVESEEDUSER")
@@ -106,9 +126,6 @@ export const action: ActionFunction = async ({
             user.properties.username
         )
         return null;
-    } else if (intent === "showRecommendations") {
-        let recommendedUsers = await getStreamRecommendedUsers(stream.properties.name)
-        return { recommendedUsers: recommendedUsers }
     }
 }
 
@@ -117,12 +134,12 @@ export default function StreamDetailsPage() {
     const stream = data.stream;
     const seedUsers = data.seedUsers;
     const tweets = data.tweets;
+    const recommendedUsers = data.recommendedUsers;
     const actionData = useActionData();
     let errors = {};
-    let recommendedUsers = [];
     if (actionData) {
         errors = actionData.errors;
-        recommendedUsers = actionData.recommendedUsers;
+        // recommendedUsers = actionData.recommendedUsers;
     }
     return (
         <div className="flex">
@@ -184,7 +201,7 @@ export default function StreamDetailsPage() {
                 </ol>
 
                 <div>
-                    {(recommendedUsers.length < 1) && (
+                    {/* {(recommendedUsers.length < 1) && (
                         <Form
                             method='post'
                             className='sticky top-2 my-8 mx-auto flex max-w-sm'
@@ -198,7 +215,7 @@ export default function StreamDetailsPage() {
                                 Show Recommendations
                             </button>
                         </Form>
-                    )}
+                    )} */}
                     {(recommendedUsers.length > 0) && (
                         <div>
                             <h2 className="text-2xl">Showing {recommendedUsers.length} recommended users</h2>
