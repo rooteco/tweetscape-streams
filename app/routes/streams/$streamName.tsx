@@ -308,6 +308,15 @@ export default function StreamDetailsPage() {
                                                 datetime={new Date(tweet.tweet.properties.created_at ?? new Date())}
                                             />
                                         </a>
+                                        <span className='mx-1 text-sm text-gray-500'>·</span>
+                                        <a
+                                            href={`/streams/tweets/${tweet.tweet.properties.id}`}
+                                            target='_blank'
+                                            rel='noopener noreferrer'
+                                            className='text-sm text-gray-500 hover:underline'
+                                        >
+                                            analyze
+                                        </a>
                                     </h3>
                                 </header>
                                 <p
