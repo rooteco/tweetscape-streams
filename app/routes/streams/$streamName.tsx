@@ -3,82 +3,35 @@ import type { ActionFunction } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { Form, useActionData, useCatch, useLoaderData } from "@remix-run/react";
 import invariant from "tiny-invariant";
-
 import { TimeAgo } from '~/components/timeago';
-
-
-import { getStream, getStreamTweets, deleteStreamByName, addSeedUserToStream, getUserFromTwitter, getStreamByName, removeSeedUserFromStream } from "~/models/streams.server";
-import { getUserByUsernameDB, createUser, getUsersFollowedById } from "~/models/user.server";
-import { log } from '~/log.server';
-import { seed } from "prisma/seed";
+import { getStreamRecommendedUsers, getStreamTweets, deleteStreamByName, addSeedUserToStream, getUserFromTwitter, getStreamByName, removeSeedUserFromStream } from "~/models/streams.server";
+import { getUserByUsernameDB, createUserDb } from "~/models/user.server";
 import { getClient } from '~/twitter.server';
 
-async function getStreamByNameNeo(name: string) {
-    let res = await fetch(`http://localhost:5000/api/streams/${name}`)
-    // console.log("HERE IS THE PROBLEM");
-    // console.log(await res.text());
-    let data = await res.json();
-    return data
-}
 
 export async function loader({ request, params }: LoaderArgs) {
     // const userId = await requireUserId(request);
     invariant(params.streamName, "streamName not found");
-    // const stream = await getStreamByName({ name: params.streamName });
-    const stream = await getStreamByNameNeo(params.streamName)
-    if (!stream.stream) {
+    console.time("getStreamByName")
+    const { stream, seedUsers } = await getStreamByName(params.streamName)
+    console.timeEnd("getStreamByName")
+    if (!stream) {
         throw new Response("Not Found", { status: 404 });
     }
-
-    let followingMap = new Map();
-    for (let seedUser of stream.seedUsers) {
-        let follows = await getUsersFollowedById(seedUser.id);
-        // let followsUsernames: Array<String> = [];
-        follows.map((i: any) => {
-            if (followingMap.get(i.following.username)) {
-                let cur = followingMap.get(i.following.username);
-                cur.push(seedUser.username)
-                followingMap.set(
-                    i.following.username,
-                    cur
-                );
-            } else {
-                followingMap.set(i.following.username, [seedUser.username])
-            }
-
-        });
-    }
-    let recommended_users: Array<object> = []
-    followingMap.forEach(
-        (val, key) => {
-            if (val.length > 2) {
-                recommended_users.push(
-                    {
-                        "num_followers": val.length,
-                        "username": key,
-                        "followed_by": val
-                    }
-                )
-            }
-        }
-    );
-    console.log("recommended_users");
-    console.log(recommended_users.length);
-
-
-    // Get Stream Tweets 
-    const tweets = await getStreamTweets(stream);
-
+    console.time("getStreamTweets")
+    const tweets = await getStreamTweets(stream.properties.name, stream.properties.startTime, stream.properties.endTime);
+    console.timeEnd("getStreamTweets")
     return json({
         "stream": stream,
-        "recommended_users": recommended_users,
+        "seedUsers": seedUsers,
         "tweets": tweets
     });
 }
 
 type ActionData =
     | {
-        seedUserHandle: null | string;
+        errors: { seedUserHandle: null | string },
+        recommendedUsers: [],
     }
     | undefined;
 
@@ -92,80 +45,90 @@ export const action: ActionFunction = async ({
     invariant(params.streamName, "streamName not found");
     const formData = await request.formData();
     const intent = formData.get("intent");
-    console.log("intent = ");
-    console.log(intent);
     if (intent === "delete") {
         let res = await deleteStreamByName(params.streamName);
         return redirect("/streams");
     }
-    let seedUserHandle = formData.get("seedUserHandle");
-    let errors: ActionData = {
-        seedUserHandle: seedUserHandle ? null : "seedUserHandle is required"
-    }
-    const hasErrors = Object.values(errors).some(
-        (errorMessage) => errorMessage
-    );
-    if (hasErrors) {
-        return json<ActionData>(errors);
-    }
+    let seedUserHandle: string = formData.get("seedUserHandle");
+    const { stream, seedUsers } = await getStreamByName(params.streamName);
 
-    let stream = await getStreamByNameNeo(params.streamName);
     if (!stream) {
         throw new Response("Not Found", { status: 404 });
     }
-
     if (intent === "addSeedUser") {
+        let errors: ActionData = {
+            errors: seedUserHandle ? null : "seedUserHandle is required"
+        }
+
+        const hasErrors = Object.values(errors).some(
+            (errorMessage) => errorMessage
+        );
+        console.log(hasErrors);
+        if (hasErrors) {
+            return json<ActionData>(errors);
+        }
         const { api, uid, session } = await getClient(request);
-        for (const seedUser of stream.seedUsers) {
-            console.log(`${seedUser.username} == ${seedUserHandle}`);
+        for (const seedUser of seedUsers) {
+            console.log(`${seedUser.properties.username} == ${seedUserHandle}`);
             if (seedUser.username == seedUserHandle) {
                 let errors: ActionData = {
-                    seedUserHandle: `user '${seedUserHandle}' already seed user of stream '${stream.name}'`
+                    seedUserHandle: `user '${seedUserHandle}' already seed user of stream '${stream.properties.name}'`
                 }
                 return json<ActionData>(errors);
             }
         }
         seedUserHandle = seedUserHandle.toLowerCase().replace(/^@/, '')
-        console.log("ABOUT TOO MAKE REQEUST...")
-        console.log(`http://localhost:5000/api/streams/${params.streamName}`)
-        const res = await fetch(
-            `http://localhost:5000/api/streams/${params.streamName}`,
-            {
-                method: "POST",
-                headers: {
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    username: seedUserHandle,
-                })
+        let user = await getUserByUsernameDB(seedUserHandle);
+        if (!user) {
+            let user = await getUserFromTwitter(api, seedUserHandle); // This func already flattens the data
+            if (!user) {
+                const errors: ActionData = {
+                    seedUserHandle: `handle '${seedUserHandle}' not found... please check spelling"`
+                }
+                return json<ActionData>(errors); // throw error if user is not found;
+            } else {
+                user = await createUserDb(user)
+                addSeedUserToStream(api, stream, user)
             }
-        );
-        const data = await res.text()
+        } else {
+            addSeedUserToStream(api, stream, user)
+        }
+        console.log("Done adding seed user to stream")
         return redirect(`/streams/${params.streamName}`)
 
     } else if (intent === "removeSeedUser") {
+        console.log("IN REMOVESEEDUSER")
         let user = await getUserByUsernameDB(seedUserHandle);
+        console.log(stream.properties.name)
+        console.log(user.properties.name)
         removeSeedUserFromStream(
-            stream,
-            user
+            stream.properties.name,
+            user.properties.username
         )
         return null;
+    } else if (intent === "showRecommendations") {
+        let recommendedUsers = await getStreamRecommendedUsers(stream.properties.name)
+        return { recommendedUsers: recommendedUsers }
     }
 }
 
 export default function StreamDetailsPage() {
     const data = useLoaderData<typeof loader>();
     const stream = data.stream;
-    const recommended_users = data.recommended_users;
+    const seedUsers = data.seedUsers;
     const tweets = data.tweets;
-    const errors = useActionData();
-
+    const actionData = useActionData();
+    let errors = {};
+    let recommendedUsers = [];
+    if (actionData) {
+        errors = actionData.errors;
+        recommendedUsers = actionData.recommendedUsers;
+    }
     return (
         <div className="flex">
             <div>
-                <h2 className="text-2xl font-bold">{stream.stream.name}</h2>
-                <p>startTime: {stream.stream.start_time}, endTime: {stream.stream.end_time}</p>
+                <h2 className="text-2xl font-bold">{stream.properties.name}</h2>
+                <p>startTime: {stream.properties.startTime}, endTime: {stream.properties.endTime}</p>
                 <hr className="my-4" />
                 <Form
                     method='post'
@@ -193,9 +156,9 @@ export default function StreamDetailsPage() {
                 </Form>
                 <h1 className="text-2xl">Seed Users</h1>
                 <ol>
-                    {stream.seedUsers.map((seedUser) => (
-                        <li className="flex" key={seedUser.id}>
-                            <p className="my-auto">{seedUser.username}</p>
+                    {seedUsers.map((seedUser: any) => (
+                        <li className="flex" key={seedUser.properties.id}>
+                            <p className="my-auto">{seedUser.properties.username}</p>
                             <Form
                                 method='post'
                                 className='top-2 my-8 flex'
@@ -205,7 +168,7 @@ export default function StreamDetailsPage() {
                                     name="seedUserHandle"
                                     placeholder='Enter any Twitter handle'
                                     className='flex-1 rounded border-2 border-black px-2 py-1'
-                                    value={seedUser.username}
+                                    value={seedUser.properties.username}
                                 />
                                 <button
                                     type='submit'
@@ -219,35 +182,57 @@ export default function StreamDetailsPage() {
                         </li>
                     ))}
                 </ol>
-                <h2 className="text-2xl">Showing {recommended_users.length} recommended users</h2>
-                <ol>
-                    {recommended_users.map((user) => (
-                        <li className="flex" key={user.username}>
-                            <p className="my-auto">{user.username}</p>
-                            <Form
-                                method='post'
-                                className='my-2 py-2 my-auto flex'
-                            >
 
-                                <input
-                                    type='hidden'
-                                    value={user.username}
-                                    name="seedUserHandle"
-                                    placeholder='Enter any Twitter handle'
-                                    className='flex-1 rounded border-2 border-black px-2 py-1'
-                                />
-                                <button
-                                    type='submit'
-                                    className='ml-2 inline-block rounded border-2 border-black bg-black px-2 py-1 text-white'
-                                    value="addSeedUser"
-                                    name="intent"
-                                >
-                                    Add Seed User
-                                </button>
-                            </Form>
-                        </li>
-                    ))}
-                </ol>
+                <div>
+                    {(recommendedUsers.length < 1) && (
+                        <Form
+                            method='post'
+                            className='sticky top-2 my-8 mx-auto flex max-w-sm'
+                        >
+                            <button
+                                type='submit'
+                                className='ml-2 inline-block rounded border-2 border-black bg-black px-2 py-1 text-white'
+                                value="showRecommendations"
+                                name="intent"
+                            >
+                                Show Recommendations
+                            </button>
+                        </Form>
+                    )}
+                    {(recommendedUsers.length > 0) && (
+                        <div>
+                            <h2 className="text-2xl">Showing {recommendedUsers.length} recommended users</h2>
+                            <ol>
+                                {recommendedUsers.map((user: any) => (
+                                    <li className="flex" key={user.properties.username}>
+                                        <p className="my-auto">{user.properties.username}</p>
+                                        <Form
+                                            method='post'
+                                            className='my-2 py-2 my-auto flex'
+                                        >
+
+                                            <input
+                                                type='hidden'
+                                                value={user.properties.username}
+                                                name="seedUserHandle"
+                                                placeholder='Enter any Twitter handle'
+                                                className='flex-1 rounded border-2 border-black px-2 py-1'
+                                            />
+                                            <button
+                                                type='submit'
+                                                className='ml-2 inline-block rounded border-2 border-black bg-black px-2 py-1 text-white'
+                                                value="addSeedUser"
+                                                name="intent"
+                                            >
+                                                Add Seed User
+                                            </button>
+                                        </Form>
+                                    </li>
+                                ))}
+                            </ol>
+                        </div>
+                    )}
+                </div>
                 <Form method="post">
                     <button
                         type="submit"
@@ -264,52 +249,52 @@ export default function StreamDetailsPage() {
                 <hr className="my-4" />
                 {tweets
                     .sort(
-                        (a, b) =>
-                            new Date(b.created_at as string).valueOf() -
-                            new Date(a.created_at as string).valueOf()
+                        (a: any, b: any) =>
+                            new Date(b.tweet.created_at as string).valueOf() -
+                            new Date(a.tweet.created_at as string).valueOf()
                     )
-                    .map((tweet) => (
-                        <div className='mx-2 my-6 flex' key={tweet.id}>
+                    .map((tweet: any) => (
+                        <div className='mx-2 my-6 flex' key={tweet.tweet.properties.id}>
                             <img
                                 className='h-12 w-12 rounded-full border border-gray-300 bg-gray-100'
                                 alt=''
-                                src={tweet.author.profile_image_url}
+                                src={tweet.author.properties.profile_image_url}
                             />
-                            <article key={tweet.id} className='ml-2.5 flex-1'>
+                            <article key={tweet.tweet.properties.id} className='ml-2.5 flex-1'>
                                 <header>
                                     <h3>
                                         <a
-                                            href={`https://twitter.com/${tweet.author.username}`}
+                                            href={`https://twitter.com/${tweet.author.properties.username}`}
                                             target='_blank'
                                             rel='noopener noreferrer'
                                             className='mr-1 font-medium hover:underline'
                                         >
-                                            {tweet.author.name}
+                                            {tweet.author.properties.name}
                                         </a>
                                         <a
-                                            href={`https://twitter.com/${tweet.author.username}`}
+                                            href={`https://twitter.com/${tweet.author.properties.username}`}
                                             target='_blank'
                                             rel='noopener noreferrer'
                                             className='text-sm text-gray-500'
                                         >
-                                            @{tweet.author.username}
+                                            @{tweet.author.properties.username}
                                         </a>
                                         <span className='mx-1 text-sm text-gray-500'>·</span>
                                         <a
-                                            href={`https://twitter.com/${tweet.author.username}/status/${tweet.id}`}
+                                            href={`https://twitter.com/${tweet.author.properties.username}/status/${tweet.tweet.properties.id}`}
                                             target='_blank'
                                             rel='noopener noreferrer'
                                             className='text-sm text-gray-500 hover:underline'
                                         >
                                             <TimeAgo
                                                 locale='en_short'
-                                                datetime={new Date(tweet.created_at ?? new Date())}
+                                                datetime={new Date(tweet.tweet.properties.created_at ?? new Date())}
                                             />
                                         </a>
                                     </h3>
                                 </header>
                                 <p
-                                    dangerouslySetInnerHTML={{ __html: tweet.html ?? tweet.text }}
+                                    dangerouslySetInnerHTML={{ __html: tweet.html ?? tweet.tweet.properties.text }}
                                 />
                             </article>
                         </div>
@@ -329,7 +314,7 @@ export function CatchBoundary() {
     const caught = useCatch();
 
     if (caught.status === 404) {
-        return <div>Note not found</div>;
+        return <div>Note not found, {caught.data}</div>;
     }
 
     throw new Error(`Unexpected caught response with status: ${caught.status}`);
