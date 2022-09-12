@@ -14,3 +14,5 @@ node_modules
 streams-graph-api/api/routes/__pycache__/streams.cpython-310.pyc
 tweetscape-streams-postgres.env
 *.env
+*.env
+neo4j/cluster_credentials.env
