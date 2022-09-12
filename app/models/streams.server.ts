@@ -1,19 +1,36 @@
 
-import { prisma } from "~/db.server";
-import type { users, streams, tweets } from "@prisma/client";
-import { TwitterApi, TwitterV2IncludesHelper } from 'twitter-api-v2';
+import { TwitterApi, TwitterV2IncludesHelper, UserSearchV1Paginator } from 'twitter-api-v2';
 import { log } from '~/log.server';
-import { userInfo } from "os";
-import { createUser } from "~/models/user.server";
-import invariant from "tiny-invariant";
-import { create } from "domain";
-import StreamsPage from "~/routes/streams";
+import { driver } from "~/neo4j.server";
+import { Record } from 'neo4j-driver'
 
+export function flattenTwitterUserPublicMetrics(data: Array<any>) {
+    for (const obj of data) {
+        // obj.username = obj.username.toLowerCase();
+        obj["public_metrics.followers_count"] = obj.public_metrics.followers_count;
+        obj["public_metrics.following_count"] = obj.public_metrics.following_count;
+        obj["public_metrics.tweet_count"] = obj.public_metrics.tweet_count;
+        obj["public_metrics.listed_count"] = obj.public_metrics.listed_count;
+        delete obj.public_metrics;
+        delete obj.entities;
+    }
+    return data;
+}
 
+export function flattenTweetPublicMetrics(data: Array<any>) {
+    for (const obj of data) {
+        // obj.username = obj.us / ername.toLowerCase();
+        obj["public_metrics.retweet_count"] = obj.public_metrics.retweet_count;
+        obj["public_metrics.reply_count"] = obj.public_metrics.reply_count;
+        obj["public_metrics.like_count"] = obj.public_metrics.like_count;
+        obj["public_metrics.quote_count"] = obj.public_metrics.quote_count;
+        delete obj.public_metrics;
+        // delete obj.entities;
+    }
+    return data;
+}
 
-const api = new TwitterApi(process.env.TWITTER_TOKEN as string);
-
-export async function getUserFromTwitter(username: string) {
+export async function getUserFromTwitter(api: any, username: string) {
     const { data: user } = await api.v2.userByUsername(
         username,
         {
@@ -22,105 +39,148 @@ export async function getUserFromTwitter(username: string) {
         }
     );
     if (user) {
-        return flattenTwitterData([user])[0];
+        return flattenTwitterUserPublicMetrics([user])[0];
     }
 
+}
+
+
+export async function getTweet(tweetId: string) {
+    const session = driver.session()
+    // Create a node within a write transaction
+    const res = await session.readTransaction((tx: any) => {
+        return tx.run(`
+        MATCH (t:Tweet {id: $tweetId})
+        RETURN t`,
+            { tweetId }
+        )
+    })
+    let tweet;
+    let relNodes;
+    if (res.records.length > 0) {
+        tweet = res.records[0].get("t")
+
+        const relRes = await session.readTransaction((tx: any) => {
+            return tx.run(`
+            MATCH (t:Tweet {id: $tweetId})-[r]-(n)
+            RETURN r,n
+            `,
+                { tweetId }
+            )
+        })
+        relNodes = relRes.records.map((row: any) => {
+            return {
+                "relationship": row.get("r").type,
+                "node": row.get("n").properties
+            }
+        })
+
+    }
+    await session.close()
+    return { tweet, relNodes }
 }
 
 export async function getStreams() {
-    return prisma.streams.findMany({
-        include: {
-            seedUsers: true
-        }
-    });
+    const session = driver.session()
+    // Create a node within a write transaction
+    const res = await session.readTransaction((tx: any) => {
+        return tx.run(`
+        MATCH (s:Stream )
+        RETURN s`,
+        )
+    })
+    const streams = res.records.map((row: Record) => {
+        return row.get('s')
+    })
+    await session.close()
+    return streams;
 }
 
-export function getStream({
-    id,
-}: Pick<Stream, "id">) {
-    return prisma.streams.findFirst({
-        where: { id },
-        include: {
-            seedUsers: true
-        }
-    });
-}
-
-export function getStreamByName({
-    name,
-}: Pick<Stream, "name">) {
-    return prisma.streams.findUnique({
-        where: { name: name },
-        include: {
-            seedUsers: true
-        }
-    });
-}
-
-export async function getPosts() {
-    return prisma.post.findMany();
-}
-
-export function createStream({
-    name,
-    streamId,
-    startTime,
-    endTime,
-}: Pick<Stream, "streamId" | "name" | "startTime" | "endTime">) {
-
-    return prisma.streams.create({
-        data: {
-            name,
-            streamId,
-            startTime,
-            endTime
-        },
-    });
-}
-
-
-export function deleteStreamByName({
-    name,
-}: Pick<Stream, "name">) {
-    return prisma.streams.delete({
-        where: { name: name },
-    });
-}
-
-interface twitterUser extends users {
-    [key: string]: any;
-    // public_metrics_followers_count: Number
-}
-
-export function flattenTwitterData(data: Array<twitterUser>) {
-    for (const obj of data) {
-        obj.username = obj.username.toLowerCase();
-        obj.public_metrics_followers_count = obj.public_metrics.followers_count;
-        obj.public_metrics_following_count = obj.public_metrics.following_count;
-        obj.public_metrics_tweet_count = obj.public_metrics.tweet_count;
-        obj.public_metrics_listed_count = obj.public_metrics.listed_count;
-        delete obj.public_metrics;
-        delete obj.entities;
+export async function getStreamByName(name: string) {
+    const session = driver.session()
+    // Create a node within a write transaction
+    const streamRes = await session.readTransaction((tx: any) => {
+        return tx.run(`
+        MATCH (s:Stream {name: $name} )
+        RETURN s
+        LIMIT 1;
+        `,
+            { name })
+    })
+    let stream = null;
+    if (streamRes.records.length > 0) {
+        stream = streamRes.records[0].get("s");
     }
-    return data;
+    let seedUsers: any = [];
+    if (stream) {
+        let seedUsersRes = await session.readTransaction((tx: any) => {
+            return tx.run(`
+            MATCH (s:Stream {name: $name} )-[:CONTAINS]->(u:User)
+            RETURN u`,
+                { name })
+        })
+        if (seedUsersRes.records.length > 0) {
+            seedUsers = seedUsersRes.records.map((row: Record) => {
+                return row.get('u')
+            })
+        }
+    }
+
+    await session.close()
+    return { stream: stream, seedUsers: seedUsers };
 }
 
-export async function removeSeedUserFromStream(
-    stream: streams,
-    user: users
-) {
-    let streamUploaded = await prisma.streams.update({
-        where: { id: stream.id },
-        data: {
-            seedUsers: {
-                disconnect: [{ id: user.id }]
-            }
-        },
-    });
-    return streamUploaded;
+export async function createStream(name: string, startTime: string, endTime: string, username: string) {
+    const session = driver.session()
+    // Create a node within a write transaction
+    let streamData = {
+        name,
+        startTime,
+        endTime,
+    }
+    const res = await session.writeTransaction((tx: any) => {
+        return tx.run(`
+            MATCH (u:User {username: $username}) 
+            MERGE (s:Stream {name: $streamData.name})
+            SET s = $streamData
+            MERGE (u)-[:CREATED]->(s)
+            RETURN s`,
+            { streamData: streamData, username: username }
+        )
+    })
+    // Get the `p` value from the first record
+
+
+    const singleRecord = res.records[0]
+    const node = singleRecord.get("s")
+    await session.close()
+    return node;
+}
+
+export async function deleteStreamByName(name: string) {
+    const session = driver.session()
+    // Create a node within a write transaction
+    const res = await session.readTransaction((tx: any) => {
+        return tx.run(`
+        MATCH (s:Stream {name: $name} )
+        DETACH DELETE s`,
+            { name })
+    })
+}
+
+export async function removeSeedUserFromStream(streamName: string, username: string) {
+    const session = driver.session()
+    // Create a node within a write transaction
+    const res = await session.writeTransaction((tx: any) => {
+        return tx.run(`
+        MATCH (s:Stream {name: $streamName} )-[rc:CONTAINS]->(u:User {username: $username})
+        DELETE rc`,
+            { streamName, username })
+    })
 }
 
 async function getTweetsFromAuthorId(
+    api: any,
     id: string,
     startTime: string,
     endTime: string,
@@ -146,59 +206,141 @@ async function getTweetsFromAuthorId(
     return tweets;
 }
 
-
-async function upsertTweet(tweet: tweets) {
-    let author_id = tweet.author_id;
-    invariant(author_id, "author_id not found on tweet");
-    // delete tweet.author;
-    const createData = {
-        ...tweet,
-        // author: { this isn't necessary for this one for some reason... probably because 1-to-many
-        //     connect: [{ id: author_id }]
-        // }
-    }
-    return prisma.tweets.upsert({
-        where: { id: tweet.id },
-        create: createData,
-        update: createData,
+async function streamContainsUser(username: string, streamName: string) {
+    const session = driver.session()
+    // Create a node within a write transaction
+    const res = await session.writeTransaction((tx: any) => {
+        return tx.run(`
+        MATCH (u:User {username: $username}) 
+        MATCH (s:Stream {name: $streamName})
+        MERGE (s)-[:CONTAINS]->(u)
+        RETURN s,u`,
+            { username, streamName }
+        )
     })
+    await session.close()
+}
+
+async function getSavedFollows(username: string) {
+    const session = driver.session()
+    // Create a node within a write transaction
+    const res = await session.writeTransaction((tx: any) => {
+        return tx.run(`
+        MATCH (u:User {username: $username})-[:FOLLOWS]->(uf:User) RETURN uf`,
+            { username }
+        )
+    })
+    const users = res.records.map((row: Record) => {
+        return row.get('uf')
+    })
+    await session.close()
+    return users;
+}
+
+async function addUsersFollowedBy(username: string, users: any) {
+    const session = driver.session()
+    // Create a node within a write transaction
+    const res = await session.writeTransaction((tx: any) => {
+        return tx.run(`
+            UNWIND $users AS u
+            MATCH (followerUser:User {username: $followerUsername})
+            MERGE (followedUser:User {username: u.username})
+            SET followedUser = u
+            MERGE (followerUser)-[r:FOLLOWS]->(followedUser)
+            RETURN followedUser
+            `,
+            { users: users, followerUsername: username }
+        )
+    })
+    const followed = res.records.map((row: any) => {
+        return row.get("followedUser")
+    })
+    await session.close()
+    return followed;
+}
+
+async function addUsers(users: any) {
+    const session = driver.session()
+    // Create a node within a write transaction
+    const res = await session.writeTransaction((tx: any) => {
+        return tx.run(`
+            UNWIND $users AS u
+            MERGE (user:User {username: u.username})
+            SET user = u
+            RETURN user
+            `,
+            { users: users }
+        )
+    })
+    const followed = res.records.map((row: any) => {
+        return row.get("user")
+    })
+    await session.close()
+    return followed;
+}
+
+async function addTweetsFrom(tweets: any) {
+    const session = driver.session()
+    // Create a node within a write transaction
+    const res = await session.writeTransaction((tx: any) => {
+        return tx.run(`
+            UNWIND $tweets AS t
+            MERGE (tweet:Tweet {id: t.id})
+            SET tweet.id = t.id,
+                tweet.conversation_id = t.conversation_id,
+                tweet.possibly_sensitive = t.possibly_sensitive,
+                tweet.in_reply_to_user_id = t.in_reply_to_user_id,
+                tweet.lang = t.lang,
+                tweet.text = t.text,
+                tweet.created_at = t.created_at,
+                tweet.reply_settings = t.reply_settings
+
+            MERGE (user:User {id: t.author_id})
+
+            MERGE (user)-[:POSTED]->(tweet)
+
+            FOREACH (m IN t.entities.mentions |
+                MERGE (mentioned:User {username:m.username})
+                MERGE (tweet)-[:MENTIONED]->(mentioned)
+            )
+            FOREACH (r IN t.referenced_tweets |
+                MERGE (ref_t:Tweet {id:r.id})
+                MERGE (tweet)-[:REFERENCED{type:r.type}]->(ref_t)
+            )
+
+            FOREACH (u IN t.entities.urls |
+                MERGE (url:Link {url:u.expanded_url})
+                MERGE (tweet)-[:LINKED]->(url)
+              )
+            `,
+            { tweets: tweets }
+        )
+    })
+    await session.close()
 };
 
 export async function addSeedUserToStream(
-    stream: streams,
-    user: users
+    api: any,
+    stream: any,
+    user: any // has already been added to db before calling this func
 ) {
     try {
-        log.debug(`adding user '${user.username}' to stream '${stream.name}`)
-        log.debug(`Fetching api.v2.following for ${user.username}...`);
-
+        log.debug(`adding user '${user.properties.username}' to stream '${stream.properties.name}`)
+        log.debug(`Fetching api.v2.following for ${user.properties.username}...`);
         // Add new seedUsers relation to Stream
-        let streamUploaded = await prisma.streams.update({
-            where: { id: stream.id },
-            data: {
-                seedUsers: {
-                    connect: [{ id: user.id }]
-                }
-            },
-        }
-        );
+        await streamContainsUser(user.properties.username, stream.properties.name)
 
         // Check to see if follows have been saved for this seed user
-        let followsOfUser = await prisma.follows.findMany({
-            where: { followerId: user.id },
-            include: {
-                following: true,
-            }
-        });
-
-        // If follows haven't been saved, save them 
-        if (followsOfUser.length == user.public_metrics_following_count) {
-            log.debug(`Looks like we have already saved the ${followsOfUser.length} users followed by '${user.username}'`)
+        let savedFollowsOfUser = await getSavedFollows(user.properties.username);
+        if (savedFollowsOfUser.length == user.properties["public_metrics.following_count"]) {
+            log.debug(`Looks like we have already saved the ${savedFollowsOfUser.length} users followed by '${user.properties.username}'`)
         } else {
-            console.log(`PULLING USERS FOLLOWED BY '${user.username}`);
+
+            log.debug(`We have ${savedFollowsOfUser.length} users followed by '${user.properties.username}', but twitter shows ${user.properties["public_metrics.following_count"]}`)
+            console.log(`PULLING USERS FOLLOWED BY '${user.properties.username}`);
             // Get accounts followed by seed user
             const following = await api.v2.following(
-                user.id,
+                user.properties.id,
                 {
                     'tweet.fields': 'attachments,author_id,context_annotations,conversation_id,created_at,entities,geo,id,in_reply_to_user_id,lang,public_metrics,text,possibly_sensitive,referenced_tweets,reply_settings,source,withheld',
                     'user.fields': 'created_at,description,entities,id,location,name,pinned_tweet_id,profile_image_url,protected,public_metrics,url,username,verified,withheld',
@@ -208,52 +350,40 @@ export async function addSeedUserToStream(
             );
 
             while (!following.done) { await following.fetchNext(); }
-            console.log(`fetched ${following.data.data.length} accounts followed by '${user.username}'`);
-
-            console.log(following.data.data[0]);
-            // Add all accounts to DB
-            for (let newUser of following.data.data) {
-                newUser = flattenTwitterData([newUser])[0];
-                // let addedUser = await createUser(newUser);
-                let addedUser = await prisma.users.upsert({
-                    where: { id: newUser.id },
-                    create: newUser,
-                    update: newUser,
-                })
-                let follow = await prisma.follows.upsert({
-                    where: {
-                        followerId_followingId: {
-                            followerId: user.id,
-                            followingId: newUser.id
-                        }
-                    },
-                    create: {
-                        followerId: user.id,
-                        followingId: newUser.id
-                    },
-                    update: {
-                        followerId: user.id,
-                        followingId: newUser.id
-                    }
-                });
-            }
+            console.log(`fetched ${following.data.data.length} accounts followed by '${user.properties.username}'`);
+            let newUsers = following.data.data.map((u: any) => {
+                return flattenTwitterUserPublicMetrics([u])[0]
+            })
+            console.time("addUsersFollowedBy")
+            await addUsersFollowedBy(user.properties.username, newUsers)
+            console.timeEnd("addUsersFollowedBy")
         }
 
         // Add the tweets from stream's date Range to the DB to build a feed
-        console.log("HERE ARE MY DATE STRINGS");
-        console.log(stream.startTime);
-        console.log(stream.startTime.toString());
-        console.log(stream.startTime.toISOString());
-        let tweets = getTweetsFromAuthorId(
-            user.id,
-            stream.startTime.toISOString(),
-            stream.endTime.toISOString()
+        let tweets = await getTweetsFromAuthorId(
+            api,
+            user.properties.id,
+            stream.properties.startTime,
+            stream.properties.endTime
         );
-        for (const tweet of (await tweets).data.data) {
-            console.log(`adding tweet ${tweet.id}`)
-            let iTweet = upsertTweet(tweet);
+        if (tweets.data.includes.users.length > 0) {
+            let includedUsers = flattenTwitterUserPublicMetrics(tweets.data.includes.users);
+            console.log(`pushing ${tweets.data.includes.users.length} users included in tweets from ${user.properties.name}`)
+            console.time("addUsers")
+            await addUsers(includedUsers);
+            console.timeEnd("addUsers")
         }
-        return streamUploaded;
+        if (tweets.data.data.length > 0) {
+            console.log(`pushing ${tweets.data.data.length} tweets to graph from ${user.properties.name}`)
+            console.time("addTweetsFrom")
+            await addTweetsFrom(flattenTweetPublicMetrics(tweets.data.data));
+            console.timeEnd("addTweetsFrom")
+        }
+        if (tweets.data.includes.tweets.length > 0) {
+            console.log(`pushing ${tweets.data.includes.tweets.length} ref tweets to graph from ${user.properties.name}`)
+            await addTweetsFrom(flattenTweetPublicMetrics(tweets.data.includes.tweets));
+        }
+
     } catch (e) {
         log.error(`Error fetching tweets: ${JSON.stringify(e, null, 2)}`);
         throw e;
@@ -282,21 +412,57 @@ async function getTweetsFromUsername(id: string) {
     // );
 }
 
-export async function getStreamTweets(stream: streams) {
-    let authorIds: Object[] = [];
-    stream.seedUsers.map((user: users) => (
-        authorIds.push({ "author_id": user.id })
-    ))
-
-    return prisma.tweets.findMany({
-        where: {
-            OR: authorIds
-        },
-        include: {
-            author: true
-        }
+export async function getStreamTweets(name: string, startTime: string, endTime: string) {
+    //THIS EXCLUDES RETWEETS RIGHT NOW
+    const session = driver.session()
+    // Create a node within a write transaction
+    const res = await session.readTransaction((tx: any) => {
+        return tx.run(`
+            MATCH (s:Stream {name: $name} )-[:CONTAINS]->(u:User)-[:POSTED]->(t:Tweet)-[r:REFERENCED]->(:Tweet)
+            WHERE t.created_at > $startTime AND t.created_at < $endTime and r.type <> "retweeted"
+            RETURN u,t
+        `,
+            { name: name, startTime: startTime, endTime })
     })
+    let tweets = [];
+    if (res.records.length > 0) {
+        tweets = res.records.map((row: Record) => {
+            return {
+                "tweet": row.get('t'),
+                "author": row.get('u')
+            }
+        })
+    }
+    await session.close()
+    return tweets;
 }
+
+export async function getStreamRecommendedUsers(name: string) {
+    //THIS EXCLUDES RETWEETS RIGHT NOW
+    const session = driver.session()
+    // Create a node within a write transaction
+    // super useful for this query: https://neo4j.com/developer/kb/performing-match-intersection/
+    const res = await session.readTransaction((tx: any) => {
+        return tx.run(`
+        MATCH (s:Stream {name: $name})-[:CONTAINS]->(u:User)
+        WITH collect(u) as streamUsers
+        WITH head(streamUsers) as head, tail(streamUsers) as streamUsers
+        MATCH (head)-[:FOLLOWS]->(u:User)
+        WHERE ALL(su in streamUsers where (su)-[:FOLLOWS]->(u))
+        return u
+        `,
+            { name: name })
+    })
+    let recommendedUsers = [];
+    if (res.records.length > 0) {
+        recommendedUsers = res.records.map((row: Record) => {
+            return row.get("u")
+        })
+    }
+    await session.close()
+    return recommendedUsers;
+}
+
 
 async function getTweetsFromUsernames(usernames: string[]) {
     const queries: string[] = [];

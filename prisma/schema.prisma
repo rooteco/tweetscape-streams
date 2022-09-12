@@ -7,46 +7,9 @@ generator client {
   provider = "prisma-client-js"
 }
 
-// model User {
-//   id    String @id @default(cuid())
-//   email String @unique
-
-//   createdAt DateTime @default(now())
-//   updatedAt DateTime @updatedAt
-
-//   password Password?
-//   notes    Note[]
-// }
-
-// model oldUsers {
-//   id                String    @id @default(cuid())
-//   name              String
-//   username          String    @unique
-//   verified          Boolean?
-//   description       String?
-//   profile_image_url String?
-//   followers_count   Int?
-//   following_count   Int?
-//   tweets_count      Int?
-//   created_at        DateTime? @db.Timestamptz(6)
-//   updated_at        DateTime? @db.Timestamptz(6)
-//   // likes             likes[]
-//   // list_followers    list_followers[]
-//   // list_members      list_members[]
-//   // lists             lists[]
-//   // mentions          mentions[]
-//   // rekt              rekt[]
-//   // retweets          retweets[]
-//   // scores            scores[]
-//   // tokens            tokens?
-//   // tweets            tweets[]
-//   streams           streams?  @relation(fields: [streamsId], references: [id])
-//   streamsId         String?
-// }
-
 model users {
-  username                       String    @unique
-  id                             String    @id @unique
+  username                       String     @unique
+  id                             String     @id @unique
   public_metrics_followers_count Int
   public_metrics_following_count Int
   public_metrics_tweet_count     Int
@@ -61,9 +24,11 @@ model users {
   location                       String?
   pinned_tweet_id                String?
   streams                        streams[]
-  followers                      follows[] @relation("following")
-  following                      follows[] @relation("follower")
+  followers                      follows[]  @relation("following")
+  following                      follows[]  @relation("follower")
   tweets                         tweets[]
+  tokens                         tokens[]
+  mentions                       mentions[]
 }
 
 model follows {
@@ -73,6 +38,18 @@ model follows {
   followingId String
 
   @@id([followerId, followingId])
+}
+
+model tokens {
+  user_id       String   @id
+  token_type    String
+  expires_in    Int
+  access_token  String   @unique
+  scope         String
+  refresh_token String   @unique
+  created_at    DateTime @db.Timestamptz(6)
+  updated_at    DateTime @db.Timestamptz(6)
+  users         users    @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model streams {
@@ -86,26 +63,56 @@ model streams {
 }
 
 model tweets {
-  id                  String   @id @unique
-  author_id           String
-  author              users    @relation(fields: [author_id], references: [id])
-  referenced_tweets   Json? // trying out json https://www.prisma.io/docs/concepts/components/prisma-client/working-with-fields/working-with-json-fields
-  public_metrics      Json
+  id                                    String     @id @unique
+  author_id                             String
+  author                                users      @relation(fields: [author_id], references: [id])
+  referenced_tweets                     Json? // trying out json https://www.prisma.io/docs/concepts/components/prisma-client/working-with-fields/working-with-json-fields
+  public_metrics                        Json
   // public_metrics_retweet_count Int
   // public_metrics_reply_count   Int
   // public_metrics_like_count    Int
   // public_metrics_quote_count   Int
-  context_annotations Json?
-  entities            Json?
-  attachments         Json?
-  created_at          DateTime
-  reply_settings      String
-  lang                String
-  conversation_id     String
-  in_reply_to_user_id String?
-  text                String
-  source              String
-  possibly_sensitive  Boolean
+  context_annotations                   Json?
+  entities                              Json?
+  attachments                           Json?
+  created_at                            DateTime
+  reply_settings                        String
+  lang                                  String
+  conversation_id                       String
+  in_reply_to_user_id                   String?
+  text                                  String
+  source                                String
+  possibly_sensitive                    Boolean
+  mentions                              mentions[]
+  refs_refs_referenced_tweet_idTotweets refs[]     @relation("refs_referenced_tweet_idTotweets")
+  refs_refs_referencer_tweet_idTotweets refs[]     @relation("refs_referencer_tweet_idTotweets")
+}
+
+model mentions {
+  tweet_id String
+  user_id  String
+  start    Int
+  end      Int
+  tweets   tweets @relation(fields: [tweet_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users    users  @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([tweet_id, user_id])
+}
+
+model refs {
+  referenced_tweet_id                     String
+  referencer_tweet_id                     String
+  type                                    ref_type
+  tweets_refs_referenced_tweet_idTotweets tweets   @relation("refs_referenced_tweet_idTotweets", fields: [referenced_tweet_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  tweets_refs_referencer_tweet_idTotweets tweets   @relation("refs_referencer_tweet_idTotweets", fields: [referencer_tweet_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([referenced_tweet_id, referencer_tweet_id])
+}
+
+enum ref_type {
+  quoted
+  retweeted
+  replied_to
 }
 
 //https://www.prisma.io/docs/concepts/components/prisma-schema/relations/many-to-many-relations

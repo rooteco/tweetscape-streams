@@ -97,9 +97,9 @@ const prisma = new PrismaClient();
 export async function seed() {
     // let streamsLoadedHere = await prisma.streams.findMany();
 
-    await prisma.follows.deleteMany();
-    await prisma.streams.deleteMany();
-    await prisma.users.deleteMany();
+    // await prisma.follows.deleteMany();
+    // await prisma.streams.deleteMany();
+    // await prisma.users.deleteMany();
 
     // for (const stream of streamsLoadedHere) {
     //     console.log(`deleting stream ${stream.name}`);

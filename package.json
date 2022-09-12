@@ -46,10 +46,10 @@
     "morgan": "^1.10.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "tiny-invariant": "^1.2.0",
-    "twitter-api-v2": "^1.12.2",
     "timeago-react": "^3.0.5",
-    "timeago.js": "^4.0.2"
+    "timeago.js": "^4.0.2",
+    "tiny-invariant": "^1.2.0",
+    "twitter-api-v2": "^1.12.2"
   },
   "devDependencies": {
     "@faker-js/faker": "^7.4.0",
@@ -60,6 +60,7 @@
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^13.3.0",
     "@testing-library/user-event": "^14.4.3",
+    "@twitter-api-v2/plugin-rate-limit": "^1.1.0",
     "@types/bcryptjs": "^2.4.2",
     "@types/compression": "^1.7.2",
     "@types/eslint": "^8.4.6",
@@ -75,6 +76,7 @@
     "cookie": "^0.5.0",
     "cypress": "^10.6.0",
     "dotenv": "^16.0.1",
+    "downshift": "^6.1.9",
     "esbuild": "^0.15.5",
     "eslint": "^8.22.0",
     "eslint-config-prettier": "^8.5.0",
