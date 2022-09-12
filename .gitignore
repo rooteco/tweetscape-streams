@@ -12,3 +12,5 @@ node_modules
 *.pyc
 *.pyc
 streams-graph-api/api/routes/__pycache__/streams.cpython-310.pyc
+tweetscape-streams-postgres.env
+*.env
