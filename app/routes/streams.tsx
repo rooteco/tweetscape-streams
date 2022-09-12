@@ -30,13 +30,25 @@ export function getUserIdFromSession(session: Session) {
     return uid;
 }
 
+function flattenTwitterData(data: Array<any>) {
+    for (const obj of data) {
+        obj.username = obj.username.toLowerCase();
+        obj.public_metrics_followers_count = obj.public_metrics.followers_count;
+        obj.public_metrics_following_count = obj.public_metrics.following_count;
+        obj.public_metrics_tweet_count = obj.public_metrics.tweet_count;
+        obj.public_metrics_listed_count = obj.public_metrics.listed_count;
+        delete obj.public_metrics;
+        delete obj.entities;
+    }
+    return data;
+}
+
 // export async function loader({ request }: LoaderArgs) {
 export const loader: LoaderFunction = async ({ request }: LoaderArgs) => {
     let streams = await getStreams();
     let user = null;
     const url = new URL(request.url);
-    const redirectURI = "http://localhost:3000/streams";
-
+    const redirectURI = process.env.REDIRECT_URI
     const stateId = url.searchParams.get('state');
     const code = url.searchParams.get('code');
     const session = await getSession(request.headers.get('Cookie'));
@@ -73,7 +85,7 @@ export const loader: LoaderFunction = async ({ request }: LoaderArgs) => {
             const { data } = await api.v2.me({ "user.fields": "created_at,description,entities,id,location,name,pinned_tweet_id,profile_image_url,protected,public_metrics,url,username,verified,withheld", });
             const context = `${data.name} (@${data.username})`;
             log.info(`Upserting user for ${context}...`);
-            user = flattenTwitterUserPublicMetrics([data])[0];
+            user = flattenTwitterData([data])[0];
             await prisma.users.upsert({
                 where: { id: user.id },
                 create: user,
