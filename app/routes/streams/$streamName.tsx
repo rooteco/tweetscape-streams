@@ -134,6 +134,13 @@ export default function StreamDetailsPage() {
     const stream = data.stream;
     const seedUsers = data.seedUsers;
     const tweets = data.tweets;
+    let annotations = new Set();
+    for (const t of tweets) {
+        if (t.annotation) {
+            annotations.add(t.annotation.properties.normalized_text)
+        }
+    }
+    const annotationMap = Array.from(annotations)
     const recommendedUsers = data.recommendedUsers;
     const actionData = useActionData();
     let errors = {};
@@ -201,21 +208,6 @@ export default function StreamDetailsPage() {
                 </ol>
 
                 <div>
-                    {/* {(recommendedUsers.length < 1) && (
-                        <Form
-                            method='post'
-                            className='sticky top-2 my-8 mx-auto flex max-w-sm'
-                        >
-                            <button
-                                type='submit'
-                                className='ml-2 inline-block rounded border-2 border-black bg-black px-2 py-1 text-white'
-                                value="showRecommendations"
-                                name="intent"
-                            >
-                                Show Recommendations
-                            </button>
-                        </Form>
-                    )} */}
                     {(recommendedUsers.length > 0) && (
                         <div>
                             <h2 className="text-2xl">Showing {recommendedUsers.length} recommended users</h2>
@@ -264,6 +256,12 @@ export default function StreamDetailsPage() {
             <main className='mx-auto max-h-screen max-w-screen-sm overflow-auto'>
                 <h2 className="text-2xl font-bold">Feed</h2>
                 <hr className="my-4" />
+                <p>Tags included in this feed (turn this into a filter)</p>
+                <ol>
+                    {annotationMap.map((annotation: string) => (
+                        <li key={annotation}>{annotation}</li>
+                    ))}
+                </ol>
                 {tweets
                     .sort(
                         (a: any, b: any) =>

@@ -1,4 +1,4 @@
-app = "tweetscape-streams2-56d8"
+app = "tweetscape-streams"
 kill_signal = "SIGINT"
 kill_timeout = 5
 processes = [ ]
