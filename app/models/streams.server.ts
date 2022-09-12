@@ -303,15 +303,32 @@ async function addTweetsFrom(tweets: any) {
                 MERGE (mentioned:User {username:m.username})
                 MERGE (tweet)-[:MENTIONED]->(mentioned)
             )
+            FOREACH (u IN t.entities.urls |
+                MERGE (url:Link {url:u.expanded_url})
+                MERGE (tweet)-[:LINKED]->(url)
+            )
+            FOREACH (a IN t.entities.annotations |
+                MERGE (annotation:Annotation {probability:a.probability, type:a.type, normalized_text:a.normalized_text})
+                MERGE (tweet)-[:ANNOTATED]->(annotation)
+            )
+            FOREACH (h IN t.entities.hashtags |
+                MERGE (hashtag:Hashtag {tag:h.tag})
+                MERGE (tweet)-[:TAG]->(hashtag)
+            )
+            FOREACH (c IN t.entities.cashtags |
+                MERGE (cashtag:Cashtag {tag:c.tag})
+                MERGE (tweet)-[:TAG]->(cashtag)
+            )
+            FOREACH (a IN t.attachments |
+                FOREACH (media_key in a.media_keys |
+                    MERGE (media:Media {media_key:media_key})
+                    MERGE (tweet)-[:ATTACHED]->(media)
+                )
+            )
             FOREACH (r IN t.referenced_tweets |
                 MERGE (ref_t:Tweet {id:r.id})
                 MERGE (tweet)-[:REFERENCED{type:r.type}]->(ref_t)
             )
-
-            FOREACH (u IN t.entities.urls |
-                MERGE (url:Link {url:u.expanded_url})
-                MERGE (tweet)-[:LINKED]->(url)
-              )
             `,
             { tweets: tweets }
         )
