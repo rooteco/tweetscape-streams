@@ -1,5 +1,5 @@
 
-import { TwitterApi, TwitterV2IncludesHelper, UserSearchV1Paginator } from 'twitter-api-v2';
+import { TweetStream, TwitterApi, TwitterV2IncludesHelper, UserSearchV1Paginator } from 'twitter-api-v2';
 import { log } from '~/log.server';
 import { driver } from "~/neo4j.server";
 import { Record } from 'neo4j-driver'
@@ -279,6 +279,40 @@ async function addUsers(users: any) {
     return followed;
 }
 
+export function flattenMediaPublicMetrics(data: Array<any>) {
+    for (const obj of data) {
+        // obj.username = obj.username.toLowerCase();
+        if (obj.public_metrics) {
+            obj["public_metrics.view_count"] = obj.public_metrics.view_count
+        }
+        delete obj.public_metrics;
+    }
+    return data;
+}
+
+async function addTweetMedia(media: any) {
+    const session = driver.session()
+    // Create a node within a write transaction
+    let flatMedia = flattenMediaPublicMetrics(media);
+    console.log("HERE IS THE MEDIA")
+    console.log(media);
+    const res = await session.writeTransaction((tx: any) => {
+        return tx.run(`
+            UNWIND $media AS m
+            MERGE (mediaNode:Media {media_key: m.media_key})
+            SET mediaNode = m
+            RETURN mediaNode
+            `,
+            { media: flatMedia }
+        )
+    })
+    const followed = res.records.map((row: any) => {
+        return row.get("mediaNode")
+    })
+    await session.close()
+    return followed;
+}
+
 async function addTweetsFrom(tweets: any) {
     const session = driver.session()
     // Create a node within a write transaction
@@ -390,6 +424,13 @@ export async function addSeedUserToStream(
             await addUsers(includedUsers);
             console.timeEnd("addUsers")
         }
+        if (tweets.data.includes.media && tweets.data.includes.media.length > 0) {
+            let includedMedia = tweets.data.includes.media;
+            console.log(`pushing ${tweets.data.includes.media.length} media objects included in tweets from ${user.properties.name}`)
+            console.time("addTweetMedia")
+            await addTweetMedia(includedMedia);
+            console.timeEnd("addTweetMedia")
+        }
         if (tweets.data.data.length > 0) {
             console.log(`pushing ${tweets.data.data.length} tweets to graph from ${user.properties.name}`)
             console.time("addTweetsFrom")
@@ -400,6 +441,7 @@ export async function addSeedUserToStream(
             console.log(`pushing ${tweets.data.includes.tweets.length} ref tweets to graph from ${user.properties.name}`)
             await addTweetsFrom(flattenTweetPublicMetrics(tweets.data.includes.tweets));
         }
+        return tweets;
 
     } catch (e) {
         log.error(`Error fetching tweets: ${JSON.stringify(e, null, 2)}`);
@@ -436,8 +478,9 @@ export async function getStreamTweets(name: string, startTime: string, endTime: 
     const res = await session.readTransaction((tx: any) => {
         return tx.run(`
             MATCH (s:Stream {name: $name} )-[:CONTAINS]->(u:User)-[:POSTED]->(t:Tweet)-[r:REFERENCED]->(:Tweet)
+            OPTIONAL MATCH (t)-[ar:ANNOTATED]-(a)
             WHERE t.created_at > $startTime AND t.created_at < $endTime and r.type <> "retweeted"
-            RETURN u,t
+            RETURN u,t,a
         `,
             { name: name, startTime: startTime, endTime })
     })
@@ -446,7 +489,8 @@ export async function getStreamTweets(name: string, startTime: string, endTime: 
         tweets = res.records.map((row: Record) => {
             return {
                 "tweet": row.get('t'),
-                "author": row.get('u')
+                "author": row.get('u'),
+                "annotation": row.get('a')
             }
         })
     }
