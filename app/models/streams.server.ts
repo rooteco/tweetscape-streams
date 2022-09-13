@@ -180,7 +180,7 @@ export async function removeSeedUserFromStream(streamName: string, username: str
 }
 
 async function getTweetsFromAuthorId(
-    api: any,
+    api: TwitterApi,
     id: string,
     startTime: string,
     endTime: string,
@@ -371,7 +371,7 @@ async function addTweetsFrom(tweets: any) {
 };
 
 export async function addSeedUserToStream(
-    api: any,
+    api: TwitterApi,
     stream: any,
     user: any // has already been added to db before calling this func
 ) {
@@ -417,30 +417,56 @@ export async function addSeedUserToStream(
             stream.properties.startTime,
             stream.properties.endTime
         );
-        if (tweets.data.includes.users.length > 0) {
-            let includedUsers = flattenTwitterUserPublicMetrics(tweets.data.includes.users);
-            console.log(`pushing ${tweets.data.includes.users.length} users included in tweets from ${user.properties.name}`)
-            console.time("addUsers")
-            await addUsers(includedUsers);
-            console.timeEnd("addUsers")
-        }
-        if (tweets.data.includes.media && tweets.data.includes.media.length > 0) {
-            let includedMedia = tweets.data.includes.media;
-            console.log(`pushing ${tweets.data.includes.media.length} media objects included in tweets from ${user.properties.name}`)
-            console.time("addTweetMedia")
-            await addTweetMedia(includedMedia);
-            console.timeEnd("addTweetMedia")
-        }
+
+        // I can do more fun stuff with this, like get the media of specific tweets: https://github.com/PLhery/node-twitter-api-v2/blob/master/doc/helpers.md
+        const includes = new TwitterV2IncludesHelper(tweets);
+        // Add included users
+        console.log(`pushing ${includes.users.length} users included in tweets from ${user.properties.name}`)
+        console.time("addUsers")
+        await addUsers(flattenTwitterUserPublicMetrics(includes.users))
+        console.timeEnd("addUsers")
+
+        // Add media 
+        console.log(`pushing ${includes.media.length} media objects included in tweets from ${user.properties.name}`)
+        console.time("addTweetMedia")
+        await addTweetMedia(includes.media);
+        console.timeEnd("addTweetMedia")
+
+        // Add ref/included tweets
+        console.log(`pushing ${tweets.data.includes.tweets.length} ref tweets to graph from ${user.properties.name}`)
+        await addTweetsFrom(flattenTweetPublicMetrics(includes.tweets));
+
+        // Add the tweets themselves 
         if (tweets.data.data.length > 0) {
             console.log(`pushing ${tweets.data.data.length} tweets to graph from ${user.properties.name}`)
             console.time("addTweetsFrom")
             await addTweetsFrom(flattenTweetPublicMetrics(tweets.data.data));
             console.timeEnd("addTweetsFrom")
         }
-        if (tweets.data.includes.tweets.length > 0) {
-            console.log(`pushing ${tweets.data.includes.tweets.length} ref tweets to graph from ${user.properties.name}`)
-            await addTweetsFrom(flattenTweetPublicMetrics(tweets.data.includes.tweets));
-        }
+        // if (tweets.data.includes.users.length > 0) {
+        //     let includedUsers = flattenTwitterUserPublicMetrics(tweets.data.includes.users);
+        //     console.log(`pushing ${tweets.data.includes.users.length} users included in tweets from ${user.properties.name}`)
+        //     console.time("addUsers")
+        //     await addUsers(includedUsers);
+        //     console.timeEnd("addUsers")
+        // }
+        // if (tweets.data.includes.media && tweets.data.includes.media.length > 0) {
+        //     let includedMedia = tweets.data.includes.media;
+        //     console.log(`pushing ${tweets.data.includes.media.length} media objects included in tweets from ${user.properties.name}`)
+        //     console.time("addTweetMedia")
+        //     await addTweetMedia(includedMedia);
+        //     console.timeEnd("addTweetMedia")
+        // }
+        // if (tweets.data.data.length > 0) {
+        //     console.log(`pushing ${tweets.data.data.length} tweets to graph from ${user.properties.name}`)
+        //     console.time("addTweetsFrom")
+        //     await addTweetsFrom(flattenTweetPublicMetrics(tweets.data.data));
+        //     console.timeEnd("addTweetsFrom")
+        // }
+        // if (tweets.data.includes.tweets.length > 0) {
+        //     console.log(`pushing ${tweets.data.includes.tweets.length} ref tweets to graph from ${user.properties.name}`)
+        //     await addTweetsFrom(flattenTweetPublicMetrics(tweets.data.includes.tweets));
+        // }
         return tweets;
 
     } catch (e) {
