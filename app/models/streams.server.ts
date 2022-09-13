@@ -433,7 +433,7 @@ export async function addSeedUserToStream(
         console.timeEnd("addTweetMedia")
 
         // Add ref/included tweets
-        console.log(`pushing ${tweets.data.includes.tweets.length} ref tweets to graph from ${user.properties.name}`)
+        console.log(`pushing ${includes.tweets.length} ref tweets to graph from ${user.properties.name}`)
         await addTweetsFrom(flattenTweetPublicMetrics(includes.tweets));
 
         // Add the tweets themselves 
@@ -443,30 +443,6 @@ export async function addSeedUserToStream(
             await addTweetsFrom(flattenTweetPublicMetrics(tweets.data.data));
             console.timeEnd("addTweetsFrom")
         }
-        // if (tweets.data.includes.users.length > 0) {
-        //     let includedUsers = flattenTwitterUserPublicMetrics(tweets.data.includes.users);
-        //     console.log(`pushing ${tweets.data.includes.users.length} users included in tweets from ${user.properties.name}`)
-        //     console.time("addUsers")
-        //     await addUsers(includedUsers);
-        //     console.timeEnd("addUsers")
-        // }
-        // if (tweets.data.includes.media && tweets.data.includes.media.length > 0) {
-        //     let includedMedia = tweets.data.includes.media;
-        //     console.log(`pushing ${tweets.data.includes.media.length} media objects included in tweets from ${user.properties.name}`)
-        //     console.time("addTweetMedia")
-        //     await addTweetMedia(includedMedia);
-        //     console.timeEnd("addTweetMedia")
-        // }
-        // if (tweets.data.data.length > 0) {
-        //     console.log(`pushing ${tweets.data.data.length} tweets to graph from ${user.properties.name}`)
-        //     console.time("addTweetsFrom")
-        //     await addTweetsFrom(flattenTweetPublicMetrics(tweets.data.data));
-        //     console.timeEnd("addTweetsFrom")
-        // }
-        // if (tweets.data.includes.tweets.length > 0) {
-        //     console.log(`pushing ${tweets.data.includes.tweets.length} ref tweets to graph from ${user.properties.name}`)
-        //     await addTweetsFrom(flattenTweetPublicMetrics(tweets.data.includes.tweets));
-        // }
         return tweets;
 
     } catch (e) {
