@@ -16,15 +16,34 @@ import type {
     TweetV2,
     TweetV2ListTweetsPaginator,
     UserV2,
-    TwitterApiv2
 } from 'twitter-api-v2';
 import type { Decimal } from '@prisma/client/runtime';
 import { TwitterApiRateLimitPlugin } from '@twitter-api-v2/plugin-rate-limit';
 import invariant from 'tiny-invariant';
 import type { Session } from '@remix-run/node';
 import { prisma } from "~/db.server";
-import { Node } from "neo4j-driver";
+import type { users } from "@prisma/client";
+
+
+// import type {
+//     Annotation,
+//     AnnotationType,
+//     Image,
+//     Link,
+//     List,
+//     ListMember,
+//     Mention,
+//     Ref,
+//     Tag,
+//     TagType,
+//     Tweet,
+//     URL,
+//     User,
+// } from '~/types';
+
+// import { getUserIdFromSession, log } from '~/utils.server';
 import { TwitterApiRateLimitDBStore } from '~/limit.server';
+// import { prisma } from '~/db.server';
 import { getSession } from '~/session.server';
 import { log } from "~/log.server";
 
@@ -74,54 +93,6 @@ export function getUserIdFromSession(session: Session) {
     const userId = session.get('uid') as string | undefined;
     const uid = userId ? String(userId) : undefined;
     return uid;
-}
-
-export async function getUserTwitterLists(api: TwitterApi, user: UserV2) {
-    try {
-        const create = {
-            followedLists: [] as ListV2[],
-            ownedLists: [] as ListV2[]
-        };
-        log.info(`Fetching followed lists for ${user.username}...`);
-        const resFollowed = await api.v2.listFollowed(user.id, {
-            'list.fields': [
-                'created_at',
-                'follower_count',
-                'member_count',
-                'private',
-                'description',
-                'owner_id',
-            ],
-            'expansions': ['owner_id'],
-            'user.fields': USER_FIELDS,
-        });
-        const includes = new TwitterV2IncludesHelper(resFollowed);
-
-        includes.users.forEach((i) => create.followedLists.push(i));
-
-        resFollowed.lists
-            .map((l: ListV2) => {
-                create.followedLists.push(l)
-            });
-
-
-        log.info(`Fetching owned lists for ${user.username}...`);
-        const resOwned = await api.v2.listsOwned(user.id, {
-            'list.fields': [
-                'created_at',
-                'follower_count',
-                'member_count',
-                'private',
-                'description',
-                'owner_id',
-            ],
-        });
-        resOwned.lists.map((l: ListV2) => create.ownedLists.push(l));
-
-        return create;
-    } catch (e) {
-        return handleTwitterApiError(e);
-    }
 }
 
 export async function getTwitterClientForUser(
