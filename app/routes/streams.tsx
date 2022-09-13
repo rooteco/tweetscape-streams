@@ -48,11 +48,11 @@ export const loader: LoaderFunction = async ({ request }: LoaderArgs) => {
     let streams = await getStreams();
     let user = null;
     const url = new URL(request.url);
-    const redirectURI = process.env.REDIRECT_URI
+    const redirectURI: string = process.env.REDIRECT_URI
     const stateId = url.searchParams.get('state');
     const code = url.searchParams.get('code');
-    const session = await getSession(request.headers.get('Cookie'));
-    const uid = getUserIdFromSession(session);
+    let session = await getSession(request.headers.get('Cookie'));
+    let uid = getUserIdFromSession(session);
     console.log(`UID = ${uid}`);
 
     if (uid) {
@@ -110,6 +110,16 @@ export const loader: LoaderFunction = async ({ request }: LoaderArgs) => {
             log.info(`Setting session uid (${user.id}) for ${context}...`);
             session.set('uid', user.id.toString());
         }
+    }
+
+    session = await getSession(request.headers.get('Cookie'));
+    uid = getUserIdFromSession(session);
+
+    if (uid) {
+        console.log("PULLING USER DATA")
+        const { api, uid, session } = await getClient(request);
+        const meData = await api.v2.me({ "user.fields": "created_at,description,entities,id,location,name,pinned_tweet_id,profile_image_url,protected,public_metrics,url,username,verified,withheld", });
+        user = meData.data;
     }
     const headers = { 'Set-Cookie': await commitSession(session) };
     return json<LoaderData>(
