@@ -10,20 +10,18 @@ import { log } from '~/log.server';
 import type { LoaderFunction } from '@remix-run/node';
 
 import { commitSession, getSession } from '~/session.server';
-import { ListSubscriptionsV1Paginator, TwitterApi } from 'twitter-api-v2';
+import { TwitterApi } from 'twitter-api-v2';
 import { flattenTwitterData } from "~/twitter.server";
 import { flattenTwitterUserPublicMetrics } from "~/models/user.server";
-import { getClient, getUserTwitterLists } from '~/twitter.server';
+
+import { getClient } from '~/twitter.server';
+
 import { getStreams } from "~/models/streams.server";
-
-import type { ListV2, UserV2 } from 'twitter-api-v2';
-
 type LoaderData = {
     // this is a handy way to say: "posts is whatever type getStreams resolves to"
     // streams: Awaited<ReturnType<typeof getStreams>>;
     streams: any
-    user: UserV2,
-    lists: { followedLists: ListV2[], ownedLists: ListV2[] }
+    user: any
 }
 
 export function getUserIdFromSession(session: Session) {
@@ -57,13 +55,10 @@ export const loader: LoaderFunction = async ({ request }: LoaderArgs) => {
     let uid = getUserIdFromSession(session);
     console.log(`UID = ${uid}`);
 
-    let userLists = { followedLists: [] as ListV2[], ownedLists: [] as ListV2[] }
-
     if (uid) {
         const { api, uid, session } = await getClient(request);
         const meData = await api.v2.me({ "user.fields": "created_at,description,entities,id,location,name,pinned_tweet_id,profile_image_url,protected,public_metrics,url,username,verified,withheld", });
         user = meData.data;
-        userLists = await getUserTwitterLists(api, user);
     }
     else if (stateId && code) {
         const storedStateId = session.get('stateIdTwitter') as string;
@@ -114,8 +109,6 @@ export const loader: LoaderFunction = async ({ request }: LoaderArgs) => {
             });
             log.info(`Setting session uid (${user.id}) for ${context}...`);
             session.set('uid', user.id.toString());
-
-            userLists = await getUserTwitterLists(api, user);
         }
     }
 
@@ -124,7 +117,6 @@ export const loader: LoaderFunction = async ({ request }: LoaderArgs) => {
         {
             streams: streams,
             user: user,
-            lists: userLists
         },
         { headers }
     )
@@ -134,8 +126,6 @@ export default function StreamsPage() {
     const data = useLoaderData<LoaderData>();
     const streams = data.streams;
     const user = data.user;
-    const ownedLists = data.lists.ownedLists;
-    const followedLists = data.lists.followedLists;
     const errors = useActionData();
     return (
         <div className="flex h-full min-h-screen flex-col">
@@ -196,52 +186,9 @@ export default function StreamsPage() {
                             ))}
                         </ol>
                     )}
-                    <br /><br />
-                    <h1 className="text-2xl">Start a stream from one of your lists!</h1>
-                    <hr />
-                    {ownedLists.length === 0 ? (
-                        <p className="p-4">You haven't created any of your own lists</p>
-                    ) : (
-                        <div>
-                            <h1>Your created lists</h1>
-                            <ol>
-                                {ownedLists.map((list: ListV2) => (
-                                    <li key={list.name}>
-                                        <NavLink
-                                            className={({ isActive }) =>
-                                                `block border-b p-4 text-xl ${isActive ? "bg-white" : ""}`
-                                            }
-                                            to={list.name}
-                                        >
-                                            📝 {list.name}
-                                        </NavLink>
-                                    </li>
-                                ))}
-                            </ol>
-                        </div>
-                    )}
-                    {followedLists.length === 0 ? (
-                        <p className="p-4">You don't follow any lists</p>
-                    ) : (
-                        <div>
-                            <h1>Your followed lists</h1>
-                            <ol>
-                                {followedLists.map((list: ListV2) => (
-                                    <li key={list.name}>
-                                        <NavLink
-                                            className={({ isActive }) =>
-                                                `block border-b p-4 text-xl ${isActive ? "bg-white" : ""}`
-                                            }
-                                            to={list.name}
-                                        >
-                                            📝 {list.name}
-                                        </NavLink>
-                                    </li>
-                                ))}
-                            </ol>
-                        </div>
-                    )}
                 </div>
+
+
                 <Outlet />
             </main>
         </div>
