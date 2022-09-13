@@ -505,14 +505,14 @@ export async function getStreamRecommendedUsers(name: string) {
     const session = driver.session()
     // Create a node within a write transaction
     // super useful for this query: https://neo4j.com/developer/kb/performing-match-intersection/
-    const res = await session.readTransaction((tx: any) => {
+    const res = await session.executeRead((tx: any) => {
         return tx.run(`
-        MATCH (s:Stream {name: $name})-[:CONTAINS]->(u:User)
-        WITH collect(u) as streamUsers
-        WITH head(streamUsers) as head, tail(streamUsers) as streamUsers
-        MATCH (head)-[:FOLLOWS]->(u:User)
-        WHERE ALL(su in streamUsers where (su)-[:FOLLOWS]->(u))
-        return u
+            MATCH (s:Stream {name: $name})-[:CONTAINS]->(seedUsers:User)-[:FOLLOWS]->(allFollowed:User)
+            WITH collect(allFollowed) as allFollowedUsers, collect(seedUsers) as seedUsers
+            MATCH (seedUser)-[r:FOLLOWS]->(allF)
+            WHERE (allF in allFollowedUsers and seedUser in seedUsers)
+            WITH collect(endNode(r)) as endingEnders
+            return apoc.coll.duplicatesWithCount(endingEnders) as u;
         `,
             { name: name })
     })
