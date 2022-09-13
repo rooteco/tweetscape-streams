@@ -112,15 +112,6 @@ export const loader: LoaderFunction = async ({ request }: LoaderArgs) => {
         }
     }
 
-    session = await getSession(request.headers.get('Cookie'));
-    uid = getUserIdFromSession(session);
-
-    if (uid) {
-        console.log("PULLING USER DATA")
-        const { api, uid, session } = await getClient(request);
-        const meData = await api.v2.me({ "user.fields": "created_at,description,entities,id,location,name,pinned_tweet_id,profile_image_url,protected,public_metrics,url,username,verified,withheld", });
-        user = meData.data;
-    }
     const headers = { 'Set-Cookie': await commitSession(session) };
     return json<LoaderData>(
         {
