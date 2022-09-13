@@ -2,7 +2,6 @@ import type { ActionArgs, LoaderArgs } from "@remix-run/node";
 import type { ActionFunction } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { Form, useActionData, useCatch, useLoaderData } from "@remix-run/react";
-import { seed } from "prisma/seed";
 import invariant from "tiny-invariant";
 import { TimeAgo } from '~/components/timeago';
 import { getStreamRecommendedUsers, getStreamTweets, deleteStreamByName, addSeedUserToStream, getUserFromTwitter, getStreamByName, removeSeedUserFromStream } from "~/models/streams.server";
@@ -24,17 +23,38 @@ export async function loader({ request, params }: LoaderArgs) {
     const tweets = await getStreamTweets(stream.properties.name, stream.properties.startTime, stream.properties.endTime);
     console.timeEnd("getStreamTweets")
 
+
+    // Getting Recommended Users
+    // The getStreamRecommendedUsers returns a list of nodes, and a count of the number of seed users those accounts as followed by
+    // This makes sure that we check all the way down to 2 overlapping seed users to make sure recommendations are provided
     let recommendedUsers = [];
     if (seedUsers.length > 1) {
         console.time("getStreamRecommendedUsers")
         recommendedUsers = await getStreamRecommendedUsers(stream.properties.name)
         console.timeEnd("getStreamRecommendedUsers")
     }
+
+    let numSeedUsersFollowedBy = seedUsers.length + 1;
+    let recommendedUsersTested = [];
+    if (recommendedUsers.length > 0) {
+        while (recommendedUsersTested.length < 5 && numSeedUsersFollowedBy > 1) {
+            recommendedUsersTested = [];
+            numSeedUsersFollowedBy--;
+            recommendedUsers[0].map((row: any) => {
+                if (row.count.toInt() >= numSeedUsersFollowedBy) {
+                    recommendedUsersTested.push(row.item)
+                }
+            })
+            console.log(`found ${recommendedUsersTested.length} users followed by ${numSeedUsersFollowedBy} users`)
+        }
+    }
+
     return json({
         "stream": stream,
         "seedUsers": seedUsers,
         "tweets": tweets,
-        "recommendedUsers": recommendedUsers
+        "recommendedUsers": recommendedUsersTested,
+        "numSeedUsersFollowedBy": numSeedUsersFollowedBy
     });
 }
 
@@ -134,6 +154,7 @@ export default function StreamDetailsPage() {
     const stream = data.stream;
     const seedUsers = data.seedUsers;
     const tweets = data.tweets;
+    const numSeedUsersFollowedBy = data.numSeedUsersFollowedBy
     let annotations = new Set();
     for (const t of tweets) {
         if (t.annotation) {
@@ -210,7 +231,7 @@ export default function StreamDetailsPage() {
                 <div>
                     {(recommendedUsers.length > 0) && (
                         <div>
-                            <h2 className="text-2xl">Showing {recommendedUsers.length} recommended users</h2>
+                            <h2 className="text-2xl">Showing {recommendedUsers.length} recommended users, follwed by at least {numSeedUsersFollowedBy} seed users</h2>
                             <ol>
                                 {recommendedUsers.map((user: any) => (
                                     <li className="flex" key={user.properties.username}>
