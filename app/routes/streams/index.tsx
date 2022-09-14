@@ -5,7 +5,7 @@ import { Form, useActionData, Link, useLoaderData } from "@remix-run/react";
 import * as React from "react";
 import BirdIcon from '~/icons/bird';
 import { commitSession, getSession } from '~/session.server';
-import { getClient } from '~/twitter.server';
+import { getClient, USER_FIELDS } from '~/twitter.server';
 import { createStream, getStreamByName } from "~/models/streams.server";
 import { getUserByUsernameDB, createUserDb } from "~/models/user.server";
 import { flattenTwitterUserPublicMetrics } from "~/models/user.server";
@@ -37,19 +37,19 @@ export async function action({ request }: ActionArgs) {
     if (!uid) {
         return null
     }
-    const meData = await api.v2.me({ "user.fields": "created_at,description,entities,id,location,name,pinned_tweet_id,profile_image_url,protected,public_metrics,url,username,verified,withheld", });
+    const meData = await api.v2.me({ "user.fields": USER_FIELDS });
     user = meData.data;
     let username = user.username;
     let userDb = await getUserByUsernameDB(username)
     if (!userDb) {
         createUserDb(flattenTwitterUserPublicMetrics([user])[0])
     }
-    const startTime = "2022-08-24T13:58:40Z";
-    const endTime = "2022-08-31T13:58:40Z";
-    stream = await createStream(name, startTime, endTime, username)
+    const endTime = new Date()
+    const startTime = new Date(endTime.getFullYear(), endTime.getMonth(), endTime.getDate() - 7, endTime.getHours(), endTime.getMinutes())
+
+    stream = await createStream(name, startTime.toISOString(), endTime.toISOString(), username)
     return redirect(`/streams/${stream.properties.name}`);
 }
-
 
 type LoaderData = {
     user: any
@@ -61,7 +61,7 @@ export const loader: LoaderFunction = async ({ request }: LoaderArgs) => {
     let user = null;
     if (uid) {
         const { api, uid, session } = await getClient(request);
-        const meData = await api.v2.me({ "user.fields": "created_at,description,entities,id,location,name,pinned_tweet_id,profile_image_url,protected,public_metrics,url,username,verified,withheld", });
+        const meData = await api.v2.me({ "user.fields": USER_FIELDS });
         user = meData.data;
     }
     return json<LoaderData>(
