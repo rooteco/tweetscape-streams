@@ -3,20 +3,17 @@ import type { LoaderArgs } from "@remix-run/node";
 import BirdIcon from '~/icons/bird';
 import { json } from "@remix-run/node";
 import type { Session } from '@remix-run/node';
-
 import { Form, useActionData, Link, NavLink, Outlet, useLoaderData } from "@remix-run/react";
 import { prisma } from "~/db.server";
 import { log } from '~/log.server';
 import type { LoaderFunction } from '@remix-run/node';
-
 import { commitSession, getSession } from '~/session.server';
 import { TwitterApi } from 'twitter-api-v2';
-import { flattenTwitterData } from "~/twitter.server";
+import { getUserTwitterLists } from "~/twitter.server";
 import { flattenTwitterUserPublicMetrics } from "~/models/user.server";
+import { getClient, USER_FIELDS } from '~/twitter.server';
+import { getStreams, addUserOwnedLists, addUserFollowedLists } from "~/models/streams.server";
 
-import { getClient } from '~/twitter.server';
-
-import { getStreams } from "~/models/streams.server";
 type LoaderData = {
     // this is a handy way to say: "posts is whatever type getStreams resolves to"
     // streams: Awaited<ReturnType<typeof getStreams>>;
@@ -54,10 +51,11 @@ export const loader: LoaderFunction = async ({ request }: LoaderArgs) => {
     let session = await getSession(request.headers.get('Cookie'));
     let uid = getUserIdFromSession(session);
     console.log(`UID = ${uid}`);
+    let userLists = { followedLists: [] as ListV2[], ownedLists: [] as ListV2[] }
 
     if (uid) {
         const { api, uid, session } = await getClient(request);
-        const meData = await api.v2.me({ "user.fields": "created_at,description,entities,id,location,name,pinned_tweet_id,profile_image_url,protected,public_metrics,url,username,verified,withheld", });
+        const meData = await api.v2.me({ "user.fields": USER_FIELDS });
         user = meData.data;
     }
     else if (stateId && code) {
@@ -82,7 +80,7 @@ export const loader: LoaderFunction = async ({ request }: LoaderArgs) => {
                 // redirectUri: getBaseURL(request),
             });
             log.info('Fetching logged in user from Twitter API...');
-            const { data } = await api.v2.me({ "user.fields": "created_at,description,entities,id,location,name,pinned_tweet_id,profile_image_url,protected,public_metrics,url,username,verified,withheld", });
+            const { data } = await api.v2.me({ "user.fields": USER_FIELDS });
             const context = `${data.name} (@${data.username})`;
             log.info(`Upserting user for ${context}...`);
             user = flattenTwitterData([data])[0];
@@ -109,9 +107,11 @@ export const loader: LoaderFunction = async ({ request }: LoaderArgs) => {
             });
             log.info(`Setting session uid (${user.id}) for ${context}...`);
             session.set('uid', user.id.toString());
+            userLists = await getUserTwitterLists(api, user);
+            let owned = await addUserOwnedLists(user, userLists.ownedLists)
+            let followed = await addUserFollowedLists(user, userLists.followedLists)
         }
     }
-
     const headers = { 'Set-Cookie': await commitSession(session) };
     return json<LoaderData>(
         {
