@@ -510,7 +510,7 @@ export async function addSeedUserToStream(
         await addTweetsFrom(flattenTweetPublicMetrics(includes.tweets));
 
         // Add the tweets themselves 
-        if (tweets.data.data.length > 0) {
+        if (tweets.data.data && tweets.data.data.length > 0) {
             console.log(`pushing ${tweets.data.data.length} tweets to graph from ${user.properties.name}`)
             console.time("addTweetsFrom")
             await addTweetsFrom(flattenTweetPublicMetrics(tweets.data.data));
