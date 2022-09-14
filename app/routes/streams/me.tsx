@@ -3,7 +3,7 @@ import type { LoaderArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { Form, Link, NavLink, Outlet, useLoaderData } from "@remix-run/react";
 import invariant from "tiny-invariant";
-import { getClient } from '~/twitter.server';
+import { getClient, USER_FIELDS } from '~/twitter.server';
 
 
 // type LoaderData = {
@@ -13,7 +13,7 @@ import { getClient } from '~/twitter.server';
 
 export async function loader({ request, params }: LoaderArgs) {
     const { api, uid, session } = await getClient(request);
-    const meData = await api.v2.me({ "user.fields": "created_at,description,entities,id,location,name,pinned_tweet_id,profile_image_url,protected,public_metrics,url,username,verified,withheld", });
+    const meData = await api.v2.me({ "user.fields": USER_FIELDS });
     let user = meData.data;
     return json(user)
 };
