@@ -279,6 +279,79 @@ async function addUsers(users: any) {
     return followed;
 }
 
+export async function addUserFollowedLists(user: UserV2, lists: ListV2[]) {
+    const session = driver.session()
+    // Create a node within a write transaction
+    console.log("FOLLOWED LISTS");
+    console.log(lists);
+    const res = await session.executeWrite((tx: any) => {
+        return tx.run(`
+            UNWIND $lists AS l
+            MERGE (list:List {name: l.name})
+            SET list = l
+            MERGE (u:User {username: $username})
+            MERGE (u)-[:FOLLOWS]->(list)
+            RETURN u,l
+            `,
+            { lists: lists, username: user.username }
+        )
+    })
+    const followed = res.records.map((row: any) => {
+        return row.get("l")
+    })
+    await session.close()
+    return followed;
+}
+
+export async function addUserOwnedLists(user: UserV2, lists: ListV2[]) {
+    const session = driver.session()
+    // Create a node within a write transaction
+    const res = await session.executeWrite((tx: any) => {
+        return tx.run(`
+            UNWIND $lists AS l
+            MERGE (list:List {name: l.name})
+            SET list = l
+            MERGE (u:User {username: $username})
+            MERGE (u)-[:OWNS]->(list)
+            RETURN u,l
+            `,
+            { lists: lists, username: user.username }
+        )
+    })
+    const followed = res.records.map((row: any) => {
+        return row.get("l")
+    })
+    await session.close()
+    return followed;
+}
+
+export async function getAllUserLists(username: string) {
+    const session = driver.session()
+    // Create a node within a write transaction
+    const res = await session.executeRead((tx: any) => {
+        return tx.run(`
+            MATCH (u {username:$username})-[]-(l:List) return l
+            `,
+            { username: username }
+        )
+    })
+    const lists = res.records.map((row: any) => {
+        return row.get("l")
+    })
+    await session.close()
+    return lists;
+}
+
+export async function addTwitterListToStream(api: TwitterApi, stream: Node, listId: string) {
+    const users = await getListUsers(api, listId)
+    console.log("USERS ------")
+    console.log(users);
+    for (const user of users) {
+        const userDb = await createUserDb(user)
+        addSeedUserToStream(api, stream, userDb)
+    }
+}
+
 export function flattenMediaPublicMetrics(data: Array<any>) {
     for (const obj of data) {
         // obj.username = obj.username.toLowerCase();
