@@ -1,9 +1,14 @@
-import { TwitterApi } from 'twitter-api-v2';
+import { TwitterApi, TwitterV2IncludesHelper } from 'twitter-api-v2';
 
-const api = new TwitterApi(TWITTER_TOKEN);
+import * as dotenv from "dotenv";
+
+dotenv.config();
+
+
+const api = new TwitterApi(process.env.TWITTER_TOKEN as string);
 
 async function getTweetsFromAuthorId(
-    api: any,
+    api: TwitterApi,
     id: string,
     startTime: string,
     endTime: string,
@@ -32,22 +37,28 @@ async function getTweetsFromAuthorId(
 async function run() {
     const startTime = "2022-08-24T13:58:40Z";
     const endTime = "2022-08-31T13:58:40Z";
-    // const id = "803693608419422209";
-    const id = "16884623";
+    const id = "803693608419422209";
+    // const id = "16884623";
     const tweets = await getTweetsFromAuthorId(
         api,
         id,
         startTime,
         endTime
     )
-    console.log(tweets.data.data[0]);
-    // for (const obj of tweets.data.data) {
-    //     console.log(obj.attachments)
-    // }
-    for (const obj of tweets.data.includes.media) {
-        console.log(obj)
 
-    }
+    const includes = new TwitterV2IncludesHelper(tweets);
+
+    console.log(includes.tweets)
+    console.log("-----")
+    console.log(includes.media)
+    // console.log(tweets.data.data[0]);
+    // // for (const obj of tweets.data.data) {
+    // //     console.log(obj.attachments)
+    // // }
+    // for (const obj of tweets.data.includes.media) {
+    //     console.log(obj)
+
+    // }
 }
 
 run()
