@@ -26,7 +26,7 @@ export function flattenTwitterUserPublicMetrics(data: Array<any>) {
 
 export async function getUserByUsernameDB(username: string) {
   const session = driver.session()
-  const res = await session.writeTransaction((tx: any) => {
+  const res = await session.executeWrite((tx: any) => {
     return tx.run(`
       MATCH (u:User {username: $username})
       RETURN u`,
@@ -47,7 +47,7 @@ export async function getUserByUsernameDB(username: string) {
 
 export async function createUserDb(user: any) {
   const session = driver.session()
-  const res = await session.writeTransaction((tx: any) => {
+  const res = await session.executeWrite((tx: any) => {
     return tx.run(`
       MERGE (u:User {username: $user.username})
       SET u = $user
