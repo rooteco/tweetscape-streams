@@ -149,13 +149,12 @@ export async function getStreamByName(name: string) {
     return { stream: stream, seedUsers: seedUsers };
 }
 
-export async function createStream(name: string, startTime: string, endTime: string, username: string) {
+export async function createStream(name: string, startTime: string, username: string) {
     const session = driver.session()
     // Create a node within a write transaction
     let streamData = {
         name,
         startTime,
-        endTime,
     }
     const res = await session.executeWrite((tx: any) => {
         return tx.run(`
@@ -202,7 +201,6 @@ async function getTweetsFromAuthorId(
     api: TwitterApi,
     id: string,
     startTime: string,
-    endTime: string,
 ) {
     const tweets = await api.v2.userTimeline(
         id,
@@ -214,7 +212,6 @@ async function getTweetsFromAuthorId(
             'poll.fields': 'duration_minutes,end_datetime,id,options,voting_status',
             'place.fields': 'contained_within,country,country_code,full_name,geo,id,name,place_type',
             'max_results': 100,
-            'end_time': endTime,
             'start_time': startTime
         }
     );
@@ -526,8 +523,7 @@ export async function updateStreamTweets(api: TwitterApi, limits: TwitterApiRate
         let tweets = await getTweetsFromAuthorId(
             api,
             user.properties.id,
-            stream.properties.startTime,
-            stream.properties.endTime
+            startTime,
         );
 
         // I can do more fun stuff with this, like get the media of specific tweets: https://github.com/PLhery/node-twitter-api-v2/blob/master/doc/helpers.md
