@@ -7,7 +7,6 @@ import { TimeAgo } from '~/components/timeago';
 import { addTwitterListToStream, getStreamRecommendedUsers, getStreamTweets, deleteStreamByName, addSeedUserToStream, getUserFromTwitter, getStreamByName, removeSeedUserFromStream, getAllUserLists, updateStreamTweets, updateStreamFollowsNetwork } from "~/models/streams.server";
 import { getUserByUsernameDB, createUserDb } from "~/models/user.server";
 import { getClient, USER_FIELDS, handleTwitterApiError } from '~/twitter.server';
-import { matchSorter } from 'match-sorter'
 import Downshift from "downshift";
 
 export async function loader({ request, params }: LoaderArgs) {
@@ -19,8 +18,11 @@ export async function loader({ request, params }: LoaderArgs) {
         throw new Response("Not Found", { status: 404 });
     }
     console.time("getStreamTweets")
-    const tweets = await getStreamTweets(stream.properties.name, stream.properties.startTime, stream.properties.endTime);
+    const tweets = await getStreamTweets(stream.properties.name, stream.properties.startTime);
     console.timeEnd("getStreamTweets")
+
+    // console.log(tweets.map((item) => (item.author.properties.username)))
+
     // Getting Recommended Users
     // The getStreamRecommendedUsers returns a list of nodes, and a count of the number of seed users those accounts as followed by
     // This makes sure that we check all the way down to 2 overlapping seed users to make sure recommendations are provided
@@ -111,8 +113,8 @@ export const action: ActionFunction = async ({
             }
             const { api, uid, session } = await getClient(request);
             for (const seedUser of seedUsers) {
-                console.log(`${seedUser.properties.username} == ${seedUserHandle}`);
-                if (seedUser.username == seedUserHandle) {
+                console.log(`${seedUser.user.properties.username} == ${seedUserHandle}`);
+                if (seedUser.user.username == seedUserHandle) {
                     let errors: ActionData = {
                         seedUserHandle: `user '${seedUserHandle}' already seed user of stream '${stream.properties.name}'`
                     }
@@ -120,11 +122,11 @@ export const action: ActionFunction = async ({
                 }
             }
             seedUserHandle = seedUserHandle.toLowerCase().replace(/^@/, '')
+            let addedUser;
             let user = await getUserByUsernameDB(seedUserHandle);
             if (!user) {
-
                 console.time("getUserFromTwitter")
-                let user = await getUserFromTwitter(api, seedUserHandle); // This func already flattens the data
+                user = await getUserFromTwitter(api, seedUserHandle); // This func already flattens the data
                 console.timeEnd("getUserFromTwitter")
                 if (!user) {
                     const errors: ActionData = {
@@ -134,27 +136,26 @@ export const action: ActionFunction = async ({
                 } else {
                     user = await createUserDb(user)
                     console.time("addSeedUserToStream")
-                    addSeedUserToStream(api, stream, user)
+                    addedUser = await addSeedUserToStream(api, stream, user)
                     console.timeEnd("addSeedUserToStream")
                 }
             } else {
                 console.time("addSeedUserToStream")
-                addSeedUserToStream(api, stream, user)
+                addedUser = await addSeedUserToStream(api, stream, user)
                 console.timeEnd("addSeedUserToStream")
             }
             console.log(`Added user ${user.properties.username} to stream ${stream.properties.name}`)
-            return null;
+            return addedUser;
 
         } else if (intent === "removeSeedUser") {
-            console.log("IN REMOVESEEDUSER")
             let user = await getUserByUsernameDB(seedUserHandle);
             console.log(stream.properties.name)
             console.log(user.properties.name)
-            removeSeedUserFromStream(
+            let deletedRel = await removeSeedUserFromStream(
                 stream.properties.name,
                 user.properties.username
             )
-            return null;
+            return deletedRel;
         } else if (intent === "addSeedUsersFromList") {
             const { api, uid, session } = await getClient(request);
             let listId = formData.get("listId") as string;
@@ -162,7 +163,7 @@ export const action: ActionFunction = async ({
             return null;
         } else if (intent === "updateStreamTweets") {
             const { api, limits } = await getClient(request);
-            updateStreamTweets(api, limits, stream, seedUsers)
+            updateStreamTweets(api, limits, stream, seedUsers.map((item) => (item.user)))
             return null;
         } else if (intent === "updateStreamFollowsNetwork") {
             console.log("CORRECT INTENT")
@@ -182,9 +183,8 @@ export default function StreamDetailsPage() {
     const tweets = data.tweets;
     const numSeedUsersFollowedBy = data.numSeedUsersFollowedBy
     const userLists = data.userLists;
-    const getItems = (value: any) => value ? matchSorter(userLists.map((i: any) => i.properties), value, { keys: ['name'] }) : userLists
-
-
+    // const getItems = (value: any) => value ? matchSorter(userLists.map((i: any) => i.properties), value, { keys: ['name'] }) : userLists
+    // const getItems = (value: any) => userLists.map((i: any) => i.properties.name)
     let annotations = new Set();
     for (const t of tweets) {
         if (t.annotation) {
@@ -203,7 +203,9 @@ export default function StreamDetailsPage() {
         <div className="flex">
             <div>
                 <h2 className="text-2xl font-bold">{stream.properties.name}</h2>
-                <p>startTime: {stream.properties.startTime}, endTime: {stream.properties.endTime}</p>
+                <p>startTime: {stream.properties.startTime}</p>
+                <p>Tweets lastUpdatedAt: {stream.properties.tweetsLastUpdatedAt}</p>
+                <p>Following lastUpdatedAt: {stream.properties.followingLastUpdatedAt}</p>
                 <div className="flex">
                     <Form
                         method='post'
@@ -274,11 +276,12 @@ export default function StreamDetailsPage() {
                             selectedItem,
                         }) => (
                             <div>
-                                <label {...getLabelProps()}>Import Seed Users From List</label>
-                                <input className="ml-2 inline-block rounded border-2 border-black bg-blue px-2 py-1 text-black" {...getInputProps()} />
+                                {/* <label {...getLabelProps()}>Import Seed Users From List</label>
+                                <input className="ml-2 inline-block rounded border-2 border-black bg-blue px-2 py-1 text-black" {...getInputProps()} /> */}
+                                <span>Select one of your lists to import all users as seed users</span>
                                 <button
                                     {...getToggleButtonProps()}
-                                    className="bg-green-200 text-white"
+                                    className='ml-2 inline-block rounded border-2 border-black bg-green-800 px-2 py-1 text-white'
                                 >
                                     {isOpen ? 'close' : 'open'}
                                 </button>
@@ -289,20 +292,20 @@ export default function StreamDetailsPage() {
                                 >
                                     {isOpen
                                         ?
-                                        getItems(inputValue)
-                                            .map((item, index) => (
+                                        userLists
+                                            .map((item: any, index: number) => (
                                                 <li>
                                                     <Form
                                                         method='post'
                                                         className='top-2 my-8 flex'
                                                         {...getItemProps({
                                                             item,
-                                                            key: item.value,
+                                                            key: item.properties.id,
                                                             index,
                                                             style: {
                                                                 backgroundColor:
-                                                                    highlightedIndex === index ? 'lightgray' : 'white',
-                                                                fontWeight: selectedItem === item ? 'bold' : 'normal',
+                                                                    highlightedIndex === item.properties.id ? 'lightgray' : 'white',
+                                                                fontWeight: selectedItem === item.properties.id ? 'bold' : 'normal',
                                                             },
                                                             disabled: true,
                                                         })}
@@ -312,7 +315,7 @@ export default function StreamDetailsPage() {
                                                             name="listId"
                                                             placeholder='enter list name'
                                                             className='flex-1 rounded border-2 border-black px-2 py-1'
-                                                            value={item.id}
+                                                            value={item.properties.id}
                                                         />
                                                         <button
                                                             type='submit'
@@ -320,7 +323,7 @@ export default function StreamDetailsPage() {
                                                             value="addSeedUsersFromList"
                                                             name="intent"
                                                         >
-                                                            Import from list '{item.name}'
+                                                            Import {item.properties.member_count} seed users from list '{item.properties.name}'
                                                         </button>
                                                     </Form>
                                                 </li>
@@ -336,11 +339,11 @@ export default function StreamDetailsPage() {
                 </div>
 
 
-                <h1 className="text-2xl">Seed Users</h1>
+                <h1 className="text-2xl">{seedUsers.length} Seed Users</h1>
                 <ol>
                     {seedUsers.map((seedUser: any) => (
-                        <li className="flex" key={seedUser.properties.id}>
-                            <p className="my-auto">{seedUser.properties.username}</p>
+                        <li className="flex" key={seedUser.user.properties.id}>
+                            <p className="my-auto">{seedUser.user.properties.username}</p>
                             <Form
                                 method='post'
                                 className='top-2 my-8 flex'
@@ -350,7 +353,7 @@ export default function StreamDetailsPage() {
                                     name="seedUserHandle"
                                     placeholder='Enter any Twitter handle'
                                     className='flex-1 rounded border-2 border-black px-2 py-1'
-                                    value={seedUser.properties.username}
+                                    value={seedUser.user.properties.username}
                                 />
                                 <button
                                     type='submit'
@@ -361,6 +364,7 @@ export default function StreamDetailsPage() {
                                     Remove Seed User
                                 </button>
                             </Form>
+                            <span>tweets last updated: {seedUser.rel.properties.tweetsLastUpdatedAt}</span>
                         </li>
                     ))}
                 </ol>
