@@ -577,14 +577,14 @@ async function getTweetsFromUsername(id: string) {
     // );
 }
 
-export async function getStreamTweets(name: string, startTime: string, endTime: string) {
+export async function getStreamTweets(name: string, startTime: string) {
     //THIS EXCLUDES RETWEETS RIGHT NOW
     const session = driver.session()
     // Create a node within a write transaction
     const res = await session.executeRead((tx: any) => {
         return tx.run(`
             MATCH (s:Stream {name: $name} )-[:CONTAINS]->(u:User)-[:POSTED]->(t:Tweet)-[r:REFERENCED]->(:Tweet)
-            WHERE t.created_at > $startTime AND t.created_at < $endTime and r.type <> "retweeted"
+            WHERE t.created_at > $startTime and r.type <> "retweeted"
             OPTIONAL MATCH (t)-[ar:ANNOTATED]-(a)
             RETURN u,t,a
             ORDER by t.created_at DESC
