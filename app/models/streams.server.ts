@@ -551,7 +551,7 @@ export async function updateStreamTweets(api: TwitterApi, limits: TwitterApiRate
             await addTweetsFrom(flattenTweetPublicMetrics(tweets.data.data));
             console.timeEnd("addTweetsFrom")
         }
-        return tweets;
+        await updateStreamTweetsLastUpdatedAt(stream, user, now.toISOString());
     }
 }
 
@@ -589,7 +589,7 @@ export async function getStreamTweets(name: string, startTime: string) {
             RETURN u,t,a
             ORDER by t.created_at DESC
         `,
-            { name: name, startTime: startTime, endTime })
+            { name: name, startTime: startTime })
     })
     let tweets = [];
     if (res.records.length > 0) {
