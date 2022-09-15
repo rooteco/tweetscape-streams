@@ -11,6 +11,8 @@ import { commitSession, getSession } from '~/session.server';
 import { TwitterApi } from 'twitter-api-v2';
 import { getUserTwitterLists } from "~/twitter.server";
 import { flattenTwitterUserPublicMetrics } from "~/models/user.server";
+import { TwitterApiRateLimitPlugin } from '@twitter-api-v2/plugin-rate-limit';
+import { TwitterApiRateLimitDBStore } from '~/limit.server';
 import { getClient, USER_FIELDS } from '~/twitter.server';
 import { getStreams, addUserOwnedLists, addUserFollowedLists } from "~/models/streams.server";
 
@@ -45,7 +47,7 @@ export const loader: LoaderFunction = async ({ request }: LoaderArgs) => {
     let streams = await getStreams();
     let user = null;
     const url = new URL(request.url);
-    const redirectURI: string = process.env.REDIRECT_URI
+    const redirectURI: string = process.env.REDIRECT_URI as string;
     const stateId = url.searchParams.get('state');
     const code = url.searchParams.get('code');
     let session = await getSession(request.headers.get('Cookie'));
@@ -79,6 +81,9 @@ export const loader: LoaderFunction = async ({ request }: LoaderArgs) => {
                 redirectUri: redirectURI
                 // redirectUri: getBaseURL(request),
             });
+
+            //TODO: INSTANTIATE THIS API WITH THE RATE LIMIT PLUGIN SO IT STORES THIS IN REDIS AND RATE LIMITS ARE ACCURATE...
+
             log.info('Fetching logged in user from Twitter API...');
             const { data } = await api.v2.me({ "user.fields": USER_FIELDS });
             const context = `${data.name} (@${data.username})`;
