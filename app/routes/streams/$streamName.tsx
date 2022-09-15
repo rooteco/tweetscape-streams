@@ -204,8 +204,7 @@ export default function StreamDetailsPage() {
             <div>
                 <h2 className="text-2xl font-bold">{stream.properties.name}</h2>
                 <p>startTime: {stream.properties.startTime}</p>
-                <p>Tweets lastUpdatedAt: {stream.properties.tweetsLastUpdatedAt}</p>
-                <p>Following lastUpdatedAt: {stream.properties.followingLastUpdatedAt}</p>
+                <p>Following Network lastUpdatedAt: {stream.properties.followingLastUpdatedAt}</p>
                 <div className="flex">
                     <Form
                         method='post'
