@@ -46,8 +46,7 @@ export async function action({ request }: ActionArgs) {
     }
     const endTime = new Date()
     const startTime = new Date(endTime.getFullYear(), endTime.getMonth(), endTime.getDate() - 7, endTime.getHours(), endTime.getMinutes())
-
-    stream = await createStream(name, startTime.toISOString(), endTime.toISOString(), username)
+    stream = await createStream(name, startTime.toISOString(), username)
     return redirect(`/streams/${stream.properties.name}`);
 }
 
