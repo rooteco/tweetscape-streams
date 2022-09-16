@@ -176,7 +176,7 @@ export async function createStream(name: string, startTime: string, username: st
 export async function deleteStreamByName(name: string) {
     const session = driver.session()
     // Create a node within a write transaction
-    const res = await session.executeRead((tx: any) => {
+    const res = await session.executeWrite((tx: any) => {
         return tx.run(`
         MATCH (s:Stream {name: $name} )
         DETACH DELETE s`,
@@ -698,6 +698,89 @@ export async function getStreamRecommendedUsers(name: string) {
             WHERE (allF in allFollowedUsers and seedUser in seedUsers)
             WITH collect(endNode(r)) as endingEnders
             return apoc.coll.duplicatesWithCount(endingEnders) as u;
+        `,
+            { name: name })
+    })
+    let recommendedUsers = [];
+    if (res.records.length > 0) {
+        recommendedUsers = res.records.map((row: Record) => {
+            return row.get("u")
+        })
+    }
+    await session.close()
+    return recommendedUsers;
+}
+
+export async function getStreamInteractions(name: string) {
+
+    // Get all the of the interactions (aka pull all their replies/qts/rts) between seedUsers and "interactedUsers". Show them 
+    // I made this on my way to creating getStreamDistinctInteractionedWithAccounts, which was my original goal 
+
+    const session = driver.session()
+    // Create a node within a write transaction
+    // super useful for this query: https://neo4j.com/developer/kb/performing-match-intersection/
+    const res = await session.executeRead((tx: any) => {
+        return tx.run(`
+        MATCH (s:Stream {name: $name})-[:CONTAINS]->(seedUsers:User)-[:POSTED]->(seedUserTweets:Tweet)-[r]->(interactionTweets:Tweet)<-[:POSTED]-(interactedUsers:User)
+        WHERE seedUsers.id <> interactedUsers.id
+        RETURN seedUsers, seedUserTweets, interactionTweets, interactedUsers
+        `,
+            { name: name })
+    })
+    let recommendedUsers = [];
+    if (res.records.length > 0) {
+        recommendedUsers = res.records.map((row: Record) => {
+            return {
+                seedUser: row.get("seedUsers"),
+                seedUserTweet: row.get("seedUserTweets"),
+                interactionTweet: row.get("interactionTweets"),
+                interactedUser: row.get("interactedUsers"),
+            }
+        })
+    }
+    await session.close()
+    return recommendedUsers;
+}
+
+export async function getStreamDistinctInteractionedWithAccounts(name: string) {
+    // For each interactedUser (a user that a seedUser has interacted with), get the number of seedUsers that have interacted with them in the timerange of the stream
+    // aka look for accounts that multiple seed users have replied to/qt'd/rt'd 
+    const session = driver.session()
+    // Create a node within a write transaction
+    // super useful for this query: https://neo4j.com/developer/kb/performing-match-intersection/
+    const res = await session.executeRead((tx: any) => {
+        return tx.run(`
+        MATCH (s:Stream {name: $name})-[:CONTAINS]->(seedUsers:User)-[:POSTED]->(seedUserTweets:Tweet)-[r]->(interactionTweets:Tweet)<-[:POSTED]-(interactedUsers:User)
+        WHERE seedUsers.id <> interactedUsers.id
+        WITH collect(distinct {seedUser: seedUsers.username, interactedUser: interactedUsers.username}) as accountPairs
+        WITH [x IN accountPairs | x.interactedUser] as interactedwith
+        return apoc.coll.duplicatesWithCount(interactedwith) as counts;
+        `,
+            // return apoc.coll.frequencies(interactedwith) as counts; if I want all rows (this includes count=1)
+            { name: name })
+    })
+    let frequencies = [];
+    if (res.records.length > 0) {
+        frequencies = res.records.map((row: Record) => {
+            return row.get("counts")
+        })
+    }
+    await session.close()
+    return frequencies;
+}
+
+
+export async function getStreamRecommendedUsersByInteractions(name: string) {
+    //THIS EXCLUDES RETWEETS RIGHT NOW
+    const session = driver.session()
+    // Create a node within a write transaction
+    // super useful for this query: https://neo4j.com/developer/kb/performing-match-intersection/
+    const res = await session.executeRead((tx: any) => {
+        return tx.run(`
+        MATCH (s:Stream {name: $name})-[:CONTAINS]->(seedUsers:User)-[:POSTED]->(seedUserTweets:Tweet)-[r]->(interactionTweets:Tweet)<-[:POSTED]-(interactedUsers:User)
+        WHERE seedUsers.id <> interactedUsers.id
+        WITH collect(interactedUsers) as interactedUsers
+        RETURN apoc.coll.duplicatesWithCount(interactedUsers) as u
         `,
             { name: name })
     })
