@@ -24,7 +24,7 @@ type ActionData =
 
 export async function action({ request }: ActionArgs) {
     const formData = await request.formData();
-    const name: string = formData.get("name");
+    const name: string = formData.get("name") as string;
     let { stream, seedUsers } = await getStreamByName(name);
     if (stream) {
         let errors: ActionData = {
@@ -34,7 +34,8 @@ export async function action({ request }: ActionArgs) {
     }
     const { api, uid, session } = await getClient(request);
     let user = null;
-    if (!uid) {
+    if (!api) {
+        console.log("YOU ARE NOT LOGGED IN")
         return null
     }
     const meData = await api.v2.me({ "user.fields": USER_FIELDS });
@@ -47,6 +48,8 @@ export async function action({ request }: ActionArgs) {
     const endTime = new Date()
     const startTime = new Date(endTime.getFullYear(), endTime.getMonth(), endTime.getDate() - 7, endTime.getHours(), endTime.getMinutes())
     stream = await createStream(name, startTime.toISOString(), username)
+    console.log("I MADE IT")
+    console.log(stream)
     return redirect(`/streams/${stream.properties.name}`);
 }
 

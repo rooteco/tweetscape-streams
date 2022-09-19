@@ -199,10 +199,23 @@ export async function getTwitterClientForUser(
 
 export async function getClient(request: Request) {
     const session = await getSession(request.headers.get('Cookie'));
-    const uid = getUserIdFromSession(session);
-    const client = uid
-        ? await getTwitterClientForUser(uid)
-        : { api: new TwitterApi(process.env.TWITTER_TOKEN as string) };
+    let uid;
+    if (process.env.TEST) {
+        console.log("MANUALLY SETTING UID")
+        uid = process.env.TEST_USER_ID
+    } else {
+        uid = getUserIdFromSession(session)
+    }
+
+    // const client = uid
+    //     ? await getTwitterClientForUser(uid)
+    //     : { api: new TwitterApi(process.env.TWITTER_TOKEN as string) };
+    let client;
+    if (uid) {
+        client = await getTwitterClientForUser(uid)
+    } else {
+        client = null;
+    }
     return { ...client, uid, session };
 }
 
