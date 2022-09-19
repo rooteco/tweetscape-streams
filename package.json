@@ -12,7 +12,6 @@
     "dev:css": "cross-env NODE_ENV=development npm run generate:css -- --watch",
     "dev:remix": "cross-env NODE_ENV=development remix watch",
     "dev:server": "cross-env NODE_ENV=development node --inspect --require ./node_modules/dotenv/config --require ./mocks ./build/server.js",
-    "dev:redis": "dotenv -- bash -c 'docker run -p 6379:6379 redis redis-server --protected-mode yes --requirepass $REDIS_PASSWORD'",
     "docker": "docker-compose up -d",
     "format": "prettier --write .",
     "generate:css": "tailwindcss -o ./app/styles/tailwind.css",
