@@ -1,7 +1,6 @@
 import { redirect, json } from "@remix-run/node";
 import type { LoaderArgs } from "@remix-run/node";
 import BirdIcon from '~/icons/bird';
-import { json } from "@remix-run/node";
 import type { Session } from '@remix-run/node';
 import { Form, useActionData, Link, NavLink, Outlet, useLoaderData } from "@remix-run/react";
 import { prisma } from "~/db.server";
@@ -14,6 +13,7 @@ import { flattenTwitterUserPublicMetrics } from "~/models/user.server";
 import { TwitterApiRateLimitPlugin } from '@twitter-api-v2/plugin-rate-limit';
 import { TwitterApiRateLimitDBStore } from '~/limit.server';
 import { getClient, USER_FIELDS } from '~/twitter.server';
+import type { ListV2 } from 'twitter-api-v2';
 import { getStreams, addUserOwnedLists, addUserFollowedLists } from "~/models/streams.server";
 
 type LoaderData = {
@@ -55,7 +55,12 @@ export const loader: LoaderFunction = async ({ request }: LoaderArgs) => {
     console.log(`UID = ${uid}`);
     let userLists = { followedLists: [] as ListV2[], ownedLists: [] as ListV2[] }
 
-    if (uid) {
+    if (process.env.test) {
+        const { api, uid, session } = await getClient(request);
+        const meData = await api.v2.me({ "user.fields": USER_FIELDS });
+        user = meData.data;
+    }
+    else if (uid) {
         const { api, uid, session } = await getClient(request);
         const meData = await api.v2.me({ "user.fields": USER_FIELDS });
         user = meData.data;
