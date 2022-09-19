@@ -81,9 +81,6 @@ export const action: ActionFunction = async ({
     const formData = await request.formData();
     const intent = formData.get("intent");
 
-    console.log("INTENT")
-    console.log(intent)
-
     if (intent === "delete") {
         let res = await deleteStreamByName(params.streamName);
         return redirect("/streams");
