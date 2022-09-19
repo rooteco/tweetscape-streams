@@ -176,7 +176,7 @@ export async function createStream(name: string, startTime: string, username: st
 export async function deleteStreamByName(name: string) {
     const session = driver.session()
     // Create a node within a write transaction
-    const res = await session.executeRead((tx: any) => {
+    const res = await session.executeWrite((tx: any) => {
         return tx.run(`
         MATCH (s:Stream {name: $name} )
         DETACH DELETE s`,
