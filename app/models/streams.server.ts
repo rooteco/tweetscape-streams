@@ -285,7 +285,7 @@ async function streamContainsUser(username: string, streamName: string) {
 async function getSavedFollows(username: string) {
     const session = driver.session()
     // Create a node within a write transaction
-    const res = await session.executeWrite((tx: any) => {
+    const res = await session.executeRead((tx: any) => {
         return tx.run(`
         MATCH (u:User {username: $username})-[:FOLLOWS]->(uf:User) RETURN uf`,
             { username }
@@ -298,9 +298,17 @@ async function getSavedFollows(username: string) {
     return users;
 }
 
-async function addUsersFollowedBy(username: string, users: any) {
+async function addUsersFollowedBy(users: any, { username: username }) {
     const session = driver.session()
     // Create a node within a write transaction
+    const clearFollows = await session.executeWrite((tx: any) => {
+        return tx.run(`
+            MATCH (u:User {username: $followerUsername})-[r:FOLLOWS]->(uf:User) 
+            DELETE r
+            `,
+            { followerUsername: username }
+        )
+    }) // First, clear old follows so we match current twitter following 
     const res = await session.executeWrite((tx: any) => {
         return tx.run(`
             UNWIND $users AS u
@@ -348,6 +356,22 @@ async function bulkWrites(objs: any, writeFunc: any) {
         const chunk = objs.slice(i, i + chunkSize);
         chunkWrites.push(writeFunc(chunk))
     }
+    let singleList = [];
+    for (const res of (await Promise.all(chunkWrites))) {
+        singleList.push(...res)
+    }
+    return singleList;
+}
+
+async function bulkWritesMulti(writeFunc: any, objectsToWrite: any, args: object) {
+    const chunkSize = 100;
+    let chunkWrites = [];
+    console.log(`writing ${objectsToWrite.length} objects with ${writeFunc.name}`)
+    for (let i = 0; i < objectsToWrite.length; i += chunkSize) {
+        const chunk = objectsToWrite.slice(i, i + chunkSize);
+        chunkWrites.push(writeFunc(chunk, args))
+    }
+    console.log(`split ${objectsToWrite.length} into ${chunkWrites.length} chunks`)
     let singleList = [];
     for (const res of (await Promise.all(chunkWrites))) {
         singleList.push(...res)
@@ -543,7 +567,8 @@ export async function updateStreamFollowsNetwork(api: TwitterApi, limits: Twitte
         startTime = stream.properties.startTime
     }
 
-    for (const user of seedUsers) {
+    await Promise.all(seedUsers.map(async (user: Node) => {
+        user = user.user; // yes tf it does, it is a neo4j node 
         let savedFollowsOfUser = await getSavedFollows(user.properties.username);
         if (savedFollowsOfUser.length == user.properties["public_metrics.following_count"]) {
             log.debug(`Looks like we have already saved the ${savedFollowsOfUser.length} users followed by '${user.properties.username}'`)
@@ -569,10 +594,12 @@ export async function updateStreamFollowsNetwork(api: TwitterApi, limits: Twitte
 
                 while (!following.done) { await following.fetchNext(); }
                 console.log(`fetched ${following.data.data.length} accounts followed by '${user.properties.username}'`);
-                let newUsers = following.data.data.map((u: any) => {
-                    return flattenTwitterUserPublicMetrics([u])[0]
-                })
-                await addUsersFollowedBy(user.properties.username, newUsers)
+                let newUsers = flattenTwitterUserPublicMetrics(following.data.data);
+                let saved = await bulkWritesMulti(
+                    addUsersFollowedBy,
+                    newUsers,
+                    { username: user.properties.username }
+                )
             } else {
                 log.warn(
                     `Rate limit hit for getting user (${user.properties.username}) follwings, skipping until ${new Date(
@@ -581,7 +608,7 @@ export async function updateStreamFollowsNetwork(api: TwitterApi, limits: Twitte
                 );
             }
         }
-    }
+    }))
     await updateStreamFollowingLastUpdatedAt(stream, now.toISOString());
 }
 
