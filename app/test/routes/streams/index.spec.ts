@@ -5,7 +5,6 @@ const streamName = "TEST-STREAM-in-index"
 
 describe("Check Page", () => {
     test("Check the loader", async () => {
-        console.log("in loader of streams/index")
         const response: Response = await loader({
             request: new Request("http://localhost:3000/", { method: "GET" }),
             params: {},
