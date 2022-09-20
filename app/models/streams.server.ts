@@ -78,7 +78,6 @@ export async function getTweet(tweetId: string) {
     let relNodes;
     if (res.records.length > 0) {
         tweet = res.records[0].get("t")
-
         const relRes = await session.executeRead((tx: any) => {
             return tx.run(`
             MATCH (t:Tweet {id: $tweetId})-[r]-(n)
@@ -328,7 +327,7 @@ async function addUsersFollowedBy(users: any, { username: username }) {
     return followed;
 }
 
-async function addUsers(users: any) {
+export async function addUsers(users: any) {
     const session = driver.session()
     // Create a node within a write transaction
     const res = await session.executeWrite((tx: any) => {
@@ -348,7 +347,7 @@ async function addUsers(users: any) {
     return followed;
 }
 
-async function bulkWrites(objs: any, writeFunc: any) {
+export async function bulkWrites(objs: any, writeFunc: any) {
     const chunkSize = 100;
     let chunkWrites = [];
     console.log(`writing ${objs.length} objects with ${writeFunc.name}`)
@@ -459,7 +458,7 @@ export function flattenMediaPublicMetrics(data: Array<any>) {
     return data;
 }
 
-async function addTweetMedia(media: any) {
+export async function addTweetMedia(media: any) {
     const session = driver.session()
     // Create a node within a write transaction
     let flatMedia = flattenMediaPublicMetrics(media);
@@ -480,7 +479,7 @@ async function addTweetMedia(media: any) {
     return followed;
 }
 
-async function addTweetsFrom(tweets: any) {
+export async function addTweetsFrom(tweets: any) {
     const session = driver.session()
     // Create a node within a write transaction
     const res = await session.executeWrite((tx: any) => {
@@ -511,6 +510,14 @@ async function addTweetsFrom(tweets: any) {
             FOREACH (a IN t.entities.annotations |
                 MERGE (annotation:Annotation {probability:a.probability, type:a.type, normalized_text:a.normalized_text})
                 MERGE (tweet)-[:ANNOTATED]->(annotation)
+            )
+            FOREACH (ca IN t.context_annotations |
+                MERGE (domain:Domain {id: ca.domain.id})
+                SET domain = ca.domain
+                MERGE (entity:Entity {id: ca.entity.id})
+                SET entity = ca.entity
+                MERGE (tweet)-[:INCLUDED]->(entity)
+                MERGE (entity)-[:CATEGORY]-(domain)
             )
             FOREACH (h IN t.entities.hashtags |
                 MERGE (hashtag:Hashtag {tag:h.tag})
@@ -693,6 +700,7 @@ export async function updateStreamTweets(api: TwitterApi, stream: Node, seedUser
             tweets.push(...res.data.data)
         }
     }
+
     let data = await Promise.all([
         bulkWrites(users, addUsers),
         bulkWrites(media, addTweetMedia),
