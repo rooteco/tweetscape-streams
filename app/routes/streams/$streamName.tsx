@@ -160,7 +160,7 @@ export const action: ActionFunction = async ({
             return null;
         } else if (intent === "updateStreamTweets") {
             const { api, limits } = await getClient(request);
-            updateStreamTweets(api, limits, stream, seedUsers.map((item) => (item.user)))
+            updateStreamTweets(api, stream, seedUsers.map((item: any) => (item.user)))
             return null;
         } else if (intent === "updateStreamFollowsNetwork") {
             console.log("CORRECT INTENT")
