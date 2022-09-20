@@ -678,28 +678,6 @@ export async function updateStreamTweets(api: TwitterApi, stream: Node, seedUser
     return data;
 }
 
-// async function getTweetsFromUsername(id: string) {
-//     const tweets = await api.v2.userTimeline(
-//         id,
-//         {
-//             'tweet.fields': 'attachments,author_id,context_annotations,conversation_id,created_at,entities,geo,id,in_reply_to_user_id,lang,public_metrics,text,possibly_sensitive,referenced_tweets,reply_settings,source,withheld',
-//             'user.fields': 'created_at,description,entities,id,location,name,pinned_tweet_id,profile_image_url,protected,public_metrics,url,username,verified,withheld',
-//             'max_results': 1000,
-//         }
-//     )
-//     while (!tweets.done) { await tweets.fetchNext(); }
-
-//     // const following = await api.v2.userTimeline(
-//     //     user.id,
-//     //     {
-//     //         'tweet.fields': 'attachments,author_id,context_annotations,conversation_id,created_at,entities,geo,id,in_reply_to_user_id,lang,public_metrics,text,possibly_sensitive,referenced_tweets,reply_settings,source,withheld',
-//     //         'user.fields': 'created_at,description,entities,id,location,name,pinned_tweet_id,profile_image_url,protected,public_metrics,url,username,verified,withheld',
-//     //         'max_results': 1000,
-//     //         "asPaginator": true
-//     //     }
-//     // );
-// }
-
 export async function getStreamTweets(name: string, startTime: string) {
     //THIS EXCLUDES RETWEETS RIGHT NOW
     const session = driver.session()
