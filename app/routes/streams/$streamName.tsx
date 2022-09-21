@@ -49,6 +49,8 @@ export async function loader({ request, params }: LoaderArgs) {
         }
     }
 
+    recommendedUsersTested.sort((a, b) => a.properties['public_metrics.followers_count'] - b.properties['public_metrics.followers_count'])
+
     return json({
         "stream": stream,
         "seedUsers": seedUsers,
@@ -248,6 +250,7 @@ export default function StreamDetailsPage() {
                                                 placeholder='Enter any Twitter handle'
                                                 className='flex-1 rounded border-2 border-black px-2 py-1'
                                             />
+                                            <p>{user.properties['public_metrics.followers_count']}</p>
                                             <button
                                                 type='submit'
                                                 className='ml-2 inline-block rounded border-2 border-black bg-black px-2 py-1 text-white'

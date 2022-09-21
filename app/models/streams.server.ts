@@ -484,7 +484,7 @@ export async function getStreamTweets(name: string, startTime: string, endTime: 
             WHERE t.created_at > $startTime AND t.created_at < $endTime and r.type <> "retweeted"
             RETURN u,t,a
         `,
-            { name: name, startTime: startTime, endTime })
+            { name: name, startTime: startTime, endTime: endTime })
     })
     let tweets = [];
     if (res.records.length > 0) {
