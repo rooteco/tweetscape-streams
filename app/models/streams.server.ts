@@ -1,5 +1,5 @@
 
-import { TweetStream, TwitterApi, TwitterV2IncludesHelper, UserSearchV1Paginator } from 'twitter-api-v2';
+import { MediaObjectV2, TweetStream, TwitterApi, TwitterApiv2, TwitterV2IncludesHelper, UserSearchV1Paginator } from 'twitter-api-v2';
 import { TwitterApiRateLimitPlugin } from '@twitter-api-v2/plugin-rate-limit';
 
 import { log } from '~/log.server';
@@ -226,22 +226,8 @@ async function getTweetsFromAuthorId(
     return tweets;
 }
 
-async function getTweetsFromAuthorIdForStream(
-    api: TwitterApi,
-    user: Node,
-    stream: Node,
-    now: Date,
-) {
-    let streamUserRel = await getStreamUserRel(stream, user, now.toISOString());
-    let startTime;
-    if (streamUserRel.properties.tweetsLastUpdatedAt) { // this means we already did an intial pull, so we only need to pull from last time updated
-        console.log("LAST UPDATED AT")
-        console.log(streamUserRel.properties.tweetsLastUpdatedAt)
-        startTime = streamUserRel.properties.tweetsLastUpdatedAt
-    } else { // this is the case when we haven't pulled tweets for this stream yet 
-        startTime = stream.properties.startTime
-    }
-    console.log(`pulling tweets for ${user.properties.username} from ${startTime}`)
+async function pullTweets(api: TwitterApi, user: Node, startTime: string, now: string) {
+    console.log(`pulling tweets for ${user.properties.username} from ${startTime} to ${now}`)
     const tweets = await api.v2.userTimeline(
         user.properties.id,
         {
@@ -252,15 +238,68 @@ async function getTweetsFromAuthorIdForStream(
             'poll.fields': 'duration_minutes,end_datetime,id,options,voting_status',
             'place.fields': 'contained_within,country,country_code,full_name,geo,id,name,place_type',
             'max_results': 100,
-            'start_time': startTime
+            'start_time': startTime,
+            'end_time': now
         }
     );
     while (!tweets.done) {
         console.log(tweets.data.data.length);
         await tweets.fetchNext();
     }
-    console.log(`done pulling tweets for ${user.properties.id}`)
+    console.log(`done pulling tweets for ${user.properties.username}`)
     return tweets;
+}
+
+async function getTweetsFromAuthorIdForStream(
+    api: TwitterApi,
+    user: Node,
+    stream: Node,
+    now: string = (new Date()).toISOString(), // this is a useful arg for testing
+) {
+    let dateRanges = []
+    if (!user.properties.tweetscapeIndexedTweetsStartTime || !user.properties.tweetscapeIndexedTweetsEndTime) {
+        // this means a user has never had tweets pulled
+        dateRanges.push({ startTime: stream.properties.startTime, endTime: now })
+    } else if (stream.properties.startTime > user.properties.tweetscapeIndexedTweetsStartTime && stream.properties.endTime < user.properties.tweetscapeIndexedTweetsEndTime) {
+        // we already have this user indexed for the timezone of this stream
+        log.debug("No new tweets to pull")
+        return []
+    } else if (stream.properties.startTime > user.properties.tweetscapeIndexedTweetsStartTime && stream.properties.endTime > user.properties.tweetscapeIndexedTweetsEndTime) {
+        // a user has been indexed before, this new stream has happened since then, so pull all tweets starting from date of that
+        // last query (not the startTime of the stream, so we keep all tweets pulled for this user continuous)
+        dateRanges.push({ startTime: user.properties.tweetscapeIndexedTweetsEndTime, endTime: now })
+    } else if (stream.properties.startTime < user.properties.tweetscapeIndexedTweetsStartTime) {
+        dateRanges.push({ startTime: stream.properties.startTime, endTime: user.properties.tweetscapeIndexedTweetsStartTime })
+    }
+    else if (now > user.properties.tweetscapeIndexedTweetsEndTime) {
+        dateRanges.push({ startTime: user.properties.tweetscapeIndexedTweetsEndTime, endTime: now })
+    }
+
+    console.log("DATE RANGES")
+    console.log(dateRanges)
+    const allTweets: TweetV2[] = [];
+    const tweetRes = await Promise.all(
+        dateRanges.map(({ startTime, endTime }) => {
+            return pullTweets(api, user, startTime, endTime)
+        })
+    )
+
+    let media = []
+    let users = []
+    let refTweets = []
+    let tweets = []
+
+    for (let res of tweetRes) {
+        let includes = new TwitterV2IncludesHelper(res)
+        users.push(...flattenTwitterUserPublicMetrics(includes.users))
+        media.push(...includes.media)
+        refTweets.push(...flattenTweetPublicMetrics(includes.tweets))
+        if (res.data.data && res.data.data.length > 0) {
+            tweets.push(...res.data.data)
+        }
+    }
+
+    return { tweets, refTweets, users, media }
 }
 
 async function streamContainsUser(username: string, streamName: string) {
@@ -443,7 +482,7 @@ export async function addTwitterListToStream(api: TwitterApi, stream: Node, list
     const users = await getListUsers(api, listId)
     for (const user of users) {
         const userDb = await createUserDb(user)
-        addSeedUserToStream(api, stream, userDb)
+        addSeedUserToStream(stream, userDb)
     }
 }
 
@@ -550,7 +589,6 @@ export async function addTweetsFrom(tweets: any) {
 };
 
 export async function addSeedUserToStream(
-    api: TwitterApi,
     stream: Node,
     user: any // has already been added to db before calling this func
 ) {
@@ -636,7 +674,7 @@ async function updateStreamTweetsLastUpdatedAt(stream: Node, user: Node, now: st
     return streams;
 }
 
-async function getStreamUserRel(stream: Node, user: Node, now: string) {
+async function getStreamUserRel(stream: Node, user: Node) {//}, now: string) {
     const session = driver.session()
     // Create a node within a write transaction
     const res = await session.executeRead((tx: any) => {
@@ -671,36 +709,31 @@ async function updateStreamFollowingLastUpdatedAt(stream: Node, now: string) {
     return streams;
 }
 
-export async function updateStreamTweets(api: TwitterApi, stream: Node, seedUsers: Node[]) {
+export async function updateStreamTweets(api: TwitterApi, stream: Node, seedUsers: Node[], now: string = (new Date()).toISOString()) {
     // Add the tweets from stream's date Range to the DB to build a feed
-    let now = new Date()
-    let tweetPromises = [];
-    const endTime = new Date()
-    const startTime = new Date(endTime.getFullYear(), endTime.getMonth(), endTime.getDate() - 7, endTime.getHours(), endTime.getMinutes())
-    let tweets = [];
-    let refTweets = [];
-    let users = [];
-    let media = [];
-    for (const user of seedUsers) {
-        let tweetsP = getTweetsFromAuthorIdForStream(
+    // let now = new Date()
+    // const endTime = new Date()
+    // const startTime = new Date(endTime.getFullYear(), endTime.getMonth(), endTime.getDate() - 7, endTime.getHours(), endTime.getMinutes())
+    let tweets: TweetV2[] = [];
+    let refTweets: TweetV2[] = [];
+    let users: UserV2[] = [];
+    let media: MediaObjectV2[] = [];
+    const tweetResponses = await Promise.all(seedUsers.map((user) => {
+        return getTweetsFromAuthorIdForStream(
             api,
             user,
             stream,
             now
         )
-        tweetPromises.push(tweetsP)
-    }
-    const tweetResponses = await Promise.all(tweetPromises);
+    }))
     for (let res of tweetResponses) {
-        let includes = new TwitterV2IncludesHelper(res)
-        users.push(...flattenTwitterUserPublicMetrics(includes.users))
-        media.push(...includes.media)
-        refTweets.push(...flattenTweetPublicMetrics(includes.tweets))
-        if (res.data.data && res.data.data.length > 0) {
-            tweets.push(...res.data.data)
-        }
+        console.log("here is res")
+        console.log(Object.keys(res))
+        users.push(...res.users)
+        media.push(...res.media)
+        refTweets.push(...res.refTweets)
+        tweets.push(...res.tweets)
     }
-
     let data = await Promise.all([
         bulkWrites(users, addUsers),
         bulkWrites(media, addTweetMedia),
@@ -708,9 +741,50 @@ export async function updateStreamTweets(api: TwitterApi, stream: Node, seedUser
         bulkWrites(tweets, addTweetsFrom)
     ])
     await Promise.all(seedUsers.map((user: any) => {
-        updateStreamTweetsLastUpdatedAt(stream, user, now.toISOString());
+        let tweetTimeMax = new Date(Math.max.apply(null, tweets.map((t) => new Date(t.created_at))))
+        let tweetTimeMin = new Date(Math.min.apply(null, tweets.map((t) => new Date(t.created_at))))
+
+        console.log("TIMESS")
+        console.log(tweetTimeMax)
+
+        let newMax = user.properties.tweetscapeIndexedTweetsEndTime;
+        let newMin = user.properties.tweetscapeIndexedTweetsStartTime;
+        if (!user.properties.tweetscapeIndexedTweetsEndTime) {
+            newMax = tweetTimeMax.toISOString()
+        } else if (user.properties.tweetscapeIndexedTweetsEndTime < tweetTimeMax.toISOString()) {
+            newMax = tweetTimeMax.toISOString()
+        }
+
+
+        if (!user.properties.tweetscapeIndexedTweetsEndTime) {
+            newMin = tweetTimeMin.toISOString()
+        }
+        else if (user.properties.tweetscapeIndexedTweetsStartTime > tweetTimeMin.toISOString()) {
+            newMin = tweetTimeMin.toISOString()
+        }
+        console.log(newMin)
+        console.log(newMax)
+        updateUserTweetscapeTweetIndexTimes(user, newMin, newMax)
     }))
     return data;
+}
+
+async function updateUserTweetscapeTweetIndexTimes(user: Node, startTime: string, endTime: string) {
+    const session = driver.session()
+    // Create a node within a write transaction
+    const res = await session.executeWrite((tx: any) => {
+        return tx.run(`
+        MERGE (u:User {username: $username})
+        SET u.tweetscapeIndexedTweetsStartTime = $startTime
+        SET u.tweetscapeIndexedTweetsEndTime = $endTime
+        RETURN u`,
+            { username: user.properties.username, startTime, endTime })
+    })
+    const streams = res.records.map((row: Record) => {
+        return row.get('u')
+    })
+    await session.close()
+    return streams;
 }
 
 export async function getStreamTweets(name: string, startTime: string) {
