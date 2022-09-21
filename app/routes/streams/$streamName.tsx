@@ -46,6 +46,8 @@ export async function loader({ request, params }: LoaderArgs) {
         }
     }
 
+    recommendedUsersTested.sort((a, b) => a.properties['public_metrics.followers_count'] - b.properties['public_metrics.followers_count'])
+
 
     let userLists = [];
     const { api, uid, session } = await getClient(request)
@@ -133,12 +135,12 @@ export const action: ActionFunction = async ({
                 } else {
                     user = await createUserDb(user)
                     console.time("addSeedUserToStream")
-                    addedUser = await addSeedUserToStream(api, stream, user)
+                    addedUser = await addSeedUserToStream(stream, user)
                     console.timeEnd("addSeedUserToStream")
                 }
             } else {
                 console.time("addSeedUserToStream")
-                addedUser = await addSeedUserToStream(api, stream, user)
+                addedUser = await addSeedUserToStream(stream, user)
                 console.timeEnd("addSeedUserToStream")
             }
             console.log(`Added user ${user.properties.username} to stream ${stream.properties.name}`)
@@ -385,6 +387,7 @@ export default function StreamDetailsPage() {
                                                 placeholder='Enter any Twitter handle'
                                                 className='flex-1 rounded border-2 border-black px-2 py-1'
                                             />
+                                            <p>{user.properties["public_metrics.followers_count"]}</p>
                                             <button
                                                 type='submit'
                                                 className='ml-2 inline-block rounded border-2 border-black bg-black px-2 py-1 text-white'
