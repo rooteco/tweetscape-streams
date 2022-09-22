@@ -11,6 +11,15 @@ cd $HOME/neo4j/plugins:/plugins
 sudo wget https://github.com/neo4j-contrib/neo4j-apoc-procedures/releases/download/4.4.0.9/apoc-4.4.0.9-all.jar
 ```
 
+### Local Creds
+Also, make sure you update your `.env` file: 
+You can see these settings in the `docker-compose.yml` file.
+```
+NEO4J_URI=neo4j://localhost:7687
+NEO4J_USERNAME=neo4j
+NEO4J_PASSWORD=test
+```
+
 Now you should be good to run 
 ```
 npm run docker
