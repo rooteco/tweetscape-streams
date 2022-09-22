@@ -430,13 +430,15 @@ export default function StreamDetailsPage() {
                             new Date(a.tweet.created_at as string).valueOf()
                     )
                     .map((tweet: any) => (
-                        <div className='mx-2 my-6 flex' key={tweet.tweet.properties.id}>
+                        // <div className='mx-2 my-6 flex' key={tweet.tweet.properties.id}>
+                        <div className='mx-2 my-6 flex' >
                             <img
                                 className='h-12 w-12 rounded-full border border-gray-300 bg-gray-100'
                                 alt=''
                                 src={tweet.author.properties.profile_image_url}
                             />
-                            <article key={tweet.tweet.properties.id} className='ml-2.5 flex-1'>
+                            {/* <article key={tweet.tweet.properties.id} className='ml-2.5 flex-1'> */}
+                            <article className='ml-2.5 flex-1'>
                                 <header>
                                     <h3>
                                         <a
