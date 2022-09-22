@@ -1,7 +1,7 @@
 import type { ActionArgs, LoaderFunction, LoaderArgs } from "@remix-run/node";
 import type { Session } from '@remix-run/node';
 import { json, redirect } from "@remix-run/node";
-import { Form, useActionData, Link, useLoaderData } from "@remix-run/react";
+import { Form, useActionData, Link, useLoaderData, useMatches } from "@remix-run/react";
 import * as React from "react";
 import BirdIcon from '~/icons/bird';
 import { commitSession, getSession } from '~/session.server';
@@ -48,37 +48,16 @@ export async function action({ request }: ActionArgs) {
     const endTime = new Date()
     const startTime = new Date(endTime.getFullYear(), endTime.getMonth(), endTime.getDate() - 7, endTime.getHours(), endTime.getMinutes())
     stream = await createStream(name, startTime.toISOString(), username)
-    console.log("I MADE IT")
-    console.log(stream)
     return redirect(`/streams/${stream.properties.name}`);
 }
 
-type LoaderData = {
-    user: any
-}
-
-export const loader: LoaderFunction = async ({ request }: LoaderArgs) => {
-    const session = await getSession(request.headers.get('Cookie'));
-    const uid = getUserIdFromSession(session);
-    let user = null;
-    if (uid) {
-        const { api, uid, session } = await getClient(request);
-        const meData = await api.v2.me({ "user.fields": USER_FIELDS });
-        user = meData.data;
-    }
-    return json<LoaderData>(
-        {
-            user: user,
-        },
-    )
-}
-
 export default function NewNotePage() {
+    const matches = useMatches(); // gives access to all the routes, https://remix.run/docs/en/v1/api/remix#usematches
+    const user = matches.filter((route) => route.id == 'routes/streams')[0].data.user
     const actionData = useActionData<typeof action>();
     const titleRef = React.useRef<HTMLInputElement>(null);
     const bodyRef = React.useRef<HTMLTextAreaElement>(null);
     const errors = useActionData();
-    const user = useLoaderData().user;
 
     React.useEffect(() => {
         if (actionData?.errors?.title) {
