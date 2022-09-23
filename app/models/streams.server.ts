@@ -114,6 +114,25 @@ export async function getStreams() {
     return streams;
 }
 
+export async function getAllStreams() {
+    const session = driver.session()
+    const res = await session.executeRead((tx: any) => {
+        return tx.run(`
+            MATCH (s:Stream)
+            OPTIONAL MATCH (s)-[r:CONTAINS]->(u:User)
+            RETURN s, collect(u) as seedUsers`,
+        )
+    })
+    const streams = res.records.map((row: Record) => {
+        return {
+            "stream": row.get("s"),
+            "seedUsers": row.get("seedUsers")
+        }
+    })
+    await session.close()
+    return streams;
+}
+
 export async function getStreamByName(name: string) {
     const session = driver.session()
     // Create a node within a write transaction
