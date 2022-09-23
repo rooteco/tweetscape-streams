@@ -18,3 +18,4 @@ tweetscape-streams-postgres.env
 neo4j/cluster_credentials.env
 *.code-workspace
 .env.test
+data/
