@@ -120,7 +120,8 @@ export async function getAllStreams() {
         return tx.run(`
             MATCH (s:Stream)
             OPTIONAL MATCH (s)-[r:CONTAINS]->(u:User)
-            RETURN s, collect(u) as seedUsers`,
+            RETURN s, collect(u) as seedUsers
+            `
         )
     })
     const streams = res.records.map((row: Record) => {
@@ -129,6 +130,31 @@ export async function getAllStreams() {
             "seedUsers": row.get("seedUsers")
         }
     })
+
+    const recRes = await session.executeRead((tx: any) => {
+        return tx.run(`
+            MATCH (s:Stream)
+            unwind s as singleS
+            MATCH (singleStream:Stream {name: singleS.name})-[:CONTAINS]->(seedUsers:User)-[:FOLLOWS]->(allFollowed:User)
+            WITH collect(allFollowed) as allFollowedUsers, collect(seedUsers) as seedUsers, singleStream as singleStream 
+            MATCH (seedUser)-[r:FOLLOWS]->(allF)
+            WHERE (allF in allFollowedUsers and seedUser in seedUsers)
+            WITH collect(endNode(r)) as endingEnders, singleStream
+            RETURN  singleStream.name as streamName, apoc.coll.duplicatesWithCount(endingEnders) as recU
+            `
+        )
+    })
+    const recUsersMap = new Map()
+    recRes.records.map((row: Record) => {
+        let streamName = row.get("streamName")
+        let ru = row.get("recU")
+        recUsersMap.set(streamName, ru)
+    })
+    streams.forEach((row: any) => {
+        let streamName = row.stream.properties.name
+        row.recommendedUsers = recUsersMap.get(streamName)
+    })
+
     await session.close()
     return streams;
 }
