@@ -56,8 +56,8 @@ function StreamAccordion({ streams, lists }: { streams: Stream[] }) {
   const { streamName } = useParams();
 
   useEffect(() => {
-    console.log(streamName)
-  }, [streamName])
+    console.log(lists)
+  }, [lists])
 
   return (
     <div>
@@ -83,12 +83,12 @@ function StreamAccordion({ streams, lists }: { streams: Stream[] }) {
 
             <h1> {stream.seedUsers?.length} Seed Users</h1>
             {stream.seedUsers && stream.seedUsers.map((user: userNode) => (
-              <CompactProfile user = {user} key = {user.elementId}/>
+              <CompactProfile user = {user} key = {user.elementId} streamName = {streamName} />
             ))}
 
             <h1> {stream.recommendedUsers? stream.recommendedUsers.length : 0} Recommended Accounts </h1>
             {stream.recommendedUsers && stream.recommendedUsers.map((user: userNode) => (
-              <CompactProfile user = {user} key = {user.elementId}/>
+              <CompactProfile user = {user} key = {user.elementId} streamName = {streamName} />
             ))}
 
           </AccordionDetails>
