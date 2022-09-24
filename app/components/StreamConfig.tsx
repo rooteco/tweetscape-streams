@@ -3,7 +3,8 @@ import { Form } from "@remix-run/react";
 import Downshift from "downshift";
 
 function StreamConfig({ userLists, streamName }) {
-    // Responsible for importing Lists/searching Accounts
+    // Responsible for Stream Management
+    // Add seed users from Search or Lists, Delete Stream
 
     let errors = false;
 
@@ -14,12 +15,11 @@ function StreamConfig({ userLists, streamName }) {
                 <p>Following Network lastUpdatedAt: {stream.properties.followingLastUpdatedAt}</p>
                 */}
 
-
             {/* Search for Seed Users */}
             <Form
                 method='post'
                 action={`/streams/${streamName}`}
-                className='sticky top-2 my-8 mx-auto flex max-w-sm'
+                className='sticky top-0 my-8 mx-auto flex max-w-sm'
             >
                 <label>
                     <input
@@ -77,6 +77,7 @@ function StreamConfig({ userLists, streamName }) {
                                             <li>
                                                 <Form
                                                     method='post'
+                                                    action={`/streams/${streamName}`}
                                                     className='top-2 my-8 flex'
                                                     {...getItemProps({
                                                         item,
@@ -114,7 +115,6 @@ function StreamConfig({ userLists, streamName }) {
                     )}
                 </Downshift>
             </div>
-
 
             {/* Delete Stream */}
             <Form

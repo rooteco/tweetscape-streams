@@ -26,6 +26,7 @@ import BirdIcon from '~/icons/bird';
 import StreamAccordion from '~/components/StreamAccordion';
 
 import {Stream} from "../components/StreamAccordion";
+import { couldStartTrivia } from "typescript";
 
 type LoaderData = {
     // this is a handy way to say: "posts is whatever type getStreams resolves to"
