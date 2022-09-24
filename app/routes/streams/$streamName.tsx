@@ -2,21 +2,38 @@ import type { ActionArgs, LoaderArgs } from "@remix-run/node";
 import type { ActionFunction } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { Form, useActionData, useCatch, useLoaderData } from "@remix-run/react";
+
+import Downshift from "downshift";
 import invariant from "tiny-invariant";
+
 import { TimeAgo } from '~/components/timeago';
-import { addTwitterListToStream, getStreamRecommendedUsers, getStreamTweets, deleteStreamByName, addSeedUserToStream, getUserFromTwitter, getStreamByName, removeSeedUserFromStream, getAllUserLists, updateStreamTweets, updateStreamFollowsNetwork } from "~/models/streams.server";
+import {
+    addTwitterListToStream,
+    getStreamRecommendedUsers,
+    getStreamTweets, deleteStreamByName,
+    addSeedUserToStream,
+    getUserFromTwitter,
+    getStreamByName,
+    removeSeedUserFromStream,
+    getAllUserLists,
+    updateStreamTweets,
+    updateStreamFollowsNetwork
+} from "~/models/streams.server";
+
 import { getUserByUsernameDB, createUserDb } from "~/models/user.server";
 import { getClient, USER_FIELDS, handleTwitterApiError } from '~/twitter.server';
-import Downshift from "downshift";
 
 export async function loader({ request, params }: LoaderArgs) {
     invariant(params.streamName, "streamName not found");
+
     console.time("getStreamByName")
     const { stream, seedUsers } = await getStreamByName(params.streamName)
     console.timeEnd("getStreamByName")
+
     if (!stream) {
         throw new Response("Not Found", { status: 404 });
     }
+
     console.time("getStreamTweets")
     const tweets = await getStreamTweets(stream.properties.name, stream.properties.startTime);
     console.timeEnd("getStreamTweets")
@@ -80,24 +97,22 @@ export const action: ActionFunction = async ({
 }) => {
     // structure from https://egghead.io/lessons/remix-add-delete-functionality-to-posts-page-in-remix, which was from https://github.com/remix-run/remix/discussions/3138
     invariant(params.streamName, "streamName not found");
+
     const formData = await request.formData();
     const intent = formData.get("intent");
+    let seedUserHandle: string = formData.get("seedUserHandle");
 
     if (intent === "delete") {
         let res = await deleteStreamByName(params.streamName);
         return redirect("/streams");
     }
-    let seedUserHandle: string = formData.get("seedUserHandle");
-    console.time("getStreamByName")
-    const { stream, seedUsers } = await getStreamByName(params.streamName);
-    console.timeEnd("getStreamByName")
 
+    const { stream, seedUsers } = await getStreamByName(params.streamName);
     if (!stream) {
         throw new Response("Not Found", { status: 404 });
     }
 
     try {
-
         if (intent === "addSeedUser") {
             let errors: ActionData = {
                 errors: seedUserHandle ? null : "seedUserHandle is required"
@@ -176,14 +191,16 @@ export const action: ActionFunction = async ({
 }
 
 export default function StreamDetailsPage() {
+    
     const data = useLoaderData<typeof loader>();
     const stream = data.stream;
+
     const seedUsers = data.seedUsers;
-    const tweets = data.tweets;
     const numSeedUsersFollowedBy = data.numSeedUsersFollowedBy
+    const recommendedUsers = data.recommendedUsers;
     const userLists = data.userLists;
-    // const getItems = (value: any) => value ? matchSorter(userLists.map((i: any) => i.properties), value, { keys: ['name'] }) : userLists
-    // const getItems = (value: any) => userLists.map((i: any) => i.properties.name)
+    
+    const tweets = data.tweets;
     let annotations = new Set();
     for (const t of tweets) {
         if (t.annotation) {
@@ -191,8 +208,8 @@ export default function StreamDetailsPage() {
         }
     }
     const annotationMap = Array.from(annotations)
-    const recommendedUsers = data.recommendedUsers;
     const actionData = useActionData();
+
     let errors = {};
     if (actionData) {
         errors = actionData.errors;
@@ -201,9 +218,11 @@ export default function StreamDetailsPage() {
     return (
         <div className="flex">
             <div>
-                <h2 className="text-2xl font-bold">{stream.properties.name}</h2>
+                {/*
                 <p>startTime: {stream.properties.startTime}</p>
                 <p>Following Network lastUpdatedAt: {stream.properties.followingLastUpdatedAt}</p>
+                */}
+
                 <div className="flex">
                     <Form
                         method='post'
@@ -367,10 +386,11 @@ export default function StreamDetailsPage() {
                     ))}
                 </ol>
 
+                {/* Recommended Users */}
                 <div>
                     {(recommendedUsers.length > 0) && (
                         <div>
-                            <h2 className="text-2xl">Showing {recommendedUsers.length} recommended users, follwed by at least {numSeedUsersFollowedBy} seed users</h2>
+                            <h2>Showing {recommendedUsers.length} recommended users, follwed by at least {numSeedUsersFollowedBy} seed users</h2>
                             <ol>
                                 {recommendedUsers.map((user: any) => (
                                     <li className="flex" key={user.properties.username}>
@@ -379,7 +399,6 @@ export default function StreamDetailsPage() {
                                             method='post'
                                             className='my-2 py-2 my-auto flex'
                                         >
-
                                             <input
                                                 type='hidden'
                                                 value={user.properties.username}
