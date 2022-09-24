@@ -1,20 +1,31 @@
 import { redirect, json } from "@remix-run/node";
 import type { LoaderArgs } from "@remix-run/node";
-import BirdIcon from '~/icons/bird';
+
 import type { Session } from '@remix-run/node';
 import { Form, useActionData, Link, NavLink, Outlet, useLoaderData } from "@remix-run/react";
+import type { LoaderFunction } from '@remix-run/node';
+import { TwitterApi } from 'twitter-api-v2';
+import { TwitterApiRateLimitPlugin } from '@twitter-api-v2/plugin-rate-limit';
+
 import { prisma } from "~/db.server";
 import { log } from '~/log.server';
-import type { LoaderFunction } from '@remix-run/node';
 import { commitSession, getSession } from '~/session.server';
-import { TwitterApi } from 'twitter-api-v2';
 import { getUserTwitterLists } from "~/twitter.server";
 import { flattenTwitterUserPublicMetrics } from "~/models/user.server";
-import { TwitterApiRateLimitPlugin } from '@twitter-api-v2/plugin-rate-limit';
 import { TwitterApiRateLimitDBStore } from '~/limit.server';
 import { getClient, USER_FIELDS } from '~/twitter.server';
 import type { ListV2 } from 'twitter-api-v2';
-import { getStreams, addUserOwnedLists, addUserFollowedLists } from "~/models/streams.server";
+import {
+    getStreams,
+    getAllStreams,
+    addUserOwnedLists,
+    addUserFollowedLists
+} from "~/models/streams.server";
+
+import BirdIcon from '~/icons/bird';
+import StreamAccordion from '~/components/StreamAccordion';
+import { Stream } from "stream";
+
 
 type LoaderData = {
     // this is a handy way to say: "posts is whatever type getStreams resolves to"
@@ -44,16 +55,22 @@ function flattenTwitterData(data: Array<any>) {
 
 // export async function loader({ request }: LoaderArgs) {
 export const loader: LoaderFunction = async ({ request }: LoaderArgs) => {
-    let streams = await getStreams();
+    let allStreams = await getAllStreams();
+
     let user = null;
+    let userLists = { followedLists: [] as ListV2[], ownedLists: [] as ListV2[] }
+
+
     const url = new URL(request.url);
     const redirectURI: string = process.env.REDIRECT_URI as string;
     const stateId = url.searchParams.get('state');
     const code = url.searchParams.get('code');
+
     let session = await getSession(request.headers.get('Cookie'));
     let uid = getUserIdFromSession(session);
     console.log(`UID = ${uid}`);
-    let userLists = { followedLists: [] as ListV2[], ownedLists: [] as ListV2[] }
+
+
 
     if (process.env.test) {
         const { api, uid, session } = await getClient(request);
@@ -125,7 +142,7 @@ export const loader: LoaderFunction = async ({ request }: LoaderArgs) => {
     const headers = { 'Set-Cookie': await commitSession(session) };
     return json<LoaderData>(
         {
-            streams: streams,
+            streams: allStreams,
             user: user,
         },
         { headers }
@@ -136,69 +153,46 @@ export default function StreamsPage() {
     const data = useLoaderData<LoaderData>();
     const streams = data.streams;
     const user = data.user;
+
     const errors = useActionData();
+
     return (
         <div className="flex h-full min-h-screen flex-col">
-            <header className="flex items-center justify-between bg-slate-800 p-4 text-white">
-                <h1 className="text-3xl font-bold">
-                    <Link to=".">Streams</Link>
-                </h1>
-                <p>Build Tweetscape Streams!</p>
-                {
-                    user && (
-                        <Form action="/logout" method="post" className='hover:bg-blue-500 active:bg-blue-600 mr-1.5 flex truncate items-center text-white text-xs bg-sky-800 rounded px-2 h-6'>
-                            <BirdIcon className='shrink-0 w-3.5 h-3.5 mr-1 fill-white' />
-                            <button
-                                type="submit"
-                                className="rounded py-2 px-4 text-blue-100"
-                            >
-                                Logout {user.username}
-                            </button>
-                        </Form>
-                    )
-                }
-                {!user && (
-                    <div className="flex">
-                        <Link
-                            className='hover:bg-blue-500 active:bg-blue-600 mr-1.5 flex truncate items-center text-white text-xs bg-sky-500 rounded px-2 h-6'
-                            to='/oauth'
-                        >
-                            <BirdIcon className='shrink-0 w-3.5 h-3.5 mr-1 fill-white' />
-                            <span>Login with Twitter</span>
-                        </Link>
-                    </div>
-                )}
-            </header>
-
             <main className="flex h-full bg-white">
-                <div className="h-full w-80 border-r bg-gray-50">
+                <div className="h-full border-r bg-gray-50">
+                    <div className="flex items-center justify-between p-4">
+                        {user ?
+                            <Form action="/logout" method="post" className='hover:bg-blue-500 active:bg-blue-600 mr-1.5 flex truncate items-center text-white text-xs bg-sky-800 rounded px-2 h-6'>
+                                <BirdIcon className='shrink-0 w-3.5 h-3.5 mr-1 fill-white' />
+                                <button
+                                    type="submit"
+                                    className="rounded py-2 px-4 text-blue-100"
+                                >
+                                    Logout {user.username}
+                                </button>
+                            </Form>
+                            :
+                            <Link
+                                className='hover:bg-blue-500 active:bg-blue-600 mr-1.5 flex truncate items-center text-white text-xs bg-sky-500 rounded px-2 h-6'
+                                to='/oauth'
+                            >
+                                <BirdIcon className='shrink-0 w-3.5 h-3.5 mr-1 fill-white' />
+                                <span>Login with Twitter</span>
+                            </Link>
+                        }
+                    </div>
+
                     <Link to="/streams" className="block p-4 text-xl text-blue-500">
-                        + New Stream
+                        + Create a Stream
                     </Link>
 
-                    <hr />
+                    <div>
+                        <StreamAccordion streams={streams} />
+                    </div>
 
-                    {streams.length === 0 ? (
-                        <p className="p-4">No streams yet</p>
-                    ) : (
-                        <ol>
-                            {streams.map((stream: any) => (
-                                <li key={stream.properties.name}>
-                                    <NavLink
-                                        className={({ isActive }) =>
-                                            `block border-b p-4 text-xl ${isActive ? "bg-white" : ""}`
-                                        }
-                                        to={stream.properties.name}
-                                    >
-                                        📝 {stream.properties.name}
-                                    </NavLink>
-                                </li>
-                            ))}
-                        </ol>
-                    )}
                 </div>
 
-
+                {/* Outlet for Stream Details and Feed (/$streamName) */}
                 <Outlet />
             </main>
         </div>
