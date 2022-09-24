@@ -33,6 +33,9 @@
     "/public/build"
   ],
   "dependencies": {
+    "@emotion/react": "^11.10.4",
+    "@emotion/styled": "^11.10.4",
+    "@mui/material": "^5.10.6",
     "@prisma/client": "^4.2.1",
     "@remix-run/express": "^1.7.0",
     "@remix-run/node": "^1.7.0",
