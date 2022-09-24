@@ -24,14 +24,15 @@ import {
 
 import BirdIcon from '~/icons/bird';
 import StreamAccordion from '~/components/StreamAccordion';
-import { Stream } from "stream";
 
+import {Stream} from "../components/StreamAccordion";
 
 type LoaderData = {
     // this is a handy way to say: "posts is whatever type getStreams resolves to"
     // streams: Awaited<ReturnType<typeof getStreams>>;
-    streams: any
+    streams: Array<Stream>
     user: any
+    lists: any
 }
 
 export function getUserIdFromSession(session: Session) {
@@ -144,15 +145,15 @@ export const loader: LoaderFunction = async ({ request }: LoaderArgs) => {
         {
             streams: allStreams,
             user: user,
+            lists: userLists
         },
         { headers }
     )
 }
 
 export default function StreamsPage() {
-    const data = useLoaderData<LoaderData>();
-    const streams = data.streams;
-    const user = data.user;
+    const {streams, user, lists} = useLoaderData<LoaderData>();
+    
 
     const errors = useActionData();
 
@@ -187,7 +188,7 @@ export default function StreamsPage() {
                     </Link>
 
                     <div>
-                        <StreamAccordion streams={streams} />
+                        <StreamAccordion streams={streams} lists = {lists}  />
                     </div>
 
                 </div>
