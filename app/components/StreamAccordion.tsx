@@ -7,15 +7,17 @@ import { Integer } from 'neo4j-driver';
 import { NavLink, Outlet, useParams } from "@remix-run/react";
 import { useState, useEffect } from 'react';
 
-export type streamProperty = {
-  name: string,
-  startTime: string
-}
+import CompactProfile from './CompactProfile';
+import StreamConfig from './StreamConfig';
+
 
 export type streamNode = {
   identity: Array<Integer>,
   labels: any[],
-  properties: streamProperty,
+  properties: {
+    name: string,
+    startTime: string
+  },
   elementId: string
 }
 
@@ -44,13 +46,14 @@ export type userNode = {
 export type Stream = {
   stream: streamNode;
   seedUsers: Array<userNode>;
+  recommendedUsers: Array<userNode>;
 };
 
 
-function StreamAccordion({ streams }: { streams: Stream[] }) {
-  
+function StreamAccordion({ streams, lists }: { streams: Stream[] }) {
+
   const [outlet, toggleOutlet] = useState(false)
-  const {streamName} = useParams();
+  const { streamName } = useParams();
 
   useEffect(() => {
     console.log(streamName)
@@ -64,9 +67,9 @@ function StreamAccordion({ streams }: { streams: Stream[] }) {
           onChange={(e, expanded) => {
             if (expanded) {
               toggleOutlet(true)
-            } 
+            }
           }}
-          expanded = {stream.stream.properties.name === streamName}
+          expanded={stream.stream.properties.name === streamName}
         >
           <NavLink to={stream.stream.properties.name}>
             <AccordionSummary>
@@ -74,20 +77,19 @@ function StreamAccordion({ streams }: { streams: Stream[] }) {
             </AccordionSummary>
           </NavLink>
 
-          <AccordionDetails className = "overflow-scroll" sx={{ height: '300px' }}>
+          <AccordionDetails className="overflow-scroll" sx={{ height: '300px' }}>
 
-            {outlet && <Outlet />}
+            <StreamConfig userLists={lists} streamName = {streamName}/>
 
             <h1> {stream.seedUsers?.length} Seed Users</h1>
-            {stream.seedUsers.map((user: userNode) => (
-              <div key={user.elementId}>
-                <img src={user.properties.profile_image_url} alt="profile image" />
-                <p>{user.properties.name}</p>
-                <p>{user.properties.username}</p>
-              </div>
+            {stream.seedUsers && stream.seedUsers.map((user: userNode) => (
+              <CompactProfile user = {user} key = {user.elementId}/>
             ))}
 
-            <h1> Recommended Accounts </h1>
+            <h1> {stream.recommendedUsers? stream.recommendedUsers.length : 0} Recommended Accounts </h1>
+            {stream.recommendedUsers && stream.recommendedUsers.map((user: userNode) => (
+              <CompactProfile user = {user} key = {user.elementId}/>
+            ))}
 
           </AccordionDetails>
         </Accordion>

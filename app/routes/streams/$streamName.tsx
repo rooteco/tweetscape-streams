@@ -74,7 +74,6 @@ export async function loader({ request, params }: LoaderArgs) {
     }
     return json({
         "stream": stream,
-        "seedUsers": seedUsers,
         "tweets": tweets,
         "recommendedUsers": recommendedUsersTested,
         "numSeedUsersFollowedBy": numSeedUsersFollowedBy,
@@ -95,6 +94,8 @@ type ActionData =
 export const action: ActionFunction = async ({
     request, params
 }) => {
+    // Responsible for editing the stream
+
     // structure from https://egghead.io/lessons/remix-add-delete-functionality-to-posts-page-in-remix, which was from https://github.com/remix-run/remix/discussions/3138
     invariant(params.streamName, "streamName not found");
 
@@ -190,16 +191,11 @@ export const action: ActionFunction = async ({
     }
 }
 
-export default function StreamDetailsPage() {
-    
-    const data = useLoaderData<typeof loader>();
-    const stream = data.stream;
+export default function Feed() {
+    // responsible for rendering a feed & annotations
 
-    const seedUsers = data.seedUsers;
-    const numSeedUsersFollowedBy = data.numSeedUsersFollowedBy
-    const recommendedUsers = data.recommendedUsers;
-    const userLists = data.userLists;
-    
+    const data = useLoaderData();
+
     const tweets = data.tweets;
     let annotations = new Set();
     for (const t of tweets) {
@@ -215,14 +211,11 @@ export default function StreamDetailsPage() {
         errors = actionData.errors;
         // recommendedUsers = actionData.recommendedUsers;
     }
-    return (
-        <div className="flex">
-            <div>
-                {/*
-                <p>startTime: {stream.properties.startTime}</p>
-                <p>Following Network lastUpdatedAt: {stream.properties.followingLastUpdatedAt}</p>
-                */}
 
+    return (
+        <div className="flex feed">
+            <div className='mx-auto max-h-screen max-w-screen-sm overflow-auto'>
+                <h2 className="text-2xl font-bold">Feed</h2>
                 <div className="flex">
                     <Form
                         method='post'
@@ -251,190 +244,6 @@ export default function StreamDetailsPage() {
                         </button>
                     </Form>
                 </div>
-                <hr className="my-4" />
-                <Form
-                    method='post'
-                    className='sticky top-2 my-8 mx-auto flex max-w-sm'
-                >
-                    <label>
-                        {errors?.seedUserHandle ? (
-                            <em className="text-red-600">{errors.seedUserHandle}</em>
-                        ) : null}
-                        <input
-                            type='text'
-                            name="seedUserHandle"
-                            placeholder='Enter any Twitter handle'
-                            className='flex-1 rounded border-2 border-black px-2 py-1'
-                        />
-                    </label>
-                    <button
-                        type='submit'
-                        className='ml-2 inline-block rounded border-2 border-black bg-black px-2 py-1 text-white'
-                        value="addSeedUser"
-                        name="intent"
-                    >
-                        Add Seed User
-                    </button>
-                </Form>
-
-                <div>
-                    <Downshift
-                        itemToString={item => (item ? item.value : '')}
-                    >
-                        {({
-                            getInputProps,
-                            getItemProps,
-                            getLabelProps,
-                            getMenuProps,
-                            getToggleButtonProps,
-                            isOpen,
-                            inputValue,
-                            highlightedIndex,
-                            selectedItem,
-                        }) => (
-                            <div>
-                                {/* <label {...getLabelProps()}>Import Seed Users From List</label>
-                                <input className="ml-2 inline-block rounded border-2 border-black bg-blue px-2 py-1 text-black" {...getInputProps()} /> */}
-                                <span>Select one of your lists to import all users as seed users</span>
-                                <button
-                                    {...getToggleButtonProps()}
-                                    className='ml-2 inline-block rounded border-2 border-black bg-green-800 px-2 py-1 text-white'
-                                >
-                                    {isOpen ? 'close' : 'open'}
-                                </button>
-                                <ul
-                                    {...getMenuProps({
-                                        style: { maxHeight: 300, overflowY: 'scroll' }
-                                    })}
-                                >
-                                    {isOpen
-                                        ?
-                                        userLists
-                                            .map((item: any, index: number) => (
-                                                <li>
-                                                    <Form
-                                                        method='post'
-                                                        className='top-2 my-8 flex'
-                                                        {...getItemProps({
-                                                            item,
-                                                            key: item.properties.id,
-                                                            index,
-                                                            style: {
-                                                                backgroundColor:
-                                                                    highlightedIndex === item.properties.id ? 'lightgray' : 'white',
-                                                                fontWeight: selectedItem === item.properties.id ? 'bold' : 'normal',
-                                                            },
-                                                            disabled: true,
-                                                        })}
-                                                    >
-                                                        <input
-                                                            type='hidden'
-                                                            name="listId"
-                                                            placeholder='enter list name'
-                                                            className='flex-1 rounded border-2 border-black px-2 py-1'
-                                                            value={item.properties.id}
-                                                        />
-                                                        <button
-                                                            type='submit'
-                                                            className='ml-2 inline-block rounded border-2 border-black bg-blue-600 px-2 py-1 text-white'
-                                                            value="addSeedUsersFromList"
-                                                            name="intent"
-                                                        >
-                                                            Import {item.properties.member_count} seed users from list '{item.properties.name}'
-                                                        </button>
-                                                    </Form>
-                                                </li>
-                                            ))
-                                        : null}
-                                </ul>
-
-
-
-                            </div>
-                        )}
-                    </Downshift>
-                </div>
-
-
-                <h1 className="text-2xl">{seedUsers.length} Seed Users</h1>
-                <ol>
-                    {seedUsers.map((seedUser: any) => (
-                        <li className="flex" key={seedUser.user.properties.id}>
-                            <p className="my-auto">{seedUser.user.properties.username}</p>
-                            <Form
-                                method='post'
-                                className='top-2 my-8 flex'
-                            >
-                                <input
-                                    type='hidden'
-                                    name="seedUserHandle"
-                                    placeholder='Enter any Twitter handle'
-                                    className='flex-1 rounded border-2 border-black px-2 py-1'
-                                    value={seedUser.user.properties.username}
-                                />
-                                <button
-                                    type='submit'
-                                    className='ml-2 inline-block rounded border-2 border-black bg-black px-2 py-1 text-white'
-                                    value="removeSeedUser"
-                                    name="intent"
-                                >
-                                    Remove Seed User
-                                </button>
-                            </Form>
-                            <span>tweets last updated: {seedUser.rel.properties.tweetsLastUpdatedAt}</span>
-                        </li>
-                    ))}
-                </ol>
-
-                {/* Recommended Users */}
-                <div>
-                    {(recommendedUsers.length > 0) && (
-                        <div>
-                            <h2>Showing {recommendedUsers.length} recommended users, follwed by at least {numSeedUsersFollowedBy} seed users</h2>
-                            <ol>
-                                {recommendedUsers.map((user: any) => (
-                                    <li className="flex" key={user.properties.username}>
-                                        <p className="my-auto">{user.properties.username}</p>
-                                        <Form
-                                            method='post'
-                                            className='my-2 py-2 my-auto flex'
-                                        >
-                                            <input
-                                                type='hidden'
-                                                value={user.properties.username}
-                                                name="seedUserHandle"
-                                                placeholder='Enter any Twitter handle'
-                                                className='flex-1 rounded border-2 border-black px-2 py-1'
-                                            />
-                                            <p>{user.properties["public_metrics.followers_count"]}</p>
-                                            <button
-                                                type='submit'
-                                                className='ml-2 inline-block rounded border-2 border-black bg-black px-2 py-1 text-white'
-                                                value="addSeedUser"
-                                                name="intent"
-                                            >
-                                                Add Seed User
-                                            </button>
-                                        </Form>
-                                    </li>
-                                ))}
-                            </ol>
-                        </div>
-                    )}
-                </div>
-                <Form method="post">
-                    <button
-                        type="submit"
-                        className="rounded bg-blue-500  py-2 px-4 text-white hover:bg-blue-600 focus:bg-blue-400"
-                        value="delete"
-                        name="intent"
-                    >
-                        Delete Stream
-                    </button>
-                </Form>
-            </div>
-            <main className='mx-auto max-h-screen max-w-screen-sm overflow-auto'>
-                <h2 className="text-2xl font-bold">Feed</h2>
                 <hr className="my-4" />
                 <p>Tags included in this feed (turn this into a filter)</p>
                 <ol>
@@ -503,7 +312,7 @@ export default function StreamDetailsPage() {
                             </article>
                         </div>
                     ))}
-            </main>
+            </div>
         </div>
     );
 }
