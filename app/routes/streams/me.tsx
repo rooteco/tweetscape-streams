@@ -5,13 +5,10 @@ import { Form, Link, NavLink, Outlet, useLoaderData } from "@remix-run/react";
 import invariant from "tiny-invariant";
 import { getClient, USER_FIELDS } from '~/twitter.server';
 import { getUserContextAnnotationFrequency, getStreamsUserIn, getUserIndexedTweets } from '~/models/user.server';
+
+// import { D3BarChart, IData } from '~/components/barChart';
+
 import { TweetSearchAllV2Paginator } from "twitter-api-v2";
-
-
-// type LoaderData = {
-//     // this is a handy way to say: "posts is whatever type getStreams resolves to"
-//     tweet: Awaited<ReturnType<typeof getTweet>>;
-// }
 
 
 export async function loader({ request, params }: LoaderArgs) {
@@ -47,7 +44,7 @@ export default function StreamsPage() {
             <br />
             <section>
                 <h2>Top Tags From Your Tweets</h2>
-                <D3BarChart data={data.frequencies.slice(0, 5)} />
+                {/* <D3BarChart data={data.frequencies.slice(0, 5)} /> */}
             </section>
             <pre>{JSON.stringify(user, null, 2)}</pre>
         </div >

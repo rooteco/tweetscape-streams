@@ -89,7 +89,7 @@ export default function NewNotePage() {
                 }
                 {!user && (
                     <div>
-                        <p className="pb-4">Choose a stream from the sidebar to explore, or login with twitter to create your own</p>
+                        <p>Choose a stream from the sidebar to explore, or login with twitter to create your own</p>
                         <div className="flex">
                             <Link
                                 className='hover:bg-blue-500 active:bg-blue-600 w-auto mr-1.5 flex truncate items-center text-white text-xs bg-sky-500 rounded px-2 h-6'
