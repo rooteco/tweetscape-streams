@@ -3,36 +3,51 @@ import { Form } from "@remix-run/react";
 import Downshift from "downshift";
 
 import { Tooltip } from "@mui/material";
+import SearchIcon from '@mui/icons-material/Search';
 import DeleteIcon from '@mui/icons-material/Delete';
+import { ButtonGroup } from '@mui/material';
+import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 
-function StreamConfig({ userLists, streamName }) {
+function StreamConfig({ userLists, streamName}) {
     // Responsible for Stream Management
     // Add seed users from Search or Lists, Delete Stream
 
 
     return (
-        <div>
-            
+        <div className="">
             <Form
                 method='post'
                 action={`/streams/${streamName}`}
-                className="absolute top-0 mt-1 mx-auto flex"
+                className="absolute top-16 w-full mt-1 mx-auto flex z-40"
             >
-                <label>
+                <div className="rounded border-2 border-black">
                     <input
                         type='text'
                         name="seedUserHandle"
                         placeholder='Enter any Twitter handle'
-                        className='flex-1 rounded border-2 border-black px-2 py-1'
+                        className=' px-2 py-1'
                     />
-                </label>
+                    <button
+                        type='submit'
+                        className='ml-2 inline-block rounded border-2 border-black bg-black px-2 py-1 text-white'
+                        value="addSeedUser"
+                        name="intent"
+                    >
+                        <SearchIcon />
+                    </button>
+                </div>
+
+                {/* Delete Stream */}
                 <button
-                    type='submit'
-                    className='ml-2 inline-block rounded border-2 border-black bg-black px-2 py-1 text-white'
-                    value="addSeedUser"
+                    type="submit"
+                    className="rounded bg-blue-500  py-2 px-4 text-white hover:bg-blue-600 focus:bg-blue-400"
+                    value="delete"
                     name="intent"
                 >
-                    Add Seed User
+                    <Tooltip title="Delete Stream">
+                        <DeleteIcon />
+                    </Tooltip>
+
                 </button>
             </Form>
 
@@ -111,24 +126,6 @@ function StreamConfig({ userLists, streamName }) {
                     )}
                 </Downshift>
             </div>
-
-            {/* Delete Stream */}
-            <Form
-                method="post"
-                action={`/streams/${streamName}`}
-            >
-                <button
-                    type="submit"
-                    className="rounded bg-blue-500  py-2 px-4 text-white hover:bg-blue-600 focus:bg-blue-400"
-                    value="delete"
-                    name="intent"
-                >
-                    <Tooltip title="Delete Stream">
-                        <DeleteIcon />
-                    </Tooltip>
-                    
-                </button>
-            </Form>
 
 
             {/*

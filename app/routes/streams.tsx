@@ -167,47 +167,53 @@ export default function StreamsPage() {
     return (
         <div className="max-h-screen h-screen flex flex-row-reverse bg-white">
 
-            <div className="flex-grow max-w-md max-h-min">
+            <div className="flex-grow max-w-md max-h-min bg-gray-50">
                 {/* Outlet for Stream Details and Feed (/$streamName) */}
-                <Outlet />
+                <div className="m-20"> 
+                    
+                    <Outlet />
+                </div>
             </div>
 
-            <div className="flex flex-col border-r bg-gray-20 space-y-20 ml-48 w-80 px-2 py-1.5">
+            <div className="flex flex-col border-r space-y-20 w-96 px-2 py-1.5">
                 {/* Create A Stream and Login/Logout */}
-                <div className="w-3/5 flex flex-col space-y-1">
-                    <Link to="/streams" className="block px-2 py-6  text-center rounded-xl text-xl text-blue-500 hover:bg-slate-400 bg-slate-300">
-                        <span> + </span>
-                        <p> Create a Stream </p>
-                    </Link>
-                    <div className="flex flex-row grow">
-                        {user ?
-                            <Form action="/logout" method="post" className='hover:bg-blue-500 active:bg-blue-600 flex truncate items-center text-white text-xs bg-sky-800 rounded-full px-4 h-8'>
-                                <BirdIcon className='shrink-0 w-3.5 h-3.5 mr-1 fill-white' />
-                                <button
-                                    type="submit"
-                                    className="rounded py-2 px-4 text-blue-100"
+                <div className="flex flex-row space-x-2 w-full ml-2 mt-8">
+                    <div className="w-2/5 flex flex-col space-y-2">
+                        <Link to="/streams" className="block px-2 py-10 rounded-2xl text-xl text-blue-500 hover:bg-slate-300 bg-slate-200">
+                            <p className="text-2xl font-semibold -my-1 text-blue-300 "> Create </p>
+                            <p> a Stream </p>
+                        </Link>
+                        <div className="">
+                            { user ?
+                                <Form action="/logout" method="post" className='hover:bg-blue-500 active:bg-blue-600 flex items-center text-white text-xs bg-sky-800 rounded-full h-8 w-full'>
+                                    <button
+                                        type="submit"
+                                        className="text-blue-100 mx-auto"
+                                    >
+                                    <p>Logout</p>
+                                    </button>
+                                </Form>
+                                :
+                                <Link
+                                    className='hover:bg-blue-500 mx-auto active:bg-blue-600 flex truncate items-center text-white text-xs bg-sky-500 rounded-full px-2 h-6'
+                                    to='/oauth'
                                 >
-                                    Logout {user.username}
-                                </button>
-                            </Form>
-                            :
-                            <Link
-                                className='hover:bg-blue-500 active:bg-blue-600 flex truncate items-center text-white text-xs bg-sky-500 rounded px-2 h-6'
-                                to='/oauth'
-                            >
-                                <BirdIcon className='shrink-0 w-3.5 h-3.5 mr-1 fill-white' />
-                                <span>Login with Twitter</span>
-                            </Link>
-                        }
+                                    <span>Login</span>
+                                </Link>
+                            }
+                        </div>
                     </div>
-
+                    <div className="justify-center align-middle">
+                        <p className="text-2xl justify-center align-middle">Stream</p>
+                        <p className="text-2xl justify-center align-middle">Seeding</p>
+                    </div>
                 </div>
 
                 {/* List of Streams */}
                 <div className="flex flex-col space-y-0.5 grow">
-                    <p className = "ml-2 text-xs"> Private Streams </p>
-                    <div className="bg-gray-100 p-0.5 grow max-h-full rounded">
-                        <StreamAccordion streams={streams} lists={lists}/>
+                    <p className = "ml-2 text-xs"> {user? `@${user.username}'s` : "Public"} Streams </p>
+                    <div className="bg-gray-100 p-1 grow rounded overflow-auto">
+                        <StreamAccordion streams={streams} lists={lists} />
                     </div>
                 </div>
 

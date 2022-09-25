@@ -3,18 +3,27 @@ import React from 'react'
 
 import { userNode } from './StreamAccordion'
 
+import AddIcon from '@mui/icons-material/Add';
+import RemoveIcon from '@mui/icons-material/Remove';
+
 function CompactProfile({ user, isSeed, streamName }: { user: userNode, isSeed: boolean, streamName: string }) {
     // Renders a Seed/Recommended user profile, with a button to add/remove from the stream
     return (
-        <div>
-            <img src={user.properties.profile_image_url} alt="profile image" />
-            <p>{user.properties.name}</p>
-            <p>{user.properties.username}</p>
-            <p>{user.properties['public_metrics.followers_count']} Followers </p>
+        <div className='relative flex items-center space-x-2 rounded-md bg-white p-2'>
+            <img 
+                src={user.properties.profile_image_url} 
+                alt="profile image"
+                className="rounded-full w-8 h-8" />
+            
+            <div className='flex flex-col shrink'>
+                <p className='text-sm font-medium'>{user.properties.name}</p>
+                <p className='text-xs'>{user.properties['public_metrics.followers_count']} Followers </p>
+            </div>
 
             <Form
                 method='post'
                 action={`/streams/${streamName}`}
+                className="absolute right-4"
             >
                 <input
                     type='hidden'
@@ -25,8 +34,9 @@ function CompactProfile({ user, isSeed, streamName }: { user: userNode, isSeed: 
                     type='submit'
                     name="intent"
                     value={isSeed ? "addSeedUser" : "removeSeedUser"}
+                    className = "hover:bg-slate-200 rounded-full h-8 w-8 flex items-center justify-center"
                 >
-                    {isSeed ? "Add as Seed" : "Remove Seed User"}
+                    {isSeed ? <AddIcon fontSize='small'/> : <RemoveIcon fontSize='small'/>}
                 </button>
             </Form>
 
