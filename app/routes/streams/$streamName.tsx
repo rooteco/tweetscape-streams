@@ -4,7 +4,9 @@ import { json, redirect } from "@remix-run/node";
 import { Form, useActionData, useCatch, useLoaderData } from "@remix-run/react";
 
 import Downshift from "downshift";
+import { useEffect } from "react";
 import invariant from "tiny-invariant";
+
 
 import { TimeAgo } from '~/components/timeago';
 import {
@@ -23,7 +25,16 @@ import {
 import { getUserByUsernameDB, createUserDb } from "~/models/user.server";
 import { getClient, USER_FIELDS, handleTwitterApiError } from '~/twitter.server';
 
+import { Tooltip } from "@mui/material";
+
+import HubIcon from '@mui/icons-material/Hub';
+import UpdateIcon from '@mui/icons-material/Update';
+
+
 export async function loader({ request, params }: LoaderArgs) {
+    // TODO: refactor to get only tweets and annotations
+    // TODO: move lists and recommended users logic to /streams
+
     invariant(params.streamName, "streamName not found");
 
     console.time("getStreamByName")
@@ -43,6 +54,7 @@ export async function loader({ request, params }: LoaderArgs) {
     // Getting Recommended Users
     // The getStreamRecommendedUsers returns a list of nodes, and a count of the number of seed users those accounts as followed by
     // This makes sure that we check all the way down to 2 overlapping seed users to make sure recommendations are provided
+    /* 
     let recommendedUsers = [];
     if (seedUsers.length > 1) {
         recommendedUsers = await getStreamRecommendedUsers(stream.properties.name)
@@ -59,8 +71,9 @@ export async function loader({ request, params }: LoaderArgs) {
                     recommendedUsersTested.push(row.item)
                 }
             })
-            console.log(`found ${recommendedUsersTested.length} users followed by ${numSeedUsersFollowedBy} users`)
+            // console.log(`found ${recommendedUsersTested.length} users followed by ${numSeedUsersFollowedBy} users`)
         }
+    
     }
 
     recommendedUsersTested.sort((a, b) => a.properties['public_metrics.followers_count'] - b.properties['public_metrics.followers_count'])
@@ -72,12 +85,14 @@ export async function loader({ request, params }: LoaderArgs) {
         const meData = await api.v2.me({ "user.fields": USER_FIELDS });
         userLists = await getAllUserLists(meData.data.username)
     }
+    */
+
     return json({
         "stream": stream,
         "tweets": tweets,
-        "recommendedUsers": recommendedUsersTested,
-        "numSeedUsersFollowedBy": numSeedUsersFollowedBy,
-        "userLists": userLists
+        // "recommendedUsers": recommendedUsersTested,
+        // "numSeedUsersFollowedBy": numSeedUsersFollowedBy,
+        // "userLists": userLists
     });
 }
 
@@ -192,11 +207,10 @@ export const action: ActionFunction = async ({
 }
 
 export default function Feed() {
-    // responsible for rendering a feed & annotations
+    // Responsible for rendering a feed & annotations
 
-    const data = useLoaderData();
+    const { tweets, stream } = useLoaderData();
 
-    const tweets = data.tweets;
     let annotations = new Set();
     for (const t of tweets) {
         if (t.annotation) {
@@ -213,45 +227,53 @@ export default function Feed() {
     }
 
     return (
-        <div className="flex feed">
-            <div className='mx-auto max-h-screen max-w-screen-sm overflow-auto'>
-                <h2 className="text-2xl font-bold">Feed</h2>
-                <div className="flex">
-                    {/* DEV: Update Stream Tweets / Stream Follower Network */}
-                    <Form
-                        method='post'
-                        className='sticky top-2 my-8 mx-auto flex max-w-sm'
-                    >
-                        <button
-                            type='submit'
-                            className='ml-2 inline-block rounded border-2 border-black bg-green-300 px-2 py-1 text-white'
-                            value="updateStreamTweets"
-                            name="intent"
+        <div className="">
+            <div className='max-h-screen max-w-screen-sm overflow-auto'>
+                <div className="absolute top-0 backdrop-blur-xl p-0.1 m-1.5 rounded-xl">
+                    <div className="flex flex-row space-x-2 justify-between m-2 p-3 bg-slate-50 rounded-lg">
+                        <p className="text-xl font-bold">{stream.properties.name}</p>
+                        {/* DEV: Update Stream Tweets / Stream Follower Network */}
+                        <Form
+                            method='post'
                         >
-                            Update Stream Tweets
-                        </button>
-                    </Form>
-                    <Form
-                        method='post'
-                        className='sticky top-2 my-8 mx-auto flex max-w-sm'
-                    >
-                        <button
-                            type='submit'
-                            className='ml-2 inline-block rounded border-2 border-black bg-green-300 px-2 py-1 text-white'
-                            value="updateStreamFollowsNetwork"
-                            name="intent"
+                            <button
+                                type='submit'
+                                className='inline-block rounded border-2 border-black bg-green-300 px-2 py-1 text-white text-xs'
+                                value="updateStreamTweets"
+                                name="intent"
+                            >
+                                <Tooltip title = "Update Stream Tweets">
+                                    <UpdateIcon fontSize="small"/>
+                                </Tooltip>
+                                
+                            </button>
+                        </Form>
+                        <Form
+                            method='post'
                         >
-                            Update Stream Follower Network
-                        </button>
-                    </Form>
+                            <button
+                                type='submit'
+                                className='ml-2 inline-block rounded border-2 border-black bg-green-300 px-2 py-1 text-white text-xs'
+                                value="updateStreamFollowsNetwork"
+                                name="intent"
+                            >
+                                <Tooltip title = "Update Stream Follower">
+                                    <HubIcon fontSize="small"/>
+                                </Tooltip>
+                            </button>
+                        </Form>
+                    </div>
+
+                    <div className="flex flex-row hidden">
+                        <p>Tags</p>
+                        <ol>
+                            {annotationMap.map((annotation: string) => (
+                                <li key={annotation}>{annotation}</li>
+                            ))}
+                        </ol>
+                    </div>
                 </div>
-                <hr className="my-4" />
-                <p>Tags included in this feed (turn this into a filter)</p>
-                <ol>
-                    {annotationMap.map((annotation: string) => (
-                        <li key={annotation}>{annotation}</li>
-                    ))}
-                </ol>
+
                 {tweets
                     .sort(
                         (a: any, b: any) =>
@@ -259,7 +281,7 @@ export default function Feed() {
                             new Date(a.tweet.created_at as string).valueOf()
                     )
                     .map((tweet: any) => (
-                        <div className='mx-2 my-6 flex' key={tweet.tweet.properties.id}>
+                        <div className='mx-2 my-6 flex border-gray-700' key={tweet.tweet.properties.id}>
                             <img
                                 className='h-12 w-12 rounded-full border border-gray-300 bg-gray-100'
                                 alt=''
