@@ -3,9 +3,14 @@ import AccordionSummary from '@mui/material/AccordionSummary';
 import AccordionDetails from '@mui/material/AccordionDetails';
 import Typography from '@mui/material/Typography';
 
+import { makeStyles } from '@material-ui/styles';
+
 import { Integer } from 'neo4j-driver';
 import { NavLink, Outlet, useParams } from "@remix-run/react";
+
+import { redirect } from '@remix-run/server-runtime';
 import { useState, useEffect } from 'react';
+
 
 import CompactProfile from './CompactProfile';
 import StreamConfig from './StreamConfig';
@@ -49,51 +54,66 @@ export type Stream = {
   recommendedUsers: Array<userNode>;
 };
 
+const useStyles = makeStyles((theme) => ({
+  root: {
+    width: "100%",
+    height: "100%",
+    background: "transparent",
+    color: "transparent",
+    flexGrow: 0
+  },
+  rootExpanded: {
+    background: "transparent",
+    height: "100%",
+    flexGrow: 1
+  }
+}));
 
 function StreamAccordion({ streams, lists }: { streams: Stream[] }) {
 
-  const [outlet, toggleOutlet] = useState(false)
-  const { streamName } = useParams();
+  // TODO: onOpen redirect to $streamName
+  // TODO: perf should be much better when folding/unfolding streams
 
-  useEffect(() => {
-    console.log(lists)
-  }, [lists])
+  const { streamName } = useParams();
+  const classes = useStyles();
 
   return (
-    <div>
-      {streams.map((stream: Stream) => (
-        <Accordion
-          key={stream.stream.elementId}
-          onChange={(e, expanded) => {
-            if (expanded) {
-              toggleOutlet(true)
-            }
-          }}
-          expanded={stream.stream.properties.name === streamName}
-        >
-          <NavLink to={stream.stream.properties.name}>
-            <AccordionSummary>
-              <Typography>{stream.stream.properties.name}</Typography>
-            </AccordionSummary>
-          </NavLink>
+    <div className='h-full'>
+      {streams.map((stream: Stream) => {
 
-          <AccordionDetails className="overflow-scroll" sx={{ height: '300px' }}>
+        const expanded = stream.stream.properties.name === streamName;
+        const baseClass = expanded ? classes.rootExpanded : classes.root;
 
-            <StreamConfig userLists={lists} streamName = {streamName}/>
+        return (
+          <Accordion
+            className= {baseClass}
+            elevation={0}
+            key={stream.stream.elementId}
+            expanded={expanded}
+          >
+            <NavLink to={stream.stream.properties.name}>
+              <AccordionSummary>
+                <Typography>{stream.stream.properties.name}</Typography>
+              </AccordionSummary>
+            </NavLink>
 
-            <h1> {stream.seedUsers?.length} Seed Users</h1>
-            {stream.seedUsers && stream.seedUsers.map((user: userNode) => (
-              <CompactProfile user = {user} key = {user.elementId} streamName = {streamName} />
-            ))}
+            <AccordionDetails className="bg-transparent">
+              <StreamConfig userLists={lists} streamName={streamName} />
 
-            <h1> {stream.recommendedUsers? stream.recommendedUsers.length : 0} Recommended Accounts </h1>
-            {stream.recommendedUsers && stream.recommendedUsers.map((user: userNode) => (
-              <CompactProfile user = {user} key = {user.elementId} streamName = {streamName} />
-            ))}
+              <h1> {stream.seedUsers?.length} Seed Users</h1>
+              {stream.seedUsers && stream.seedUsers.map((user: userNode) => (
+                <CompactProfile user={user} key={user.elementId} streamName={streamName} />
+              ))}
 
-          </AccordionDetails>
-        </Accordion>
-      ))}
+              <h1> {stream.recommendedUsers ? stream.recommendedUsers.length : 0} Recommended Accounts </h1>
+              {stream.recommendedUsers && stream.recommendedUsers.map((user: userNode) => (
+                <CompactProfile user={user} key={user.elementId} streamName={streamName} />
+              ))}
+
+            </AccordionDetails>
+          </Accordion>
+        )
+      })}
     </div>
   )
 }
