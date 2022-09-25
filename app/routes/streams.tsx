@@ -25,8 +25,9 @@ import {
 import BirdIcon from '~/icons/bird';
 import StreamAccordion from '~/components/StreamAccordion';
 
-import {Stream} from "../components/StreamAccordion";
+import { Stream } from "../components/StreamAccordion";
 import { couldStartTrivia } from "typescript";
+import { useEffect } from "react";
 
 type LoaderData = {
     // this is a handy way to say: "posts is whatever type getStreams resolves to"
@@ -153,18 +154,34 @@ export const loader: LoaderFunction = async ({ request }: LoaderArgs) => {
 }
 
 export default function StreamsPage() {
-    const {streams, user, lists} = useLoaderData<LoaderData>();
-    
+    const { streams, user, lists } = useLoaderData<LoaderData>();
+
+    useEffect(() => {
+        console.log("user: ", user)
+        console.log("lists: ", lists)
+    })
+
 
     const errors = useActionData();
 
     return (
-        <div className="flex h-full min-h-screen flex-col">
-            <main className="flex h-full bg-white">
-                <div className="h-full border-r bg-gray-50">
-                    <div className="flex items-center justify-between p-4">
+        <div className="max-h-screen h-screen flex flex-row-reverse bg-white">
+
+            <div className="flex-grow max-w-md max-h-min">
+                {/* Outlet for Stream Details and Feed (/$streamName) */}
+                <Outlet />
+            </div>
+
+            <div className="flex flex-col border-r bg-gray-20 space-y-20 ml-48 w-80 px-2 py-1.5">
+                {/* Create A Stream and Login/Logout */}
+                <div className="w-3/5 flex flex-col space-y-1">
+                    <Link to="/streams" className="block px-2 py-6  text-center rounded-xl text-xl text-blue-500 hover:bg-slate-400 bg-slate-300">
+                        <span> + </span>
+                        <p> Create a Stream </p>
+                    </Link>
+                    <div className="flex flex-row grow">
                         {user ?
-                            <Form action="/logout" method="post" className='hover:bg-blue-500 active:bg-blue-600 mr-1.5 flex truncate items-center text-white text-xs bg-sky-800 rounded px-2 h-6'>
+                            <Form action="/logout" method="post" className='hover:bg-blue-500 active:bg-blue-600 flex truncate items-center text-white text-xs bg-sky-800 rounded-full px-4 h-8'>
                                 <BirdIcon className='shrink-0 w-3.5 h-3.5 mr-1 fill-white' />
                                 <button
                                     type="submit"
@@ -175,7 +192,7 @@ export default function StreamsPage() {
                             </Form>
                             :
                             <Link
-                                className='hover:bg-blue-500 active:bg-blue-600 mr-1.5 flex truncate items-center text-white text-xs bg-sky-500 rounded px-2 h-6'
+                                className='hover:bg-blue-500 active:bg-blue-600 flex truncate items-center text-white text-xs bg-sky-500 rounded px-2 h-6'
                                 to='/oauth'
                             >
                                 <BirdIcon className='shrink-0 w-3.5 h-3.5 mr-1 fill-white' />
@@ -184,19 +201,17 @@ export default function StreamsPage() {
                         }
                     </div>
 
-                    <Link to="/streams" className="block p-4 text-xl text-blue-500">
-                        + Create a Stream
-                    </Link>
-
-                    <div>
-                        <StreamAccordion streams={streams} lists = {lists}  />
-                    </div>
-
                 </div>
 
-                {/* Outlet for Stream Details and Feed (/$streamName) */}
-                <Outlet />
-            </main>
+                {/* List of Streams */}
+                <div className="flex flex-col space-y-0.5 grow">
+                    <p className = "ml-2 text-xs"> Private Streams </p>
+                    <div className="bg-gray-100 p-0.5 grow max-h-full rounded">
+                        <StreamAccordion streams={streams} lists={lists}/>
+                    </div>
+                </div>
+
+            </div>
         </div>
     );
 }

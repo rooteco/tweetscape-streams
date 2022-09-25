@@ -2,24 +2,21 @@
 import { Form } from "@remix-run/react";
 import Downshift from "downshift";
 
+import { Tooltip } from "@mui/material";
+import DeleteIcon from '@mui/icons-material/Delete';
+
 function StreamConfig({ userLists, streamName }) {
     // Responsible for Stream Management
     // Add seed users from Search or Lists, Delete Stream
 
-    let errors = false;
 
     return (
         <div>
-            {/*
-                <p>startTime: {stream.properties.startTime}</p>
-                <p>Following Network lastUpdatedAt: {stream.properties.followingLastUpdatedAt}</p>
-                */}
-
-            {/* Search for Seed Users */}
+            
             <Form
                 method='post'
                 action={`/streams/${streamName}`}
-                className='sticky top-0 my-8 mx-auto flex max-w-sm'
+                className="absolute top-0 mt-1 mx-auto flex"
             >
                 <label>
                     <input
@@ -58,7 +55,7 @@ function StreamConfig({ userLists, streamName }) {
                         <div>
                             {/* <label {...getLabelProps()}>Import Seed Users From List</label>
                                 <input className="ml-2 inline-block rounded border-2 border-black bg-blue px-2 py-1 text-black" {...getInputProps()} /> */}
-                            <span>Select one of your lists to import all users as seed users</span>
+                            <span>Lists</span>
                             <button
                                 {...getToggleButtonProps()}
                                 className='ml-2 inline-block rounded border-2 border-black bg-green-800 px-2 py-1 text-white'
@@ -70,8 +67,7 @@ function StreamConfig({ userLists, streamName }) {
                                     style: { maxHeight: 300, overflowY: 'scroll' }
                                 })}
                             >
-                                {isOpen
-                                    ?
+                                {isOpen &&
                                     userLists
                                         .map((item: any, index: number) => (
                                             <li>
@@ -109,7 +105,7 @@ function StreamConfig({ userLists, streamName }) {
                                                 </Form>
                                             </li>
                                         ))
-                                    : null}
+                                }
                             </ul>
                         </div>
                     )}
@@ -127,9 +123,20 @@ function StreamConfig({ userLists, streamName }) {
                     value="delete"
                     name="intent"
                 >
-                    Delete Stream
+                    <Tooltip title="Delete Stream">
+                        <DeleteIcon />
+                    </Tooltip>
+                    
                 </button>
             </Form>
+
+
+            {/*
+                <p>startTime: {stream.properties.startTime}</p>
+                <p>Following Network lastUpdatedAt: {stream.properties.followingLastUpdatedAt}</p>
+                */}
+
+            {/* Search for Seed Users */}
         </div>
     )
 }
