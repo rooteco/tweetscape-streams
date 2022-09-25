@@ -6,7 +6,7 @@ import Typography from '@mui/material/Typography';
 import { makeStyles } from '@material-ui/styles';
 
 import { Integer } from 'neo4j-driver';
-import { NavLink, Outlet, useParams } from "@remix-run/react";
+import { NavLink, Link, Outlet, useParams } from "@remix-run/react";
 
 import { redirect } from '@remix-run/server-runtime';
 import { useState, useEffect } from 'react';
@@ -57,14 +57,12 @@ export type Stream = {
 const useStyles = makeStyles((theme) => ({
   root: {
     width: "100%",
-    height: "100%",
-    background: "transparent",
-    color: "transparent",
+    background: "white",
+    color: "black",
     flexGrow: 0
   },
   rootExpanded: {
     background: "transparent",
-    height: "100%",
     flexGrow: 1
   }
 }));
@@ -78,7 +76,7 @@ function StreamAccordion({ streams, lists }: { streams: Stream[] }) {
   const classes = useStyles();
 
   return (
-    <div className='h-full'>
+    <div className='overflow-auto'>
       {streams.map((stream: Stream) => {
 
         const expanded = stream.stream.properties.name === streamName;
@@ -86,29 +84,32 @@ function StreamAccordion({ streams, lists }: { streams: Stream[] }) {
 
         return (
           <Accordion
-            className= {baseClass}
+            className= {"bg-transparent"}
             elevation={0}
             key={stream.stream.elementId}
             expanded={expanded}
           >
-            <NavLink to={stream.stream.properties.name}>
+            <Link to={expanded ? "/streams" : stream.stream.properties.name}>
               <AccordionSummary>
                 <Typography>{stream.stream.properties.name}</Typography>
               </AccordionSummary>
-            </NavLink>
+            </Link>
 
-            <AccordionDetails className="bg-transparent">
-              <StreamConfig userLists={lists} streamName={streamName} />
+            <AccordionDetails className="bg-slate-100">
+              <StreamConfig userLists={lists} streamName={streamName}/>
 
               <h1> {stream.seedUsers?.length} Seed Users</h1>
-              {stream.seedUsers && stream.seedUsers.map((user: userNode) => (
-                <CompactProfile user={user} key={user.elementId} streamName={streamName} />
-              ))}
+              <div className='flex flex-col space-y-2'>
+                {stream.seedUsers && stream.seedUsers.map((user: userNode) => (
+                  <CompactProfile user={user} key={user.elementId} streamName={streamName} />
+                  ))}
+              </div>
 
               <h1> {stream.recommendedUsers ? stream.recommendedUsers.length : 0} Recommended Accounts </h1>
               {stream.recommendedUsers && stream.recommendedUsers.map((user: userNode) => (
                 <CompactProfile user={user} key={user.elementId} streamName={streamName} />
-              ))}
+                ))}
+
 
             </AccordionDetails>
           </Accordion>
