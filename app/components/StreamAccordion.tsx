@@ -58,12 +58,12 @@ const useStyles = makeStyles((theme) => ({
   root: {
     width: "100%",
     background: "white",
-    color: "black",
-    flexGrow: 0
+    flexGrow: 0,
+    border: "0px"
   },
   rootExpanded: {
-    background: "transparent",
-    flexGrow: 1
+    background: "white",
+    flexGrow: 1,
   }
 }));
 
@@ -76,7 +76,7 @@ function StreamAccordion({ streams, lists }: { streams: Stream[] }) {
   const classes = useStyles();
 
   return (
-    <div className='overflow-auto'>
+    <div className='overflow-auto h-full'>
       {streams.map((stream: Stream) => {
 
         const expanded = stream.stream.properties.name === streamName;
@@ -84,18 +84,18 @@ function StreamAccordion({ streams, lists }: { streams: Stream[] }) {
 
         return (
           <Accordion
-            className= {"bg-transparent"}
+            className= {baseClass}
             elevation={0}
             key={stream.stream.elementId}
             expanded={expanded}
           >
             <Link to={expanded ? "/streams" : stream.stream.properties.name}>
-              <AccordionSummary>
+              <AccordionSummary className='bg-white'>
                 <Typography>{stream.stream.properties.name}</Typography>
               </AccordionSummary>
             </Link>
 
-            <AccordionDetails className="bg-slate-100">
+            <AccordionDetails className="bg-transparent">
               <StreamConfig userLists={lists} streamName={streamName}/>
 
               <h1> {stream.seedUsers?.length} Seed Users</h1>

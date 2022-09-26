@@ -167,17 +167,17 @@ export default function StreamsPage() {
     return (
         <div className="max-h-screen h-screen flex flex-row-reverse bg-white">
 
-            <div className="flex-grow max-w-md max-h-min bg-gray-50">
+            <div className="flex-1 max-w-lg max-h-min bg-gray-50">
                 {/* Outlet for Stream Details and Feed (/$streamName) */}
-                <div className="m-20"> 
+                <div className="m-16"> 
                     
                     <Outlet />
                 </div>
             </div>
 
-            <div className="flex flex-col border-r space-y-20 w-96 px-2 py-1.5">
+            <div className="flex flex-col border-r space-y-20 w-96 px-2 py-3">
                 {/* Create A Stream and Login/Logout */}
-                <div className="flex flex-row space-x-2 w-full ml-2 mt-8">
+                <div className="flex flex-row space-x-2 w-full ml-2 mt-4">
                     <div className="w-2/5 flex flex-col space-y-2">
                         <Link to="/streams" className="block px-2 py-10 rounded-2xl text-xl text-blue-500 hover:bg-slate-300 bg-slate-200">
                             <p className="text-2xl font-semibold -my-1 text-blue-300 "> Create </p>
@@ -210,9 +210,9 @@ export default function StreamsPage() {
                 </div>
 
                 {/* List of Streams */}
-                <div className="flex flex-col space-y-0.5 grow">
-                    <p className = "ml-2 text-xs"> {user? `@${user.username}'s` : "Public"} Streams </p>
-                    <div className="bg-gray-100 p-1 grow rounded overflow-auto">
+                <div className="flex flex-col space-y-0.5 flex-1">
+                    <p className = "ml-2 text-sm"> {user? `@${user.username}'s` : "Public"} Streams </p>
+                    <div className="bg-slate-100 p-1 grow rounded">
                         <StreamAccordion streams={streams} lists={lists} />
                     </div>
                 </div>
