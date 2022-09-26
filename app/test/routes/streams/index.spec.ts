@@ -4,15 +4,6 @@ import { loader, action } from "~/routes/streams/index";
 const streamName = "TEST-STREAM-in-index"
 
 describe("Check Page", () => {
-    test("Check the loader", async () => {
-        const response: Response = await loader({
-            request: new Request("http://localhost:3000/", { method: "GET" }),
-            params: {},
-            context: {},
-        });
-        expect(response.status).toBe(200)
-    });
-
     test("Create a Stream", async () => {
         const formData = new FormData();
         formData.append("name", streamName)
