@@ -152,7 +152,36 @@ export async function getAllStreams() {
     })
     streams.forEach((row: any) => {
         let streamName = row.stream.properties.name
-        row.recommendedUsers = recUsersMap.get(streamName)
+        let seedUsers = row.seedUsers;
+
+        let recommendedUsers = recUsersMap.get(streamName)
+        if (!recommendedUsers) {
+            recommendedUsers = []
+        }
+
+        let numSeedUsersFollowedBy = seedUsers.length + 1;
+        let recommendedUsersTested: any[] = [];
+
+        console.log("STREAMNAME")
+        console.log(streamName)
+        if (recommendedUsers.length > 0) {
+            while (recommendedUsersTested.length < 5 && numSeedUsersFollowedBy > 1) {
+                recommendedUsersTested = [];
+                numSeedUsersFollowedBy--;
+                recommendedUsers.map((row: any) => {
+                    if (row.count.toInt() >= numSeedUsersFollowedBy) {
+                        recommendedUsersTested.push(row.item)
+                    }
+                })
+                // console.log(`found ${recommendedUsersTested.length} users followed by ${numSeedUsersFollowedBy} users`)
+            }
+
+        }
+
+        recommendedUsersTested.sort((a, b) => a.properties['public_metrics.followers_count'] - b.properties['public_metrics.followers_count'])
+
+
+        row.recommendedUsers = recommendedUsersTested
     })
 
     await session.close()
