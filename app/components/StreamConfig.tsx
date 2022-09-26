@@ -5,10 +5,11 @@ import Downshift from "downshift";
 import { Tooltip } from "@mui/material";
 import SearchIcon from '@mui/icons-material/Search';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { ButtonGroup } from '@mui/material';
+
+import { ButtonGroup, Button } from '@mui/material';
 import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 
-function StreamConfig({ userLists, streamName}) {
+function StreamConfig({ userLists, streamName }) {
     // Responsible for Stream Management
     // Add seed users from Search or Lists, Delete Stream
 
@@ -20,21 +21,29 @@ function StreamConfig({ userLists, streamName}) {
                 action={`/streams/${streamName}`}
                 className="absolute top-16 w-full mt-1 mx-auto flex z-40"
             >
-                <div className="rounded border-2 border-black">
+                <div className="rounded flex border-2 border-black">
                     <input
                         type='text'
                         name="seedUserHandle"
                         placeholder='Enter any Twitter handle'
                         className=' px-2 py-1'
                     />
-                    <button
+                    <ButtonGroup variant="contained" aria-label="outlined primary button group">
+                    <Button
                         type='submit'
-                        className='ml-2 inline-block rounded border-2 border-black bg-black px-2 py-1 text-white'
                         value="addSeedUser"
                         name="intent"
                     >
                         <SearchIcon />
-                    </button>
+                    </Button>
+                    <Button
+                        type='submit'
+                        value="addSeedUser"
+                        name="intent"
+                    >
+                        <ReceiptLongIcon />
+                    </Button>
+                </ButtonGroup>
                 </div>
 
                 {/* Delete Stream */}
