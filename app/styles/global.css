@@ -5,24 +5,41 @@
 
 .MuiAccordion-root {
     margin-bottom: 0.25rem;
-    border: none;
-    border-radius: 1rem;
+    border: none !important;
+    border-radius: 4px !important;
 }
 
-.MuiAccordion-root .MuiAccordionSummary-root .MuiAccordionDetails-root  {
-    border: none;
-    border-radius: 1rem;
+.MuiAccordion-root::before{
+    display: none !important;
+}
+
+.MuiAccordion-root .MuiAccordionSummary-root  {
+    /* Controls summary styling */
     margin: 0;
-    min-height: 32px;
+    min-height: 2.5rem;
+    height: 2.5rem;
+    border: none !important;
+    border-radius: 3rem;
 }
 
 
-.MuiAccordion-root .MuiAccordionSummary-root .Mui-expanded  {
-    border: none;
-    border-color: transparent;
-    border-radius: 1rem;
+.MuiAccordion-root .MuiAccordionDetails-root  {
     margin: 0;
-    min-height: 32px;
+    border-radius: 3rem;
+    border: none !important;
+    
 }
+
+.MuiAccordion-root .Mui-expanded {
+    margin: 0 !important;
+    border-radius: 3rem;
+    border: none !important;
+    
+}
+
+.MuiAccordionDetails-root {
+    border: none !important;
+}
+
 
 html, body {margin: 0; height: 100%; overflow: hidden}
