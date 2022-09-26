@@ -15,7 +15,7 @@ afterAll(async () => {
 })
 
 describe("Run Loader", () => {
-    test("Check the laoded stream", async () => {
+    test("Check the loaded stream", async () => {
         const response: Response = await loader({
             request: new Request(`http://localhost:3000/streams/${streamName}`, { method: "GET" }),
             params: { streamName: streamName },
@@ -29,11 +29,8 @@ describe("Run Loader", () => {
         // TODO: check the lengths and stuff, most should be empty at this point
         expect(data).toHaveProperty("stream")
         expect(data.stream.properties).toHaveProperty("name", streamName)
-        expect(data).toHaveProperty("userLists")
-        expect(data).toHaveProperty("seedUsers")
+        expect(data.stream.properties.name).toBe(streamName)
         expect(data).toHaveProperty("tweets")
-        expect(data).toHaveProperty("recommendedUsers")
-        expect(data).toHaveProperty("numSeedUsersFollowedBy")
     });
 
     test("Add Seed User to stream", async () => {

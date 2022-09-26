@@ -257,14 +257,16 @@ describe("Testing Streams Functions", () => {
 
         const stream2Name = 'stream2TESTING'
         const stream2StartTime = '2022-09-17T15:08:02.484Z'
+        const stream2EndTime = '2022-09-21T15:56:07.000Z'
         let stream2 = await createStream(stream2Name, stream2StartTime, username)
         await addSeedUserToStream(stream2, userDb)
         let { seedUsers: stream2SeedUsers } = await getStreamByName(stream2.properties.name);
-        await updateStreamTweets(api, stream2, stream2SeedUsers.map((u) => u.user))
+        await updateStreamTweets(api, stream2, stream2SeedUsers.map((u) => u.user), stream2EndTime)
 
         checkTweets = await getUserIndexedTweets("nicktorba")
         userDb = await getUserByUsernameDB("nicktorba")
-        expect(userDb.properties.tweetscapeIndexedTweetsEndTime).toBe("2022-09-21T15:56:07.000Z")
+        expect(new Date(userDb.properties.tweetscapeIndexedTweetsEndTime)).greaterThan(new Date("2022-09-21"))
+        expect(new Date(userDb.properties.tweetscapeIndexedTweetsEndTime)).lessThan(new Date("2022-09-22"))
         expect(userDb.properties.tweetscapeIndexedTweetsStartTime).toBe("2022-09-07T17:54:07.000Z")
     }, 36000)
 });
