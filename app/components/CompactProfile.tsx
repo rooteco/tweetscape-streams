@@ -10,7 +10,7 @@ import RemoveIcon from '@mui/icons-material/Remove';
 function CompactProfile({ user, isSeed, streamName }: { user: userNode, isSeed: boolean, streamName: string }) {
     // Renders a Seed/Recommended user profile, with a button to add/remove from the stream
     return (
-        <div className='relative border border-gray-100 shadow-lg flex items-center space-x-2 rounded-md bg-white p-2'>
+        <div className='relative border border-gray-100 shadow-lg flex items-center space-x-2 rounded-lg bg-white p-2'>
             <img 
                 src={user.properties.profile_image_url} 
                 alt="profile image"
