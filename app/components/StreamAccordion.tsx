@@ -81,7 +81,7 @@ function StreamAccordion({ streams, lists }: { streams: Stream[] }) {
   const classes = useStyles();
 
   return (
-    <div className='overflow-auto h-full'>
+    <div className='overflow-y h-full'>
       {streams.map((stream: Stream) => {
 
         const expanded = stream.stream.properties.name === streamName;
@@ -95,10 +95,15 @@ function StreamAccordion({ streams, lists }: { streams: Stream[] }) {
           >
             <Link to={expanded ? "/streams" : stream.stream.properties.name}>
               <AccordionSummary
-                expandIcon={<ArrowForwardIosSharpIcon sx={expanded? { fontSize: '0.8rem', color: '#1D1D1D' } : {fontSize: '0.8rem', color: '#B9BEC4'}} />}
+                expandIcon={<ArrowForwardIosSharpIcon sx={expanded? { fontSize: '0.85rem', color: '#1D1D1D' } : {fontSize: '0.85rem', color: '#B9BEC4'}} />}
               >
-                <p className={expanded? 'font-medium text-gray-700' : 'font-medium text-slate-400'}>{stream.stream.properties.name}</p>
-                <Chip icon = {<div>🌱</div>} size="small" label = {`${stream.seedUsers?.length}`}  />
+                <p 
+                  className={'font-medium'}
+                  style = {expanded? {color: '#1D1D1D'} : {color: '#949DA7'}}
+                >
+                  {stream.stream.properties.name}
+                </p>
+                <Chip icon = {<div>🌱</div>} size="small" label = {`${stream.seedUsers?.length}`}  sx = {{color: "#3f3f3f", backgroundColor: "#f1f1f1"}}/>
               </AccordionSummary>
             </Link>
 

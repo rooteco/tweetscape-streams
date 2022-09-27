@@ -22,7 +22,7 @@ import {
     addUserFollowedLists
 } from "~/models/streams.server";
 
-import BirdIcon from '~/icons/bird';
+import Add from "@mui/icons-material/Add";
 import StreamAccordion from '~/components/StreamAccordion';
 
 import { Stream } from "../components/StreamAccordion";
@@ -167,31 +167,44 @@ export default function StreamsPage() {
     return (
         <div className="max-h-screen h-screen flex flex-row-reverse bg-white">
 
-            <div className="flex-1 px-4 py-2 max-w-lg max-h-min bg-gray-50 z-10">
-                {/* Outlet for Stream Details and Feed (/$streamName) */}    
-                    <Outlet />
+            <div className="flex-1 px-4 py-2 max-w-lg max-h-min bg-fade z-10">
+                {/* Outlet for Stream Details and Feed (/$streamName) */}
+                <Outlet />
             </div>
 
             <div className="relative flex flex-col border-r space-y-16 w-96 pr-6 pb-6">
                 {/* Create A Stream and Login/Logout */}
                 <div className="flex flex-row space-x-2 w-full ml-2 mt-4">
-                    <div className="h-full w-30 h-30flex flex-col space-y-2 z-10">
-                        <Link to="/streams" className="block py-12 px-2 rounded-2xl text-xl text-blue-500 hover:bg-slate-300 bg-slate-200">
-                            <p className="text-sm font-semibold -my-1 text-blue-400 "> Create a Stream </p>
+                    <div className="h-full flex flex-col space-y-2 z-10">
+                        <Link to="/streams" className="button-big py-2 pl-2 pr-8 rounded-2xl text-xl flex space-x-3 items-center" style={{ color: "#439AAF" }}>
+                            <div id = "icon" className="center rounded-full hover:bg-slate-300/50">
+                                <Add sx = {{fontSize: "2.5rem", fontWeight: "bold", opacity: "0.2" }} />
+                            </div>
+                            <div className="">
+                                <p className="text-sm font-regular  -my-1" > Create </p>
+                                <p className="text-sm font-regular" > a Stream </p>
+                            </div>
                         </Link>
-                        <div className="">
-                            { user ?
-                                <Form action="/logout" method="post" className='hover:bg-blue-500 active:bg-blue-600 flex items-center text-white text-xs bg-sky-800 rounded-full h-8 w-full'>
+                        <div className="" >
+                            {user ?
+                                <Form 
+                                    action="/logout" 
+                                    method="post" 
+                                    
+                                >
                                     <button
                                         type="submit"
-                                        className="text-blue-100 mx-auto"
+                                        className= 'pill flex items-center justify-center text-xs rounded-full h-8 w-full'
+                                        style = {{color: "#4173C2"}}
+                                        
                                     >
-                                    <p>Logout</p>
+                                        <p>Logout</p>
                                     </button>
                                 </Form>
                                 :
                                 <Link
-                                    className='hover:bg-blue-500 mx-auto active:bg-blue-600 flex truncate items-center text-white text-xs bg-sky-500 rounded-full px-2 h-6'
+                                    className=' mx-auto pill flex truncate items-center text-white text-xs bg-sky-500 rounded-full px-2 h-6'
+                                    style = {{background: "#E5ECF7", border: "1 solid #D2DCED"}}
                                     to='/oauth'
                                 >
                                     <span>Login</span>
@@ -200,15 +213,15 @@ export default function StreamsPage() {
                         </div>
                     </div>
                     <div className="absolute justify-center align-middle -left-36 top-12 flex flex-col space-y-16 z-0">
-                        <p className="text-xl font-semibold justify-center align-middle text-gray-100" style={{fontSize: 96}}>Stream</p>
-                        <p className="text-xl font-bold justify-center align-middle  text-gray-100" style={{fontSize: 96}}>Seeding</p>
+                        <p className="text-xl font-semibold justify-center align-middle text-gray-100" style={{ fontSize: 96 }}>Stream</p>
+                        <p className="text-xl font-bold justify-center align-middle  text-gray-100" style={{ fontSize: 96 }}>Seeding</p>
                     </div>
                 </div>
 
                 {/* List of Streams */}
-                <div className="flex flex-col space-y-0.5 flex-1">
-                    <p className = "ml-2 text-slate-400 font-normal text-sm"> {user? `@${user.username}'s` : "Public"} Streams </p>
-                    <div className="accordion-container bg-gray-100 border border-gray-200 p-1 grow rounded z-0">
+                <div className="flex flex-col space-y-0.5 flex-1 z-10">
+                    <p className="ml-2 text-slate-400 font-light text-sm"> {user ? `@${user.username}'s` : "Public"} Streams </p>
+                    <div className="accordion-container radial-bg bg-gray-100 border border-gray-200 p-1 grow rounded z-0">
                         <StreamAccordion streams={streams} lists={lists} />
                     </div>
                 </div>
