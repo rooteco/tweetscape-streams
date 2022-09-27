@@ -8,7 +8,6 @@ import { useEffect } from "react";
 import invariant from "tiny-invariant";
 
 
-import { TimeAgo } from '~/components/timeago';
 import {
     addTwitterListToStream,
     getStreamRecommendedUsers,
@@ -29,6 +28,8 @@ import { Tooltip } from "@mui/material";
 
 import HubIcon from '@mui/icons-material/Hub';
 import UpdateIcon from '@mui/icons-material/Update';
+
+import Tweet from '~/components/Tweet';
 
 
 export async function loader({ request, params }: LoaderArgs) {
@@ -227,53 +228,54 @@ export default function Feed() {
     }
 
     return (
-        <div className="">
-            <div className='max-h-screen max-w-screen-sm overflow-auto'>
-                <div className="absolute top-0 backdrop-blur-xl p-0.1 m-1.5 rounded-xl">
-                    <div className="flex flex-row space-x-2 justify-between m-2 p-3 bg-slate-50 rounded-lg">
-                        <p className="text-xl font-bold">{stream.properties.name}</p>
-                        {/* DEV: Update Stream Tweets / Stream Follower Network */}
-                        <Form
-                            method='post'
-                        >
-                            <button
-                                type='submit'
-                                className='inline-block rounded border-2 border-black bg-green-300 px-2 py-1 text-white text-xs'
-                                value="updateStreamTweets"
-                                name="intent"
-                            >
-                                <Tooltip title = "Update Stream Tweets">
-                                    <UpdateIcon fontSize="small"/>
-                                </Tooltip>
-                                
-                            </button>
-                        </Form>
-                        <Form
-                            method='post'
-                        >
-                            <button
-                                type='submit'
-                                className='ml-2 inline-block rounded border-2 border-black bg-green-300 px-2 py-1 text-white text-xs'
-                                value="updateStreamFollowsNetwork"
-                                name="intent"
-                            >
-                                <Tooltip title = "Update Stream Follower">
-                                    <HubIcon fontSize="small"/>
-                                </Tooltip>
-                            </button>
-                        </Form>
-                    </div>
 
-                    <div className="flex flex-row hidden">
-                        <p>Tags</p>
-                        <ol>
-                            {annotationMap.map((annotation: string) => (
-                                <li key={annotation}>{annotation}</li>
-                            ))}
-                        </ol>
-                    </div>
+        <div className='relative max-h-screen max-w-screen-sm overflow-auto'>
+            <div className="sticky top-0 mx-auto backdrop-blur-xl p-0.5 rounded-xl">
+                <div className="flex flex-row space-x-2 justify-between m-2 p-3 bg-slate-50 rounded-lg">
+                    <p className="text-xl font-bold">{stream.properties.name}</p>
+                    {/* DEV: Update Stream Tweets / Stream Follower Network */}
+                    <Form
+                        method='post'
+                    >
+                        <button
+                            type='submit'
+                            className='inline-block rounded border-2 border-black bg-green-300 px-2 py-1 text-white text-xs'
+                            value="updateStreamTweets"
+                            name="intent"
+                        >
+                            <Tooltip title="Update Stream Tweets">
+                                <UpdateIcon fontSize="small" />
+                            </Tooltip>
+
+                        </button>
+                    </Form>
+                    <Form
+                        method='post'
+                    >
+                        <button
+                            type='submit'
+                            className='ml-2 inline-block rounded border-2 border-black bg-green-300 px-2 py-1 text-white text-xs'
+                            value="updateStreamFollowsNetwork"
+                            name="intent"
+                        >
+                            <Tooltip title="Update Stream Follower">
+                                <HubIcon fontSize="small" />
+                            </Tooltip>
+                        </button>
+                    </Form>
                 </div>
 
+                <div className="flex flex-row hidden">
+                    <p>Tags</p>
+                    <ol>
+                        {annotationMap.map((annotation: string) => (
+                            <li key={annotation}>{annotation}</li>
+                        ))}
+                    </ol>
+                </div>
+            </div>
+
+            <div className="h-full">
                 {tweets
                     .sort(
                         (a: any, b: any) =>
@@ -281,62 +283,11 @@ export default function Feed() {
                             new Date(a.tweet.created_at as string).valueOf()
                     )
                     .map((tweet: any) => (
-                        <div className='mx-2 my-6 flex border-gray-700' key={tweet.tweet.properties.id}>
-                            <img
-                                className='h-12 w-12 rounded-full border border-gray-300 bg-gray-100'
-                                alt=''
-                                src={tweet.author.properties.profile_image_url}
-                            />
-                            <article key={tweet.tweet.properties.id} className='ml-2.5 flex-1'>
-                                <header>
-                                    <h3>
-                                        <a
-                                            href={`https://twitter.com/${tweet.author.properties.username}`}
-                                            target='_blank'
-                                            rel='noopener noreferrer'
-                                            className='mr-1 font-medium hover:underline'
-                                        >
-                                            {tweet.author.properties.name}
-                                        </a>
-                                        <a
-                                            href={`https://twitter.com/${tweet.author.properties.username}`}
-                                            target='_blank'
-                                            rel='noopener noreferrer'
-                                            className='text-sm text-gray-500'
-                                        >
-                                            @{tweet.author.properties.username}
-                                        </a>
-                                        <span className='mx-1 text-sm text-gray-500'>·</span>
-                                        <a
-                                            href={`https://twitter.com/${tweet.author.properties.username}/status/${tweet.tweet.properties.id}`}
-                                            target='_blank'
-                                            rel='noopener noreferrer'
-                                            className='text-sm text-gray-500 hover:underline'
-                                        >
-                                            <TimeAgo
-                                                locale='en_short'
-                                                datetime={new Date(tweet.tweet.properties.created_at ?? new Date())}
-                                            />
-                                        </a>
-                                        <span className='mx-1 text-sm text-gray-500'>·</span>
-                                        <a
-                                            href={`/streams/tweets/${tweet.tweet.properties.id}`}
-                                            target='_blank'
-                                            rel='noopener noreferrer'
-                                            className='text-sm text-gray-500 hover:underline'
-                                        >
-                                            analyze
-                                        </a>
-                                    </h3>
-                                </header>
-                                <p
-                                    dangerouslySetInnerHTML={{ __html: tweet.html ?? tweet.tweet.properties.text }}
-                                />
-                            </article>
-                        </div>
+                        <Tweet key={tweet.tweet.id} tweet={tweet} />
                     ))}
             </div>
         </div>
+
     );
 }
 

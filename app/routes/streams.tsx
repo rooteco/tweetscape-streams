@@ -212,11 +212,10 @@ export default function StreamsPage() {
                 {/* List of Streams */}
                 <div className="flex flex-col space-y-0.5 flex-1">
                     <p className = "ml-2 text-sm"> {user? `@${user.username}'s` : "Public"} Streams </p>
-                    <div className="bg-slate-100 p-1 grow rounded drop-shadow-xl z-0">
+                    <div className="bg-slate-100 border border-gray-200 p-1 grow rounded drop-shadow-xl z-0">
                         <StreamAccordion streams={streams} lists={lists} />
                     </div>
                 </div>
-
             </div>
         </div>
     );
