@@ -92,7 +92,6 @@ function StreamAccordion({ streams, lists }: { streams: Stream[] }) {
           >
             <Link to={expanded ? "/streams" : stream.stream.properties.name}>
               <AccordionSummary
-                
                 expandIcon={<ArrowForwardIosSharpIcon sx={{ fontSize: '0.9rem' }} />}
               >
                 <Typography>{stream.stream.properties.name}</Typography>
@@ -105,13 +104,13 @@ function StreamAccordion({ streams, lists }: { streams: Stream[] }) {
               <h1> {stream.seedUsers?.length} Seed Users</h1>
               <div className='flex flex-col space-y-2'>
                 {stream.seedUsers && stream.seedUsers.map((user: userNode) => (
-                  <CompactProfile user={user} key={user.elementId} streamName={streamName} />
+                  <CompactProfile user={user} key={user.elementId} streamName={streamName} isSeed />
                   ))}
               </div>
 
               <h1> {stream.recommendedUsers ? stream.recommendedUsers.length : 0} Recommended Accounts </h1>
               {stream.recommendedUsers && stream.recommendedUsers.map((user: userNode) => (
-                <CompactProfile user={user} key={user.elementId} streamName={streamName} />
+                <CompactProfile user={user} key={user.elementId} streamName={streamName} isSeed = {false} />
                 ))}
 
 

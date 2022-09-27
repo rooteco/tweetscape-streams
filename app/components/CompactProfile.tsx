@@ -34,10 +34,10 @@ function CompactProfile({ user, isSeed, streamName }: { user: userNode, isSeed: 
                 <button
                     type='submit'
                     name="intent"
-                    value={isSeed ? "addSeedUser" : "removeSeedUser"}
+                    value={isSeed ?  "removeSeedUser" : "addSeedUser"}
                     className = "hover:bg-slate-200 rounded-full h-8 w-8 flex items-center justify-center"
                 >
-                    {isSeed ? <AddIcon fontSize='small'/> : <RemoveIcon fontSize='small'/>}
+                    {isSeed ? <RemoveIcon fontSize='small'/> : <AddIcon fontSize='small'/>}
                 </button>
             </Form>
 
