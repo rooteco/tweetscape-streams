@@ -172,13 +172,12 @@ export default function StreamsPage() {
                     <Outlet />
             </div>
 
-            <div className="flex flex-col border-r space-y-20 w-96 px-2 py-3">
+            <div className="relative flex flex-col border-r space-y-16 w-96 pr-6 pb-6">
                 {/* Create A Stream and Login/Logout */}
                 <div className="flex flex-row space-x-2 w-full ml-2 mt-4">
-                    <div className="w-2/5 flex flex-col space-y-2">
-                        <Link to="/streams" className="block px-2 py-10 rounded-2xl text-xl text-blue-500 hover:bg-slate-300 bg-slate-200">
-                            <p className="text-2xl font-semibold -my-1 text-blue-300 "> Create </p>
-                            <p> a Stream </p>
+                    <div className="h-full w-30 h-30flex flex-col space-y-2 z-10">
+                        <Link to="/streams" className="block py-12 px-2 rounded-2xl text-xl text-blue-500 hover:bg-slate-300 bg-slate-200">
+                            <p className="text-sm font-semibold -my-1 text-blue-400 "> Create a Stream </p>
                         </Link>
                         <div className="">
                             { user ?
@@ -200,16 +199,16 @@ export default function StreamsPage() {
                             }
                         </div>
                     </div>
-                    <div className="justify-center align-middle">
-                        <p className="text-2xl justify-center align-middle">Stream</p>
-                        <p className="text-2xl justify-center align-middle">Seeding</p>
+                    <div className="absolute justify-center align-middle -left-36 top-12 flex flex-col space-y-16 z-0">
+                        <p className="text-xl font-semibold justify-center align-middle text-gray-100" style={{fontSize: 96}}>Stream</p>
+                        <p className="text-xl font-bold justify-center align-middle  text-gray-100" style={{fontSize: 96}}>Seeding</p>
                     </div>
                 </div>
 
                 {/* List of Streams */}
                 <div className="flex flex-col space-y-0.5 flex-1">
-                    <p className = "ml-2 text-sm"> {user? `@${user.username}'s` : "Public"} Streams </p>
-                    <div className="bg-slate-100 border border-gray-200 p-1 grow rounded drop-shadow-xl z-0">
+                    <p className = "ml-2 text-slate-400 font-normal text-sm"> {user? `@${user.username}'s` : "Public"} Streams </p>
+                    <div className="accordion-container bg-gray-100 border border-gray-200 p-1 grow rounded z-0">
                         <StreamAccordion streams={streams} lists={lists} />
                     </div>
                 </div>
