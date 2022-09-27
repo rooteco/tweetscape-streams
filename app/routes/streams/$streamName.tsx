@@ -230,39 +230,42 @@ export default function Feed() {
     return (
 
         <div className='relative max-h-screen max-w-screen-sm overflow-auto'>
-            <div className="sticky top-0 mx-auto backdrop-blur-xl p-0.5 rounded-xl">
-                <div className="flex flex-row space-x-2 justify-between m-2 p-3 bg-slate-50 rounded-lg">
-                    <p className="text-xl font-bold">{stream.properties.name}</p>
+            <div className="sticky top-0 mx-auto backdrop-blur-xl p-1 rounded-xl">
+                <div className="flex flex-row justify-between p-3 bg-slate-50 rounded-lg">
+                    <p className="text-xl font-medium">{stream.properties.name}</p>
                     {/* DEV: Update Stream Tweets / Stream Follower Network */}
-                    <Form
-                        method='post'
-                    >
-                        <button
-                            type='submit'
-                            className='inline-block rounded border-2 border-black bg-green-300 px-2 py-1 text-white text-xs'
-                            value="updateStreamTweets"
-                            name="intent"
+                    <div className="flex flex-row space-x-2">
+                        <Form
+                            method='post'
                         >
-                            <Tooltip title="Update Stream Tweets">
-                                <UpdateIcon fontSize="small" />
-                            </Tooltip>
+                            <button
+                                type='submit'
+                                className='inline-block rounded border border-gray-300 bg-gray-200 w-8 h-8 text-white text-xs'
+                                value="updateStreamTweets"
+                                name="intent"
+                            >
+                                <Tooltip title="Update Stream Tweets">
+                                    <UpdateIcon fontSize="small" />
+                                </Tooltip>
 
-                        </button>
-                    </Form>
-                    <Form
-                        method='post'
-                    >
-                        <button
-                            type='submit'
-                            className='ml-2 inline-block rounded border-2 border-black bg-green-300 px-2 py-1 text-white text-xs'
-                            value="updateStreamFollowsNetwork"
-                            name="intent"
+                            </button>
+                        </Form>
+                        <Form
+                            method='post'
                         >
-                            <Tooltip title="Update Stream Follower">
-                                <HubIcon fontSize="small" />
-                            </Tooltip>
-                        </button>
-                    </Form>
+                            <button
+                                type='submit'
+                                className='\inline-block rounded border border-gray-300 bg-gray-200 w-8 h-8 text-white text-xs'
+                                value="updateStreamFollowsNetwork"
+                                name="intent"
+                            >
+                                <Tooltip title="Update Stream Follower">
+                                    <HubIcon fontSize="small" />
+                                </Tooltip>
+                            </button>
+                        </Form>
+                    </div>
+
                 </div>
 
                 <div className="flex flex-row hidden">
@@ -275,7 +278,7 @@ export default function Feed() {
                 </div>
             </div>
 
-            <div className="h-full">
+            <div className="h-full mx-2">
                 {tweets
                     .sort(
                         (a: any, b: any) =>
@@ -284,7 +287,7 @@ export default function Feed() {
                     )
                     .map((tweet: any) => (
                         <Tweet key={tweet.tweet.id} tweet={tweet} />
-                    ))}j,bjkg5 4ds6ps
+                    ))}
             </div>
         </div>
 
