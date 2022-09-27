@@ -74,7 +74,7 @@ function StreamConfig(props: any) {
             <Form
                 method='post'
                 action={`/streams/${streamName}`}
-                className="sticky top-2 w-full mt-1 mx-auto flex items-center z-40"
+                className="sticky top-1 w-full mt-1 mx-auto flex items-center z-40"
             >
                 <Search className="grow-1 rounded flex space-x-0 border border-gray-200 backdrop-blur-lg">
                     <ImportSwitch>

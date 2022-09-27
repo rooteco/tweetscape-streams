@@ -103,7 +103,7 @@ function StreamAccordion({ streams, lists }: { streams: Stream[] }) {
                 >
                   {stream.stream.properties.name}
                 </p>
-                <Chip icon = {<div>🌱</div>} size="small" label = {`${stream.seedUsers?.length}`}  sx = {{color: "#3f3f3f", backgroundColor: "#f1f1f1"}}/>
+                <Chip icon = {<div>🌱</div>} size="small" label = {`${stream.seedUsers?.length}`}  sx = {{color: "#91949a", backgroundColor: "#f1f1f1"}}/>
               </AccordionSummary>
             </Link>
 
