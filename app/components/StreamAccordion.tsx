@@ -2,6 +2,7 @@ import Accordion from '@mui/material/Accordion';
 import AccordionSummary from '@mui/material/AccordionSummary';
 import AccordionDetails from '@mui/material/AccordionDetails';
 import Typography from '@mui/material/Typography';
+import Chip from '@mui/material/Chip';
 
 import { makeStyles } from '@material-ui/styles';
 
@@ -69,6 +70,8 @@ const useStyles = makeStyles((theme) => ({
   }
 }));
 
+
+
 function StreamAccordion({ streams, lists }: { streams: Stream[] }) {
 
   // TODO: onOpen redirect to $streamName
@@ -92,9 +95,10 @@ function StreamAccordion({ streams, lists }: { streams: Stream[] }) {
           >
             <Link to={expanded ? "/streams" : stream.stream.properties.name}>
               <AccordionSummary
-                expandIcon={<ArrowForwardIosSharpIcon sx={{ fontSize: '0.9rem' }} />}
+                expandIcon={<ArrowForwardIosSharpIcon sx={expanded? { fontSize: '0.8rem', color: '#1D1D1D' } : {fontSize: '0.8rem', color: '#B9BEC4'}} />}
               >
-                <Typography>{stream.stream.properties.name}</Typography>
+                <p className={expanded? 'font-medium text-gray-700' : 'font-medium text-slate-400'}>{stream.stream.properties.name}</p>
+                <Chip icon = {<div>🌱</div>} size="small" label = {`${stream.seedUsers?.length}`}  />
               </AccordionSummary>
             </Link>
 
