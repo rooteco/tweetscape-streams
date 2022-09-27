@@ -5,6 +5,9 @@ import Typography from '@mui/material/Typography';
 
 import { makeStyles } from '@material-ui/styles';
 
+import ArrowForwardIosSharpIcon from '@mui/icons-material/ArrowForwardIosSharp';
+
+
 import { Integer } from 'neo4j-driver';
 import { NavLink, Link, Outlet, useParams } from "@remix-run/react";
 
@@ -57,12 +60,11 @@ export type Stream = {
 const useStyles = makeStyles((theme) => ({
   root: {
     width: "100%",
-    background: "white",
+    background: "transparent",
     flexGrow: 0,
-    border: "0px"
   },
   rootExpanded: {
-    background: "white",
+    background: "transparent",
     flexGrow: 1,
   }
 }));
@@ -84,18 +86,20 @@ function StreamAccordion({ streams, lists }: { streams: Stream[] }) {
 
         return (
           <Accordion
-            className= {baseClass}
             elevation={0}
             key={stream.stream.elementId}
             expanded={expanded}
           >
             <Link to={expanded ? "/streams" : stream.stream.properties.name}>
-              <AccordionSummary className='bg-white'>
+              <AccordionSummary
+                
+                expandIcon={<ArrowForwardIosSharpIcon sx={{ fontSize: '0.9rem' }} />}
+              >
                 <Typography>{stream.stream.properties.name}</Typography>
               </AccordionSummary>
             </Link>
 
-            <AccordionDetails className="bg-transparent">
+            <AccordionDetails>
               <StreamConfig userLists={lists} streamName={streamName}/>
 
               <h1> {stream.seedUsers?.length} Seed Users</h1>
