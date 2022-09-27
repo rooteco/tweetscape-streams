@@ -10,7 +10,7 @@ import RemoveIcon from '@mui/icons-material/Remove';
 function CompactProfile({ user, isSeed, streamName }: { user: userNode, isSeed: boolean, streamName: string }) {
     // Renders a Seed/Recommended user profile, with a button to add/remove from the stream
     return (
-        <div className='relative flex items-center space-x-2 rounded-md bg-white p-2'>
+        <div className='relative border border-gray-100 shadow-lg flex items-center space-x-2 rounded-md bg-white p-2'>
             <img 
                 src={user.properties.profile_image_url} 
                 alt="profile image"
@@ -35,7 +35,7 @@ function CompactProfile({ user, isSeed, streamName }: { user: userNode, isSeed: 
                     type='submit'
                     name="intent"
                     value={isSeed ?  "removeSeedUser" : "addSeedUser"}
-                    className = "hover:bg-slate-200 rounded-full h-8 w-8 flex items-center justify-center"
+                    className = "hover:bg-slate-200 bg-slate-100 rounded-full h-8 w-8 flex items-center justify-center"
                 >
                     {isSeed ? <RemoveIcon fontSize='small'/> : <AddIcon fontSize='small'/>}
                 </button>

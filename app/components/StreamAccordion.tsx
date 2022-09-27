@@ -99,26 +99,31 @@ function StreamAccordion({ streams, lists }: { streams: Stream[] }) {
             </Link>
 
             <AccordionDetails>
-              <StreamConfig userLists={lists} streamName={streamName}/>
+              <StreamConfig userLists={lists} streamName={streamName} />
 
-              <h1> {stream.seedUsers?.length} Seed Users</h1>
-              <div className='flex flex-col space-y-2'>
-                {stream.seedUsers && stream.seedUsers.map((user: userNode) => (
-                  <CompactProfile user={user} key={user.elementId} streamName={streamName} isSeed />
+              <div className='mx-2'>
+                <h1> {stream.seedUsers?.length} Seed Users</h1>
+                <div className='flex flex-col space-y-2'>
+                  {stream.seedUsers && stream.seedUsers.map((user: userNode) => (
+                    <CompactProfile user={user} key={user.elementId} streamName={streamName} isSeed />
                   ))}
+                </div>
+
+                <h1> {stream.recommendedUsers ? stream.recommendedUsers.length : 0} Recommended Accounts </h1>
+                <div className='flex flex-col space-y-2'>
+                  {stream.recommendedUsers && stream.recommendedUsers.map((user: userNode) => (
+                    <CompactProfile user={user} key={user.elementId} streamName={streamName} isSeed={false} />
+                  ))}
+                </div>
               </div>
 
-              <h1> {stream.recommendedUsers ? stream.recommendedUsers.length : 0} Recommended Accounts </h1>
-              {stream.recommendedUsers && stream.recommendedUsers.map((user: userNode) => (
-                <CompactProfile user={user} key={user.elementId} streamName={streamName} isSeed = {false} />
-                ))}
 
 
             </AccordionDetails>
           </Accordion>
         )
       })}
-    </div>
+    </div >
   )
 }
 
