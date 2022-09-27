@@ -167,7 +167,7 @@ export default function StreamsPage() {
     return (
         <div className="max-h-screen h-screen flex flex-row-reverse bg-white">
 
-            <div className="flex-1 max-w-lg max-h-min bg-gray-50">
+            <div className="flex-1 max-w-lg max-h-min bg-gray-50 z-10">
                 {/* Outlet for Stream Details and Feed (/$streamName) */}
                 <div className="m-16"> 
                     
@@ -212,7 +212,7 @@ export default function StreamsPage() {
                 {/* List of Streams */}
                 <div className="flex flex-col space-y-0.5 flex-1">
                     <p className = "ml-2 text-sm"> {user? `@${user.username}'s` : "Public"} Streams </p>
-                    <div className="bg-slate-100 p-1 grow rounded">
+                    <div className="bg-slate-100 p-1 grow rounded drop-shadow-xl z-0">
                         <StreamAccordion streams={streams} lists={lists} />
                     </div>
                 </div>

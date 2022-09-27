@@ -1,45 +1,40 @@
-.MuiAccordionDetails-root {
-    max-height: 400px;
-    overflow-y: scroll;
+html,
+body {
+    margin: 0;
+    height: 100%;
+    overflow: hidden
 }
 
 .MuiAccordion-root {
     margin-bottom: 0.25rem;
-    border: none !important;
     border-radius: 4px !important;
+    background-color: transparent !important;
 }
 
-.MuiAccordion-root::before{
+.MuiAccordion-root::before {
+    /* Remove border */
     display: none !important;
 }
 
-.MuiAccordion-root .MuiAccordionSummary-root  {
-    /* Controls summary styling */
-    margin: 0;
-    min-height: 2.5rem;
-    height: 2.5rem;
-    border: none !important;
-    border-radius: 3rem;
+.MuiAccordion-root .MuiAccordionSummary-root {
+    flex-direction: row-reverse;
+    background-color: white;
+    max-height: 2.5rem;
+    min-height: min-content;
+    border-radius: 4px !important;
+}
+
+.MuiAccordionSummary-root .MuiAccordionSummary-expandIconWrapper.Mui-expanded {
+    transform: rotate(90deg);
+}
+
+.MuiAccordion-root .MuiAccordionDetails-root {
+    max-height: 400px;
+    overflow-y: scroll;
+    background-color: transparent !important;
 }
 
 
-.MuiAccordion-root .MuiAccordionDetails-root  {
-    margin: 0;
-    border-radius: 3rem;
-    border: none !important;
-    
-}
-
-.MuiAccordion-root .Mui-expanded {
-    margin: 0 !important;
-    border-radius: 3rem;
-    border: none !important;
-    
-}
-
-.MuiAccordionDetails-root {
-    border: none !important;
-}
 
 
-html, body {margin: 0; height: 100%; overflow: hidden}
+
