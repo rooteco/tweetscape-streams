@@ -1,9 +1,9 @@
 import { TimeAgo } from '~/components/timeago';
 
 
-function Tweet({ tweet }) {
+function Tweet({ tweet, key }) {
     return (
-        <div className='mx-2 my-2 flex py-4 px-3 rounded-lg  bg-white border border-gray-100'>
+        <div key ={key} className='mx-2 my-2 flex py-4 px-3 rounded-lg  bg-white border border-gray-100'>
             <img
                 className='h-12 w-12 rounded-full border border-gray-300 bg-gray-100'
                 alt=''

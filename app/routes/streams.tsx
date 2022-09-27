@@ -167,12 +167,9 @@ export default function StreamsPage() {
     return (
         <div className="max-h-screen h-screen flex flex-row-reverse bg-white">
 
-            <div className="flex-1 max-w-lg max-h-min bg-gray-50 z-10">
-                {/* Outlet for Stream Details and Feed (/$streamName) */}
-                <div className="m-16"> 
-                    
+            <div className="flex-1 px-4 py-2 max-w-lg max-h-min bg-gray-50 z-10">
+                {/* Outlet for Stream Details and Feed (/$streamName) */}    
                     <Outlet />
-                </div>
             </div>
 
             <div className="flex flex-col border-r space-y-20 w-96 px-2 py-3">
