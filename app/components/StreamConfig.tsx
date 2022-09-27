@@ -14,30 +14,34 @@ import { styled, alpha } from '@mui/material/styles';
 
 import Toolbar from '@mui/material/Toolbar';
 import InputBase from '@mui/material/InputBase';
-import e from "express";
 
 const Search = styled('div')(({ theme }) => ({
-    position: 'relative',
-    borderRadius: theme.shape.borderRadius,
-    backgroundColor: alpha(theme.palette.common.white, 0.15),
+    borderRadius: "4px",
+    flexGrow: 1,
+    alignItems: 'center',
+    display: 'flex',
+    padding: '2px 4px',
+    backgroundColor: alpha(theme.palette.common.white, 0.65),
     '&:hover': {
-        backgroundColor: alpha(theme.palette.common.white, 0.25),
+        backgroundColor: alpha(theme.palette.common.white, 0.95),
     },
-    marginLeft: 0,
+    '&:focus': {
+        backgroundColor: alpha(theme.palette.common.white, 0.95),
+    },
     width: '100%',
+    maxWidth: '100%',
     [theme.breakpoints.up('sm')]: {
-        marginLeft: theme.spacing(1),
+        marginLeft: 0,
         width: 'auto',
     },
 }));
 
 const ImportSwitch = styled('div')(({ theme }) => ({
-    padding: theme.spacing(0, 2),
     height: '100%',
-    position: 'absolute',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
+    
 }));
 
 const StyledInputBase = styled(InputBase)(({ theme }) => ({
@@ -45,11 +49,12 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
     '& .MuiInputBase-input': {
         padding: theme.spacing(1, 1, 1, 0),
         // vertical padding + font size from searchIcon
-        paddingLeft: `calc(1em + ${theme.spacing(4)})`,
+        paddingLeft: "0.5rem",
         transition: theme.transitions.create('width'),
         width: '100%',
+        maxWidth: "100%",
         [theme.breakpoints.up('sm')]: {
-            width: '12ch',
+            width: '16ch',
             '&:focus': {
                 width: '20ch',
             },
@@ -71,16 +76,16 @@ function StreamConfig(props: any) {
                 action={`/streams/${streamName}`}
                 className="sticky top-2 w-full mt-1 mx-auto flex items-center z-40"
             >
-                <Search className="rounded flex space-x-2 bg-white/75 border border-gray-200 backdrop-blur-lg grow">
+                <Search className="grow-1 rounded flex space-x-0 border border-gray-200 backdrop-blur-lg">
                     <ImportSwitch>
-                        <ButtonGroup className="bg-white">
+                        <ButtonGroup className="bg-white" sx = {{border: '1 px solid #e5e5e5'}}>
                             <Tooltip title="Import from List">
-                                <Button>
+                                <Button className = "border border-gray-200">
                                     <ReceiptLongIcon />
                                 </Button>
                             </Tooltip>
                             <Tooltip title="Import from Search">
-                                <Button>
+                                <Button sx = {{border: '1 px solid #e5e5e5'}}>
                                     <SearchIcon />
                                 </Button>
                             </Tooltip>
@@ -91,7 +96,7 @@ function StreamConfig(props: any) {
                         autoFocus
                         name="seedUserHandle"
                         value={handle}
-                        placeholder='Search ...'
+                        placeholder='Search handle ...'
                         inputProps={{ 'aria-label': 'search' }}
                         onChange={(e) => setHandle(e.target.value)}
                     />
@@ -120,7 +125,7 @@ function StreamConfig(props: any) {
                 </button>
             </Form>
 
-            {/* Add from User Lists */}
+            {/* Add from User Lists 
             <div>
                 <Downshift
                     itemToString={item => (item ? item.value : '')}
@@ -137,8 +142,6 @@ function StreamConfig(props: any) {
                         selectedItem,
                     }) => (
                         <div>
-                            {/* <label {...getLabelProps()}>Import Seed Users From List</label>
-                                <input className="ml-2 inline-block rounded border-2 border-black bg-blue px-2 py-1 text-black" {...getInputProps()} /> */}
                             <span>Lists</span>
                             <button
                                 {...getToggleButtonProps()}
@@ -195,6 +198,8 @@ function StreamConfig(props: any) {
                     )}
                 </Downshift>
             </div>
+            */}
+
 
 
             {/*
