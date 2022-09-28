@@ -857,12 +857,15 @@ export async function getStreamTweets(name: string, startTime: string) {
     //THIS EXCLUDES RETWEETS RIGHT NOW
     const session = driver.session()
     // Create a node within a write transaction
+
     const res = await session.executeRead((tx: any) => {
         return tx.run(`
-            MATCH (s:Stream {name: $name} )-[:CONTAINS]->(u:User)-[:POSTED]->(t:Tweet)-[r:REFERENCED]->(:Tweet)
-            WHERE t.created_at > $startTime and r.type <> "retweeted"
+            MATCH (s:Stream {name: $name} )-[:CONTAINS]->(u:User)-[:POSTED]->(t:Tweet)
+            OPTIONAL MATCH (t)-[r:REFERENCED]->(ref_t:Tweet)<-[:POSTED]-(ref_a:User)
+            WHERE r.type <> "retweeted"
             OPTIONAL MATCH (t)-[ar:ANNOTATED]-(a)
-            RETURN u,t,a
+            OPTIONAL MATCH (t)-[tr:INCLUDED]->(entity)
+            RETURN u,t,collect(a) as a, collect(r) as refTweetRels, collect(ref_t) as refTweets,collect(ref_a) as refTweetAuthors, collect(entity) as entities
             ORDER by t.created_at DESC
         `,
             { name: name, startTime: startTime })
@@ -871,15 +874,20 @@ export async function getStreamTweets(name: string, startTime: string) {
     if (res.records.length > 0) {
         tweets = res.records.map((row: Record) => {
             return {
-                "tweet": row.get('t'),
-                "author": row.get('u'),
-                "annotation": row.get('a')
+                tweet: row.get('t'),
+                author: row.get('u'),
+                annotation: row.get('a'),
+                refTweets: row.get('refTweets'),
+                refTweetRels: row.get('refTweetRels'),
+                refTweetAuthors: row.get('refTweetAuthors'),
+                entities: row.get('entities')
             }
         })
     }
     await session.close()
     return tweets;
 }
+
 
 export async function getStreamRecommendedUsers(name: string) {
     //THIS EXCLUDES RETWEETS RIGHT NOW
