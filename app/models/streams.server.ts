@@ -862,7 +862,6 @@ export async function getStreamTweets(name: string, startTime: string) {
         return tx.run(`
             MATCH (s:Stream {name: $name} )-[:CONTAINS]->(u:User)-[:POSTED]->(t:Tweet)
             OPTIONAL MATCH (t)-[r:REFERENCED]->(ref_t:Tweet)<-[:POSTED]-(ref_a:User)
-            WHERE r.type <> "retweeted"
             OPTIONAL MATCH (t)-[ar:ANNOTATED]-(a)
             OPTIONAL MATCH (t)-[tr:INCLUDED]->(entity)
             RETURN u,t,collect(a) as a, collect(r) as refTweetRels, collect(ref_t) as refTweets,collect(ref_a) as refTweetAuthors, collect(entity) as entities
