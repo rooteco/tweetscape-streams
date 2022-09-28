@@ -23,18 +23,17 @@ export async function loader({ request, params }: LoaderArgs) {
     invariant(params.tweetId, "tweetId not found");
     console.log("LOADING");
     console.log(params.tweetId);
-    let { tweet, relNodes } = await getTweet(params.tweetId)
-    return json({ tweet, relNodes });
+    let data = await getTweet(params.tweetId)
+    return json(data);
 };
 
 export default function StreamsPage() {
-    const { tweet, relNodes } = useLoaderData();
+    const data = useLoaderData();
     console.log("-----")
-    console.log(relNodes);
+    // console.log(relNodes);
     return (
-        <div>
-            <pre>{JSON.stringify(tweet.properties, null, 2)}</pre>
-            <pre>{JSON.stringify(relNodes, null, 2)}</pre>
+        <div className='overflow-y-auto'>
+            <pre>{JSON.stringify(data, null, 2)}</pre>
         </div>
     );
 }
