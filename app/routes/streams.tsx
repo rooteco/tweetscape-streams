@@ -159,7 +159,7 @@ export const loader: LoaderFunction = async ({ request }: LoaderArgs) => {
 export default function StreamsPage() {
     const { streams, user, lists } = useLoaderData<LoaderData>();
     const params = useParams();
-    
+
     const streamsRoot = params.streamName === undefined;
     if (!streamsRoot) {
         const currentStream = params.streamName && params.streamName;
@@ -177,14 +177,16 @@ export default function StreamsPage() {
         <div className="max-h-screen h-screen flex flex-row-reverse bg-white">
 
             {/* Outlet for Stream Details and Feed (/$streamName) */}
-            <div className="flex-1 px-4 py-2 max-w-lg max-h-min bg-fade z-10">
+
+            <Outlet />
+            {/* <div className="flex-1 px-4 py-2 max-w-lg max-h-min bg-fade z-10">
                 <Outlet />
-            </div>
+            </div> */}
 
             {/* Either 'Create A Stream and Login/Logout' or 'Export Stream or Delete Stream' */}
             <div className="relative flex flex-col border-r space-y-16 w-96 pr-6 pb-6">
                 <div className="flex flex-row space-x-2 w-full ml-2 mt-4">
-                    {streamsRoot? <CreateAndLogin user = {user} /> : <ExportAndDelete user = {user}/>}
+                    {streamsRoot ? <CreateAndLogin user={user} /> : <ExportAndDelete user={user} />}
 
                     <div className="absolute justify-center align-middle -left-36 top-12 flex flex-col space-y-16 z-0">
                         <p className="text-xl font-semibold justify-center align-middle text-gray-100" style={{ fontSize: 96 }}>Stream</p>

@@ -1,7 +1,8 @@
 import type { ActionArgs, LoaderArgs } from "@remix-run/node";
 import type { ActionFunction } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
-import { Form, useActionData, useCatch, useLoaderData } from "@remix-run/react";
+import { Form, useActionData, useCatch, useLoaderData, Outlet } from "@remix-run/react";
+
 
 import Downshift from "downshift";
 import { useEffect } from "react";
@@ -229,69 +230,70 @@ export default function Feed() {
     }
 
     return (
-
-        <div className='relative max-h-screen max-w-screen-sm overflow-auto'>
-            <div className="sticky top-0 mx-auto backdrop-blur-xl p-1 rounded-xl">
-                <div className="flex flex-row justify-between p-3 bg-slate-50 rounded-lg">
-                    <p className="text-xl font-medium">{stream.properties.name}</p>
-                    {/* DEV: Update Stream Tweets / Stream Follower Network */}
-                    <div className="flex flex-row space-x-2">
-                        <Form
-                            method='post'
-                        >
-                            <button
-                                type='submit'
-                                className='inline-block rounded border border-gray-300 bg-gray-200 w-8 h-8 text-white text-xs'
-                                value="updateStreamTweets"
-                                name="intent"
+        <div className="flex px-4 py-2 max-w-4xl max-h-min bg-fade z-10">
+            <div className='relative max-h-screen overflow-y-auto'>
+                <div className="sticky top-0 mx-auto backdrop-blur-xl p-1 rounded-xl">
+                    <div className="flex flex-row justify-between p-3 bg-slate-50 rounded-lg">
+                        <p className="text-xl font-medium">{stream.properties.name}</p>
+                        {/* DEV: Update Stream Tweets / Stream Follower Network */}
+                        <div className="flex flex-row space-x-2">
+                            <Form
+                                method='post'
                             >
-                                <Tooltip title="Update Stream Tweets">
-                                    <UpdateIcon fontSize="small" />
-                                </Tooltip>
+                                <button
+                                    type='submit'
+                                    className='inline-block rounded border border-gray-300 bg-gray-200 w-8 h-8 text-white text-xs'
+                                    value="updateStreamTweets"
+                                    name="intent"
+                                >
+                                    <Tooltip title="Update Stream Tweets">
+                                        <UpdateIcon fontSize="small" />
+                                    </Tooltip>
 
-                            </button>
-                        </Form>
-                        <Form
-                            method='post'
-                        >
-                            <button
-                                type='submit'
-                                className='\inline-block rounded border border-gray-300 bg-gray-200 w-8 h-8 text-white text-xs'
-                                value="updateStreamFollowsNetwork"
-                                name="intent"
+                                </button>
+                            </Form>
+                            <Form
+                                method='post'
                             >
-                                <Tooltip title="Update Stream Follower">
-                                    <HubIcon fontSize="small" />
-                                </Tooltip>
-                            </button>
-                        </Form>
+                                <button
+                                    type='submit'
+                                    className='\inline-block rounded border border-gray-300 bg-gray-200 w-8 h-8 text-white text-xs'
+                                    value="updateStreamFollowsNetwork"
+                                    name="intent"
+                                >
+                                    <Tooltip title="Update Stream Follower">
+                                        <HubIcon fontSize="small" />
+                                    </Tooltip>
+                                </button>
+                            </Form>
+                        </div>
+
                     </div>
 
+                    <div className="flex flex-row hidden">
+                        <p>Tags</p>
+                        <ol>
+                            {annotationMap.map((annotation: string) => (
+                                <li key={annotation}>{annotation}</li>
+                            ))}
+                        </ol>
+                    </div>
                 </div>
 
-                <div className="flex flex-row hidden">
-                    <p>Tags</p>
-                    <ol>
-                        {annotationMap.map((annotation: string) => (
-                            <li key={annotation}>{annotation}</li>
+                <div className="h-full mx-2">
+                    {tweets
+                        .sort(
+                            (a: any, b: any) =>
+                                new Date(b.tweet.created_at as string).valueOf() -
+                                new Date(a.tweet.created_at as string).valueOf()
+                        )
+                        .map((tweet: any) => (
+                            <Tweet key={tweet.tweet.id} tweet={tweet} />
                         ))}
-                    </ol>
                 </div>
             </div>
-
-            <div className="h-full mx-2">
-                {tweets
-                    .sort(
-                        (a: any, b: any) =>
-                            new Date(b.tweet.created_at as string).valueOf() -
-                            new Date(a.tweet.created_at as string).valueOf()
-                    )
-                    .map((tweet: any) => (
-                        <Tweet key={tweet.tweet.id} tweet={tweet} />
-                    ))}
-            </div>
+            <Outlet />
         </div>
-
     );
 }
 
