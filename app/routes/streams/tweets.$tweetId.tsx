@@ -7,11 +7,7 @@ import invariant from "tiny-invariant";
 import { getTweet } from "~/models/streams.server";
 
 export async function loader({ request, params }: LoaderArgs) {
-    console.log("in tweets laoder")
-    console.log(params.tweetId)
     invariant(params.tweetId, "tweetId not found");
-    console.log("LOADING");
-    console.log(params.tweetId);
     let data = await getTweet(params.tweetId)
     return json(data);
 };
