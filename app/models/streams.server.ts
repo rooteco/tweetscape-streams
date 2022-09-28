@@ -66,36 +66,28 @@ export async function getUserFromTwitter(api: any, username: string) {
 
 export async function getTweet(tweetId: string) {
     const session = driver.session()
-    // Create a node within a write transaction
+
     const res = await session.executeRead((tx: any) => {
         return tx.run(`
-        MATCH (t:Tweet {id: $tweetId})
-        RETURN t`,
+            MATCH (t:Tweet {id: $tweetId})-[r:POSTED]-(u)
+            OPTIONAL MATCH (t)-[r]->(referenced)
+            OPTIONAL MATCH (t)<-[rb]-(referenced_by)
+            RETURN t, u, collect(referenced) as referenced, collect(r) as refRels, collect(referenced_by) as referencedBy, collect(rb) as refByRels`,
             { tweetId }
         )
     })
-    let tweet;
-    let relNodes;
-    if (res.records.length > 0) {
-        tweet = res.records[0].get("t")
-        const relRes = await session.executeRead((tx: any) => {
-            return tx.run(`
-            MATCH (t:Tweet {id: $tweetId})-[r]-(n)
-            RETURN r,n
-            `,
-                { tweetId }
-            )
-        })
-        relNodes = relRes.records.map((row: any) => {
-            return {
-                "relationship": row.get("r").type,
-                "node": row.get("n").properties
-            }
-        })
 
-    }
+    let data = res.records.map((row: any) => {
+        return {
+            tweet: row.get("t"),
+            referenced: row.get("referenced"),
+            refRels: row.get("refRels"),
+            referencedBy: row.get("referencedBy"),
+            refByRels: row.get('refByRels')
+        }
+    })
     await session.close()
-    return { tweet, relNodes }
+    return data
 }
 
 export async function getStreams() {
