@@ -216,8 +216,10 @@ export default function Feed() {
 
     let annotations = new Set();
     for (const t of tweets) {
-        if (t.annotation) {
-            annotations.add(t.annotation.properties.normalized_text)
+        if (t.annotation && t.annotation.length > 0) {
+            for (let annotation of t.annotation) {
+                annotations.add(annotation.properties.normalized_text)
+            }
         }
     }
     const annotationMap = Array.from(annotations)
