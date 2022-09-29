@@ -11,10 +11,10 @@ export async function loader({ request, params }: LoaderArgs) {
 
 export default function Overview() {
     // Responsible for rendering a feed & annotations
+
     const loaderData = useLoaderData();
     const matches = useMatches(); // gives access to all the routes, https://remix.run/docs/en/v1/api/remix#usematches
     const tweets = matches.filter((route) => route.id == 'routes/streams/$streamName')[0].data.tweets
-    console.log(tweets[0].tweet.properties)
     const now = new Date()
     const todayMinus7Days = new Date();
     todayMinus7Days.setDate(todayMinus7Days.getDate() - 7);
@@ -58,9 +58,6 @@ export default function Overview() {
         referencedAccountCounts.push({ key: key, value: value })
     })
     referencedAccountCounts.sort((a, b) => b.value - a.value)
-
-
-    console.log(tweets.filter((row) => row.entities.length > 0).map((row) => row.entities[0].properties))
 
 
     // ENTITY COUNTS
