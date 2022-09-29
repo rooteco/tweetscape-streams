@@ -154,8 +154,6 @@ export async function getAllStreams() {
         let numSeedUsersFollowedBy = seedUsers.length + 1;
         let recommendedUsersTested: any[] = [];
 
-        console.log("STREAMNAME")
-        console.log(streamName)
         if (recommendedUsers.length > 0) {
             while (recommendedUsersTested.length < 5 && numSeedUsersFollowedBy > 1) {
                 recommendedUsersTested = [];
