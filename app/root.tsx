@@ -6,13 +6,13 @@ import theme from './src/theme';
 import ClientStyleContext from './src/ClientStyleContext';
 import Layout from './src/Layout';
 
+import tailwindStylesheetUrl from "./styles/tailwind.css";
+import globalStylesheetUrl from "./styles/global.css";
+
 interface DocumentProps {
   children: React.ReactNode;
   title?: string;
 }
-
-import tailwindStylesheetUrl from "./styles/tailwind.css";
-import globalStylesheetUrl from "./styles/global.css";
 
 const Document = withEmotionCache(({ children, title }: DocumentProps, emotionCache) => {
   const clientStyleData = React.useContext(ClientStyleContext);

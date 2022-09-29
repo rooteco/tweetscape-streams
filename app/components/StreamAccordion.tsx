@@ -8,7 +8,7 @@ import { makeStyles } from '@material-ui/styles';
 import ArrowForwardIosSharpIcon from '@mui/icons-material/ArrowForwardIosSharp';
 
 
-import { Integer } from 'neo4j-driver';
+import type { Integer } from 'neo4j-driver';
 import { Link, useParams } from "@remix-run/react";
 
 
