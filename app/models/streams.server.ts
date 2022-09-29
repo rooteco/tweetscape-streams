@@ -416,7 +416,17 @@ async function addUsersFollowedBy(users: any, { username: username }) {
             UNWIND $users AS u
             MATCH (followerUser:User {username: $followerUsername})
             MERGE (followedUser:User {username: u.username})
-            SET followedUser = u
+            SET followedUser.id = u.id,
+                followedUser.created_at = u.created_at,
+                followedUser.verified = u.verified,
+                followedUser.profile_image_url = u.profile_image_url,
+                followedUser.name = u.name,
+                followedUser.username = u.username,
+                followedUser.url = u.url,
+                followedUser.\`public_metrics.followers_count\`  = u.\`public_metrics.followers_count\`,
+                followedUser.\`public_metrics.following_count\`  = u.\`public_metrics.following_count\`,
+                followedUser.\`public_metrics.tweet_count\`  = u.\`public_metrics.tweet_count\`,
+                followedUser.\`public_metrics.listed_count\`  = u.\`public_metrics.listed_count\`
             MERGE (followerUser)-[r:FOLLOWS]->(followedUser)
             RETURN followedUser
             `,
@@ -437,7 +447,17 @@ export async function addUsers(users: any) {
         return tx.run(`
             UNWIND $users AS u
             MERGE (user:User {username: u.username})
-            SET user = u
+            SET user.id = u.id,
+                user.created_at = u.created_at,
+                user.verified = u.verified,
+                user.profile_image_url = u.profile_image_url,
+                user.name = u.name,
+                user.username = u.username,
+                user.url = u.url,
+                user.\`public_metrics.followers_count\`  = u.\`public_metrics.followers_count\`,
+                user.\`public_metrics.following_count\`  = u.\`public_metrics.following_count\`,
+                user.\`public_metrics.tweet_count\`  = u.\`public_metrics.tweet_count\`,
+                user.\`public_metrics.listed_count\`  = u.\`public_metrics.listed_count\`
             RETURN user
             `,
             { users: users }
