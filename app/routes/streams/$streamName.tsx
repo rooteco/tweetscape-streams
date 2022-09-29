@@ -51,7 +51,7 @@ export async function loader({ request, params }: LoaderArgs) {
     console.time("getStreamTweets")
     const tweets = await getStreamTweets(stream.properties.name, stream.properties.startTime);
     console.timeEnd("getStreamTweets")
-
+  
     return json({
         "stream": stream,
         "tweets": tweets,
@@ -230,8 +230,6 @@ export default function Feed() {
                                     </Tooltip>
                                 </button>
                             </Form>
-                        </div>
-
                     </div>
 
                     <div className="flex flex-row hidden">
