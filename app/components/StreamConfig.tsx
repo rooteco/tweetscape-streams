@@ -41,7 +41,7 @@ const ImportSwitch = styled('div')(({ theme }) => ({
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    
+
 }));
 
 const StyledInputBase = styled(InputBase)(({ theme }) => ({
@@ -78,27 +78,32 @@ function StreamConfig(props: any) {
             >
                 <Search className="grow-1 rounded flex space-x-0 border border-gray-200 backdrop-blur-lg">
                     <ImportSwitch>
-                        <ButtonGroup className="bg-white" sx = {{border: '1 px solid #e5e5e5'}}>
+                        <ButtonGroup className="bg-white" sx={{ border: '1 px solid #e5e5e5' }}>
                             <Tooltip title="Import from List">
-                                <Button className = "border border-gray-200">
+                                <Button className="border border-gray-200">
                                     <ReceiptLongIcon />
                                 </Button>
                             </Tooltip>
                             <Tooltip title="Import from Search">
-                                <Button sx = {{border: '1 px solid #e5e5e5'}}>
+                                <Button sx={{ border: '1 px solid #e5e5e5' }}>
                                     <SearchIcon />
                                 </Button>
                             </Tooltip>
                         </ButtonGroup>
                     </ImportSwitch>
 
-                    <StyledInputBase
+                    {/* <StyledInputBase
                         autoFocus
                         name="seedUserHandle"
                         value={handle}
                         placeholder='Search handle ...'
                         inputProps={{ 'aria-label': 'search' }}
                         onChange={(e) => setHandle(e.target.value)}
+                    /> */}
+                    <input
+                        name="seedUserHandle"
+                        type="text"
+                        placeholder='Search handle ...'
                     />
                     <button
                         type='submit'
