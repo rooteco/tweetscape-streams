@@ -1,7 +1,8 @@
 import type { ActionArgs, LoaderArgs } from "@remix-run/node";
 import type { ActionFunction } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
-import { Form, useActionData, useCatch, useLoaderData } from "@remix-run/react";
+import { Form, useActionData, useCatch, useLoaderData, Outlet, useTransition } from "@remix-run/react";
+
 
 import Downshift from "downshift";
 import { useEffect } from "react";
@@ -92,9 +93,7 @@ export async function loader({ request, params }: LoaderArgs) {
     return json({
         "stream": stream,
         "tweets": tweets,
-        // "recommendedUsers": recommendedUsersTested,
-        // "numSeedUsersFollowedBy": numSeedUsersFollowedBy,
-        // "userLists": userLists
+        seedUsers: seedUsers,
     });
 }
 
@@ -119,17 +118,15 @@ export const action: ActionFunction = async ({
     const formData = await request.formData();
     const intent = formData.get("intent");
     let seedUserHandle: string = formData.get("seedUserHandle");
-
     if (intent === "delete") {
         let res = await deleteStreamByName(params.streamName);
-        return redirect("/streams");
+        return res
     }
 
     const { stream, seedUsers } = await getStreamByName(params.streamName);
     if (!stream) {
         throw new Response("Not Found", { status: 404 });
     }
-
     try {
         if (intent === "addSeedUser") {
             let errors: ActionData = {
@@ -141,9 +138,10 @@ export const action: ActionFunction = async ({
             );
             console.log(hasErrors);
             if (hasErrors) {
+                console.log(errors)
                 return json<ActionData>(errors);
             }
-            const { api, uid, session } = await getClient(request);
+            const { api, limits, uid, session } = await getClient(request);
             for (const seedUser of seedUsers) {
                 console.log(`${seedUser.user.properties.username} == ${seedUserHandle}`);
                 if (seedUser.user.username == seedUserHandle) {
@@ -168,15 +166,16 @@ export const action: ActionFunction = async ({
                 } else {
                     user = await createUserDb(user)
                     console.time("addSeedUserToStream")
-                    addedUser = await addSeedUserToStream(stream, user)
+                    addedUser = await addSeedUserToStream(api, limits, stream, user)
                     console.timeEnd("addSeedUserToStream")
                 }
             } else {
                 console.time("addSeedUserToStream")
-                addedUser = await addSeedUserToStream(stream, user)
+                addedUser = await addSeedUserToStream(api, limits, stream, user)
                 console.timeEnd("addSeedUserToStream")
             }
             console.log(`Added user ${user.properties.username} to stream ${stream.properties.name}`)
+            // return redirect(`/streams/${params.streamName}/overview`)
             return addedUser;
 
         } else if (intent === "removeSeedUser") {
@@ -198,7 +197,6 @@ export const action: ActionFunction = async ({
             updateStreamTweets(api, stream, seedUsers.map((item: any) => (item.user)))
             return null;
         } else if (intent === "updateStreamFollowsNetwork") {
-            console.log("CORRECT INTENT")
             const { api, limits } = await getClient(request);
             updateStreamFollowsNetwork(api, limits, stream, seedUsers)
             return null;
@@ -210,13 +208,18 @@ export const action: ActionFunction = async ({
 
 export default function Feed() {
     // Responsible for rendering a feed & annotations
+    console.log("STREAMNAME LOADER")
+    let transition = useTransition();
+    let busy = transition.submission;
 
     const { tweets, stream } = useLoaderData();
 
     let annotations = new Set();
     for (const t of tweets) {
-        if (t.annotation) {
-            annotations.add(t.annotation.properties.normalized_text)
+        if (t.annotation && t.annotation.length > 0) {
+            for (let annotation of t.annotation) {
+                annotations.add(annotation.properties.normalized_text)
+            }
         }
     }
     const annotationMap = Array.from(annotations)
@@ -229,69 +232,72 @@ export default function Feed() {
     }
 
     return (
-
-        <div className='relative max-h-screen max-w-screen-sm overflow-auto'>
-            <div className="sticky top-0 mx-auto backdrop-blur-xl p-1 rounded-xl">
-                <div className="flex flex-row justify-between p-3 bg-slate-50 rounded-lg">
-                    <p className="text-xl font-medium">{stream.properties.name}</p>
-                    {/* DEV: Update Stream Tweets / Stream Follower Network */}
-                    <div className="flex flex-row space-x-2">
-                        <Form
-                            method='post'
-                        >
-                            <button
-                                type='submit'
-                                className='inline-block rounded border border-gray-300 bg-gray-200 w-8 h-8 text-white text-xs'
-                                value="updateStreamTweets"
-                                name="intent"
+        <div className="flex px-4 py-2 max-w-4xl max-h-min bg-fade z-10">
+            <div className='relative max-h-screen overflow-y-auto'>
+                <div className="sticky top-0 mx-auto backdrop-blur-xl p-1 rounded-xl">
+                    <div className="flex flex-row justify-between p-3 bg-slate-50 rounded-lg">
+                        <p className="text-xl font-medium">{stream.properties.name}</p>
+                        {/* DEV: Update Stream Tweets / Stream Follower Network */}
+                        <div className="flex flex-row space-x-2">
+                            <Form
+                                method='post'
                             >
-                                <Tooltip title="Update Stream Tweets">
-                                    <UpdateIcon fontSize="small" />
-                                </Tooltip>
+                                <button
+                                    type='submit'
+                                    className='inline-block rounded border border-gray-300 bg-gray-200 w-8 h-8 text-white text-xs'
+                                    value="updateStreamTweets"
+                                    name="intent"
+                                >
+                                    <Tooltip title="Update Stream Tweets">
+                                        <UpdateIcon fontSize="small" />
+                                    </Tooltip>
 
-                            </button>
-                        </Form>
-                        <Form
-                            method='post'
-                        >
-                            <button
-                                type='submit'
-                                className='\inline-block rounded border border-gray-300 bg-gray-200 w-8 h-8 text-white text-xs'
-                                value="updateStreamFollowsNetwork"
-                                name="intent"
+                                </button>
+                            </Form>
+                            <Form
+                                method='post'
                             >
-                                <Tooltip title="Update Stream Follower">
-                                    <HubIcon fontSize="small" />
-                                </Tooltip>
-                            </button>
-                        </Form>
+                                <button
+                                    type='submit'
+                                    className='\inline-block rounded border border-gray-300 bg-gray-200 w-8 h-8 text-white text-xs'
+                                    value="updateStreamFollowsNetwork"
+                                    name="intent"
+                                >
+                                    <Tooltip title="Update Stream Follower">
+                                        <HubIcon fontSize="small" />
+                                    </Tooltip>
+                                </button>
+                            </Form>
+                        </div>
+
                     </div>
 
+                    <div className="flex flex-row hidden">
+                        <p>Tags</p>
+                        <ol>
+                            {annotationMap.map((annotation: string) => (
+                                <li key={annotation}>{annotation}</li>
+                            ))}
+                        </ol>
+                    </div>
                 </div>
 
-                <div className="flex flex-row hidden">
-                    <p>Tags</p>
-                    <ol>
-                        {annotationMap.map((annotation: string) => (
-                            <li key={annotation}>{annotation}</li>
-                        ))}
-                    </ol>
+                <div className="h-full mx-2">
+                    {busy ?
+                        <div>LOADING</div> :
+                        tweets
+                            .sort(
+                                (a: any, b: any) =>
+                                    new Date(b.tweet.created_at as string).valueOf() -
+                                    new Date(a.tweet.created_at as string).valueOf()
+                            )
+                            .map((tweet: any) => (
+                                <Tweet key={tweet.tweet.id} tweet={tweet} />
+                            ))}
                 </div>
             </div>
-
-            <div className="h-full mx-2">
-                {tweets
-                    .sort(
-                        (a: any, b: any) =>
-                            new Date(b.tweet.created_at as string).valueOf() -
-                            new Date(a.tweet.created_at as string).valueOf()
-                    )
-                    .map((tweet: any) => (
-                        <Tweet key={tweet.tweet.id} tweet={tweet} />
-                    ))}
-            </div>
+            <Outlet />
         </div>
-
     );
 }
 

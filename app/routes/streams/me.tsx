@@ -27,7 +27,6 @@ export default function StreamsPage() {
     const user = data.user
     const frequencies = data.frequencies
     frequencies.sort((a, b) => b.count - a.count);
-    console.log(data.tweets.slice(0, 3))
     return (
         <div>
             <h1>Streams You are Included In</h1>
