@@ -28,7 +28,7 @@ import StreamAccordion from '~/components/StreamAccordion';
 import CreateAndLogin from "~/components/CreateAndLogin";
 import ExportAndDelete from "~/components/ExportAndDelete";
 
-import { Stream } from "../components/StreamAccordion";
+import type { Stream } from "../components/StreamAccordion";
 import { couldStartTrivia } from "typescript";
 import { useEffect } from "react";
 

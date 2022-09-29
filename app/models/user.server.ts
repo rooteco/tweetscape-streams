@@ -2,13 +2,14 @@
 import bcrypt from "bcryptjs";
 
 import { prisma } from "~/db.server";
-
-export type { users } from "@prisma/client";
 import type { users } from "@prisma/client";
 import { log } from '~/log.server';
 
 import { driver } from "~/neo4j.server";
-import { Record, session } from 'neo4j-driver'
+import type { Record} from 'neo4j-driver';
+import { session } from 'neo4j-driver'
+
+export type { users } from "@prisma/client";
 
 
 export function flattenTwitterUserPublicMetrics(data: Array<any>) {
