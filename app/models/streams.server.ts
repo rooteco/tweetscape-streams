@@ -145,6 +145,7 @@ export async function getAllStreams() {
     streams.forEach((row: any) => {
         let streamName = row.stream.properties.name
         let seedUsers = row.seedUsers;
+        let seedUserUsernames = seedUsers.map((row: any) => row.properties.username)
 
         let recommendedUsers = recUsersMap.get(streamName)
         if (!recommendedUsers) {
@@ -154,18 +155,15 @@ export async function getAllStreams() {
         let numSeedUsersFollowedBy = seedUsers.length + 1;
         let recommendedUsersTested: any[] = [];
 
-        console.log("STREAMNAME")
-        console.log(streamName)
         if (recommendedUsers.length > 0) {
             while (recommendedUsersTested.length < 5 && numSeedUsersFollowedBy > 1) {
                 recommendedUsersTested = [];
                 numSeedUsersFollowedBy--;
                 recommendedUsers.map((row: any) => {
-                    if (row.count.toInt() >= numSeedUsersFollowedBy) {
+                    if (row.count.toInt() >= numSeedUsersFollowedBy && seedUserUsernames.indexOf(row.item.properties.username) == -1) {
                         recommendedUsersTested.push(row.item)
                     }
                 })
-                // console.log(`found ${recommendedUsersTested.length} users followed by ${numSeedUsersFollowedBy} users`)
             }
 
         }
@@ -276,7 +274,7 @@ async function getTweetsFromAuthorId(
         {
             'expansions': 'author_id,in_reply_to_user_id,referenced_tweets.id,referenced_tweets.id.author_id,entities.mentions.username,attachments.poll_ids,attachments.media_keys,geo.place_id',
             'tweet.fields': 'attachments,author_id,context_annotations,conversation_id,created_at,entities,geo,id,in_reply_to_user_id,lang,public_metrics,text,possibly_sensitive,referenced_tweets,reply_settings,source,withheld',
-            'user.fields': 'created_at,description,entities,id,location,name,pinned_tweet_id,profile_image_url,protected,public_metrics,url,username,verified,withheld',
+            'user.fields': USER_FIELDS,
             'media.fields': 'alt_text,duration_ms,height,media_key,preview_image_url,type,url,width,public_metrics',
             'poll.fields': 'duration_minutes,end_datetime,id,options,voting_status',
             'place.fields': 'contained_within,country,country_code,full_name,geo,id,name,place_type',
@@ -299,7 +297,7 @@ async function pullTweets(api: TwitterApi, user: Node, startTime: string, now: s
         {
             'expansions': 'author_id,in_reply_to_user_id,referenced_tweets.id,referenced_tweets.id.author_id,entities.mentions.username,attachments.poll_ids,attachments.media_keys,geo.place_id',
             'tweet.fields': 'attachments,author_id,context_annotations,conversation_id,created_at,entities,geo,id,in_reply_to_user_id,lang,public_metrics,text,possibly_sensitive,referenced_tweets,reply_settings,source,withheld',
-            'user.fields': 'created_at,description,entities,id,location,name,pinned_tweet_id,profile_image_url,protected,public_metrics,url,username,verified,withheld',
+            'user.fields': USER_FIELDS,
             'media.fields': 'alt_text,duration_ms,height,media_key,preview_image_url,type,url,width,public_metrics',
             'poll.fields': 'duration_minutes,end_datetime,id,options,voting_status',
             'place.fields': 'contained_within,country,country_code,full_name,geo,id,name,place_type',
@@ -405,31 +403,55 @@ async function getSavedFollows(username: string) {
 async function addUsersFollowedBy(users: any, { username: username }) {
     const session = driver.session()
     // Create a node within a write transaction
-    const clearFollows = await session.executeWrite((tx: any) => {
-        return tx.run(`
+    try {
+        const clearFollows = await session.executeWrite((tx: any) => {
+            return tx.run(`
             MATCH (u:User {username: $followerUsername})-[r:FOLLOWS]->(uf:User) 
             DELETE r
             `,
-            { followerUsername: username }
-        )
-    }) // First, clear old follows so we match current twitter following 
-    const res = await session.executeWrite((tx: any) => {
-        return tx.run(`
+                { followerUsername: username }
+            )
+        }) // First, clear old follows so we match current twitter following 
+    }
+    catch (e) {
+        console.log(e)
+        await session.close()
+        throw e
+    }
+    try {
+        const res = await session.executeWrite((tx: any) => {
+            return tx.run(`
             UNWIND $users AS u
             MATCH (followerUser:User {username: $followerUsername})
             MERGE (followedUser:User {username: u.username})
-            SET followedUser = u
+            SET followedUser.id = u.id,
+                followedUser.created_at = u.created_at,
+                followedUser.verified = u.verified,
+                followedUser.profile_image_url = u.profile_image_url,
+                followedUser.name = u.name,
+                followedUser.username = u.username,
+                followedUser.url = u.url,
+                followedUser.\`public_metrics.followers_count\`  = u.\`public_metrics.followers_count\`,
+                followedUser.\`public_metrics.following_count\`  = u.\`public_metrics.following_count\`,
+                followedUser.\`public_metrics.tweet_count\`  = u.\`public_metrics.tweet_count\`,
+                followedUser.\`public_metrics.listed_count\`  = u.\`public_metrics.listed_count\`
             MERGE (followerUser)-[r:FOLLOWS]->(followedUser)
             RETURN followedUser
             `,
-            { users: users, followerUsername: username }
-        )
-    })
-    const followed = res.records.map((row: any) => {
-        return row.get("followedUser")
-    })
-    await session.close()
-    return followed;
+                { users: users, followerUsername: username }
+            )
+        })
+        const followed = res.records.map((row: any) => {
+            return row.get("followedUser")
+        })
+        await session.close()
+        return followed;
+    }
+    catch (e) {
+        console.log(e)
+        await session.close()
+        throw e
+    }
 }
 
 export async function addUsers(users: any) {
@@ -439,7 +461,17 @@ export async function addUsers(users: any) {
         return tx.run(`
             UNWIND $users AS u
             MERGE (user:User {username: u.username})
-            SET user = u
+            SET user.id = u.id,
+                user.created_at = u.created_at,
+                user.verified = u.verified,
+                user.profile_image_url = u.profile_image_url,
+                user.name = u.name,
+                user.username = u.username,
+                user.url = u.url,
+                user.\`public_metrics.followers_count\`  = u.\`public_metrics.followers_count\`,
+                user.\`public_metrics.following_count\`  = u.\`public_metrics.following_count\`,
+                user.\`public_metrics.tweet_count\`  = u.\`public_metrics.tweet_count\`,
+                user.\`public_metrics.listed_count\`  = u.\`public_metrics.listed_count\`
             RETURN user
             `,
             { users: users }
@@ -548,7 +580,7 @@ export async function addTwitterListToStream(api: TwitterApi, stream: Node, list
     const users = await getListUsers(api, listId)
     for (const user of users) {
         const userDb = await createUserDb(user)
-        addSeedUserToStream(stream, userDb)
+        addSeedUserToStream(api, stream, userDb)
     }
 }
 
@@ -655,12 +687,99 @@ export async function addTweetsFrom(tweets: any) {
 };
 
 export async function addSeedUserToStream(
+    api: TwitterApi,
+    limits: any,
     stream: Node,
     user: any // has already been added to db before calling this func
 ) {
     try {
         log.debug(`adding user '${user.properties.username}' to stream '${stream.properties.name}`)
         // Add new seedUsers relation to Stream
+        const now: string = (new Date()).toISOString()
+
+        const reses = await Promise.all([
+            getTweetsFromAuthorIdForStream(
+                api,
+                user,
+                stream,
+                now
+            ),
+            getSavedFollows(user.properties.username)
+        ])
+
+        const tweetRes = reses[0]
+        const savedFollowsOfUser = reses[1]
+
+        if (tweetRes.tweets.length > 0) {
+            let data = await Promise.all([
+                bulkWrites(tweetRes.users, addUsers),
+                bulkWrites(tweetRes.media, addTweetMedia),
+                bulkWrites(tweetRes.refTweets, addTweetsFrom),
+                bulkWrites(tweetRes.tweets, addTweetsFrom)
+            ])
+
+            let tweetTimeMax = new Date(Math.max.apply(null, tweetRes.tweets.map((t) => new Date(t.created_at))))
+            let tweetTimeMin = new Date(Math.min.apply(null, tweetRes.tweets.map((t) => new Date(t.created_at))))
+
+            let newMax = user.properties.tweetscapeIndexedTweetsEndTime;
+            let newMin = user.properties.tweetscapeIndexedTweetsStartTime;
+            if (!user.properties.tweetscapeIndexedTweetsEndTime) {
+                newMax = tweetTimeMax.toISOString()
+            } else if (user.properties.tweetscapeIndexedTweetsEndTime < tweetTimeMax.toISOString()) {
+                newMax = tweetTimeMax.toISOString()
+            }
+            if (!user.properties.tweetscapeIndexedTweetsEndTime) {
+                newMin = tweetTimeMin.toISOString()
+            }
+            else if (user.properties.tweetscapeIndexedTweetsStartTime > tweetTimeMin.toISOString()) {
+                newMin = tweetTimeMin.toISOString()
+            }
+
+            updateUserTweetscapeTweetIndexTimes(user, newMin, newMax)
+        }
+
+        if (savedFollowsOfUser.length == user.properties["public_metrics.following_count"]) {
+            log.debug(`Looks like we have already saved the ${savedFollowsOfUser.length} users followed by '${user.properties.username}'`)
+        } else {
+            log.debug(`We have ${savedFollowsOfUser.length} users followed by '${user.properties.username}', but twitter shows ${user.properties["public_metrics.following_count"]}`)
+
+            const getFollowedLimit = await limits.v2.getRateLimit(
+                'users/:id/following'
+            );
+
+            if ((getFollowedLimit?.remaining ?? 1) > 0) {
+                log.debug(`Fetching api.v2.following for ${user.properties.username}...`);
+                // Get accounts followed by seed user
+                const following = await api.v2.following(
+                    user.properties.id,
+                    {
+                        'tweet.fields': 'attachments,author_id,context_annotations,conversation_id,created_at,entities,geo,id,in_reply_to_user_id,lang,public_metrics,text,possibly_sensitive,referenced_tweets,reply_settings,source,withheld',
+                        'user.fields': USER_FIELDS,
+                        'max_results': 1000,
+                        "asPaginator": true
+                    }
+                );
+
+                while (!following.done) { await following.fetchNext(); }
+                console.log(`fetched ${following.data.data.length} accounts followed by '${user.properties.username}'`);
+                let newUsers = flattenTwitterUserPublicMetrics(following.data.data);
+                console.log("-----adfsad------")
+                console.log(newUsers.slice(0, 2))
+                let saved = await bulkWritesMulti(
+                    addUsersFollowedBy,
+                    newUsers,
+                    { username: user.properties.username }
+                )
+            } else {
+                log.warn(
+                    `Rate limit hit for getting user (${user.properties.username}) follwings, skipping until ${new Date(
+                        (getFollowedLimit?.reset ?? 0) * 1000
+                    ).toLocaleString()}...`
+                );
+            }
+        }
+
+
         return await streamContainsUser(user.properties.username, stream.properties.name)
     } catch (e) {
         log.error(`Error fetching tweets: ${JSON.stringify(e, null, 2)}`);
@@ -697,7 +816,7 @@ export async function updateStreamFollowsNetwork(api: TwitterApi, limits: Twitte
                     user.properties.id,
                     {
                         'tweet.fields': 'attachments,author_id,context_annotations,conversation_id,created_at,entities,geo,id,in_reply_to_user_id,lang,public_metrics,text,possibly_sensitive,referenced_tweets,reply_settings,source,withheld',
-                        'user.fields': 'created_at,description,entities,id,location,name,pinned_tweet_id,profile_image_url,protected,public_metrics,url,username,verified,withheld',
+                        'user.fields': USER_FIELDS,
                         'max_results': 1000,
                         "asPaginator": true
                     }
@@ -793,8 +912,6 @@ export async function updateStreamTweets(api: TwitterApi, stream: Node, seedUser
         )
     }))
     for (let res of tweetResponses) {
-        console.log("here is res")
-        console.log(Object.keys(res))
         users.push(...res.users)
         media.push(...res.media)
         refTweets.push(...res.refTweets)
@@ -809,9 +926,6 @@ export async function updateStreamTweets(api: TwitterApi, stream: Node, seedUser
     await Promise.all(seedUsers.map((user: any) => {
         let tweetTimeMax = new Date(Math.max.apply(null, tweets.map((t) => new Date(t.created_at))))
         let tweetTimeMin = new Date(Math.min.apply(null, tweets.map((t) => new Date(t.created_at))))
-
-        console.log("TIMESS")
-        console.log(tweetTimeMax)
 
         let newMax = user.properties.tweetscapeIndexedTweetsEndTime;
         let newMin = user.properties.tweetscapeIndexedTweetsStartTime;

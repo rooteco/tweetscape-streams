@@ -23,7 +23,7 @@ import invariant from 'tiny-invariant';
 import type { Session } from '@remix-run/node';
 import { prisma } from "~/db.server";
 import { flattenTwitterUserPublicMetrics } from '~/models/streams.server'
-
+import { getUserByUsernameDB } from '~/models/user.server'
 // import type {
 //     Annotation,
 //     AnnotationType,
@@ -62,7 +62,7 @@ export const USER_FIELDS: TTweetv2UserField[] = [
     'url',
     'username',
     'verified',
-    'withheld',
+    // 'withheld',
 ];
 
 export const TWEET_FIELDS: TTweetv2TweetField[] = [
@@ -132,6 +132,16 @@ export async function getListUsers(api: TwitterApi, listId: string) {
         users.push(user)
     }
     return flattenTwitterUserPublicMetrics(users);
+}
+
+export async function createList(api: TwitterApi, listName: string, userUsernames: string[]) {
+    const newList = await api.v2.createList({ name: listName, private: false })
+    let promises = userUsernames.map(async (username) => {
+        let userDb = await getUserByUsernameDB(username)
+        return await api.v2.addListMember(newList.data.id, userDb.properties.id)
+    })
+    const newMembers = await Promise.all(promises)
+    return { list: newList, members: newMembers };
 }
 
 export function handleTwitterApiError(e: unknown): never {

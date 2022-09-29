@@ -165,12 +165,6 @@ export default function StreamsPage() {
         const currentStream = params.streamName && params.streamName;
     }
 
-    useEffect(() => {
-        console.log("user: ", user)
-        console.log("lists: ", lists)
-    })
-
-
     const errors = useActionData();
 
     return (
@@ -204,4 +198,11 @@ export default function StreamsPage() {
             </div>
         </div>
     );
+}
+
+
+export function ErrorBoundary({ error }: { error: Error }) {
+    console.error(error);
+
+    return <div>An unexpected error occurred: {error.message}</div>;
 }
