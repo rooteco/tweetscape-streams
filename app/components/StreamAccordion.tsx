@@ -1,7 +1,6 @@
 import Accordion from '@mui/material/Accordion';
 import AccordionSummary from '@mui/material/AccordionSummary';
 import AccordionDetails from '@mui/material/AccordionDetails';
-import Typography from '@mui/material/Typography';
 import Chip from '@mui/material/Chip';
 
 import { makeStyles } from '@material-ui/styles';
@@ -10,10 +9,7 @@ import ArrowForwardIosSharpIcon from '@mui/icons-material/ArrowForwardIosSharp';
 
 
 import { Integer } from 'neo4j-driver';
-import { NavLink, Link, Outlet, useParams } from "@remix-run/react";
-
-import { redirect } from '@remix-run/server-runtime';
-import { useState, useEffect } from 'react';
+import { Link, useParams } from "@remix-run/react";
 
 
 import CompactProfile from './CompactProfile';
@@ -73,10 +69,8 @@ const useStyles = makeStyles((theme) => ({
 
 
 function StreamAccordion({ streams, lists }: { streams: Stream[] }) {
-
   // TODO: onOpen redirect to $streamName
   // TODO: perf should be much better when folding/unfolding streams
-
   const { streamName } = useParams();
   const classes = useStyles();
 
@@ -93,17 +87,17 @@ function StreamAccordion({ streams, lists }: { streams: Stream[] }) {
             key={stream.stream.elementId}
             expanded={expanded}
           >
-            <Link to={expanded ? "/streams" : stream.stream.properties.name}>
+            <Link to={expanded ? "/streams" : stream.stream.properties.name + "/overview"}>
               <AccordionSummary
-                expandIcon={<ArrowForwardIosSharpIcon sx={expanded? { fontSize: '0.85rem', color: '#1D1D1D' } : {fontSize: '0.85rem', color: '#B9BEC4'}} />}
+                expandIcon={<ArrowForwardIosSharpIcon sx={expanded ? { fontSize: '0.85rem', color: '#1D1D1D' } : { fontSize: '0.85rem', color: '#B9BEC4' }} />}
               >
-                <p 
+                <p
                   className={'font-medium'}
-                  style = {expanded? {color: '#1D1D1D'} : {color: '#949DA7'}}
+                  style={expanded ? { color: '#1D1D1D' } : { color: '#949DA7' }}
                 >
                   {stream.stream.properties.name}
                 </p>
-                <Chip icon = {<div>🌱</div>} size="small" label = {`${stream.seedUsers?.length}`}  sx = {{color: "#91949a", backgroundColor: "#f1f1f1"}}/>
+                <Chip icon={<div>🌱</div>} size="small" label={`${stream.seedUsers?.length}`} sx={{ color: "#91949a", backgroundColor: "#f1f1f1" }} />
               </AccordionSummary>
             </Link>
 
