@@ -1,7 +1,7 @@
 import type { ActionArgs, LoaderFunction, LoaderArgs } from "@remix-run/node";
 import type { Session } from '@remix-run/node';
 import { json, redirect } from "@remix-run/node";
-import { Form, useActionData, Link, useLoaderData, useMatches } from "@remix-run/react";
+import { Form, useActionData, Link, useMatches } from "@remix-run/react";
 import * as React from "react";
 import BirdIcon from '~/icons/bird';
 import { commitSession, getSession } from '~/session.server';
@@ -48,7 +48,7 @@ export async function action({ request }: ActionArgs) {
     const endTime = new Date()
     const startTime = new Date(endTime.getFullYear(), endTime.getMonth(), endTime.getDate() - 7, endTime.getHours(), endTime.getMinutes())
     stream = await createStream(name, startTime.toISOString(), username)
-    return redirect(`/streams/${stream.properties.name}`);
+    return stream;
 }
 
 export default function NewNotePage() {
