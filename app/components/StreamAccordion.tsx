@@ -99,7 +99,7 @@ function StreamAccordion({ streams, lists }: { streams: Stream[] }) {
             key={stream.stream.elementId}
             expanded={expanded}
           >
-            <Link to={expanded ? "/streams" : stream.stream.properties.name}>
+            <Link to={expanded ? "/streams" : `${stream.stream.properties.name}/overview`}>
               <AccordionSummary
                 expandIcon={<ArrowForwardIosSharpIcon sx={expanded ? { fontSize: '0.85rem', color: '#1D1D1D' } : { fontSize: '0.85rem', color: '#B9BEC4' }} />}
               >
