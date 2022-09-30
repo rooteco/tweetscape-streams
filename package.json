@@ -19,7 +19,7 @@
     "setup": "prisma generate && prisma migrate deploy && prisma db seed",
     "start": "cross-env NODE_ENV=production node ./build/server.js",
     "start:mocks": "cross-env NODE_ENV=production node --require ./mocks --require dotenv/config ./build/server.js",
-    "test": "vitest",
+    "test": "dotenv -e .env.test -- vitest --no-threads",
     "test:e2e:dev": "start-server-and-test dev http://localhost:3000 \"npx cypress open\"",
     "pretest:e2e:run": "npm run build",
     "test:e2e:run": "cross-env PORT=8811 start-server-and-test start:mocks http://localhost:8811 \"npx cypress run\"",
@@ -59,7 +59,8 @@
     "timeago-react": "^3.0.5",
     "timeago.js": "^4.0.2",
     "tiny-invariant": "^1.2.0",
-    "twitter-api-v2": "^1.12.2"
+    "twitter-api-v2": "^1.12.2",
+    "@twitter-api-v2/plugin-rate-limit": "^1.1.0"
   },
   "devDependencies": {
     "@faker-js/faker": "^7.4.0",
@@ -70,7 +71,6 @@
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^13.3.0",
     "@testing-library/user-event": "^14.4.3",
-    "@twitter-api-v2/plugin-rate-limit": "^1.1.0",
     "@types/bcryptjs": "^2.4.2",
     "@types/compression": "^1.7.2",
     "@types/eslint": "^8.4.6",
