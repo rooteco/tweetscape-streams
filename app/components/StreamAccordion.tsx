@@ -4,6 +4,7 @@ import AccordionDetails from '@mui/material/AccordionDetails';
 import Chip from '@mui/material/Chip';
 
 import { makeStyles } from '@material-ui/styles';
+import { styled, alpha } from '@mui/material/styles';
 
 import ArrowForwardIosSharpIcon from '@mui/icons-material/ArrowForwardIosSharp';
 
@@ -65,6 +66,17 @@ const useStyles = makeStyles((theme) => ({
     flexGrow: 1,
   }
 }));
+
+const StyledAccordion = styled(Accordion)(({ theme }) => ({
+  color: 'inherit',
+  '& .MuiAccordion-root': {
+      flexGrow: 0,
+  },
+  '& .MuiAccordion-expanded': {
+      flexGrow: 1,
+  },
+}));
+
 
 
 
