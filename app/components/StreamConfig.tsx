@@ -104,7 +104,7 @@ function StreamConfig(props: any) {
                     {/* <StyledInputBase
                         autoFocus
                         name="seedUserHandle"
-                        value={handle}
+                        type="text"
                         placeholder='Add handle ...'
                         inputProps={{ 'aria-label': 'search' }}
                         onChange={(e) => setHandle(e.target.value)}
