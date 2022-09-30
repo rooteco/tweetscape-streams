@@ -187,7 +187,7 @@ export default function StreamsPage() {
                 </div>
 
                 {/* List of Streams */}
-                <div className="flex flex-col space-y-0.5 flex-1 max-h-min z-10">
+                <div className="flex flex-col space-y-0.5 flex-1 max-h-min z-10 overflow-y-auto">
                     <p className="ml-2 text-slate-400 font-medium text-xs"> {user ? `@${user.username}'s` : "Public"} Streams </p>
                     <div className="accordion-container radial-bg bg-gray-100 border border-gray-200 p-1 grow rounded z-0">
                         <StreamAccordion streams={streams} lists={lists} />
