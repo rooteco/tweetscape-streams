@@ -4,6 +4,10 @@ import { TwitterApi, TwitterV2IncludesHelper } from 'twitter-api-v2';
 import { deleteUserIndexedTweets, getUserByUsernameDB, getUserIndexedTweets } from '~/models/user.server';
 import * as dotenv from "dotenv";
 import { createUserDb } from '~/models/user.server';
+import { TwitterApiRateLimitPlugin } from '@twitter-api-v2/plugin-rate-limit';
+import { TwitterApiRateLimitDBStore } from '~/limit.server';
+
+
 
 dotenv.config();
 
@@ -20,7 +24,12 @@ beforeAll(async () => {
 afterAll(async () => {
     await deleteStreamByName(streamName);
 })
-const api = new TwitterApi(process.env.TWITTER_TOKEN as string);
+
+const TWITTER_TOKEN = process.env.TWITTER_TOKEN as string
+const limits = new TwitterApiRateLimitPlugin(
+    new TwitterApiRateLimitDBStore(TWITTER_TOKEN)
+);
+let api = new TwitterApi(TWITTER_TOKEN, { plugins: [limits] });
 
 const TWEET = [{
     conversation_id: '1572099888682536960',
@@ -246,10 +255,9 @@ describe("Testing Streams Functions", () => {
         let stream1 = await createStream(stream1Name, stream1StartTime, username)
         const userFromTwitter = await getUserFromTwitter(api, "nicktorba");
         let userDb = await createUserDb(userFromTwitter)
-        await addSeedUserToStream(stream1, userDb)
+        await addSeedUserToStream(api, limits, stream1, userDb, stream1EndTime)
         let { seedUsers: stream1SeedUsers } = await getStreamByName(stream1.properties.name);
 
-        await updateStreamTweets(api, stream1, stream1SeedUsers.map((u) => u.user), stream1EndTime)
         let checkTweets = await getUserIndexedTweets("nicktorba")
         userDb = await getUserByUsernameDB("nicktorba")
         expect(userDb.properties.tweetscapeIndexedTweetsEndTime).toBe('2022-09-10T02:28:32.000Z')
@@ -259,9 +267,9 @@ describe("Testing Streams Functions", () => {
         const stream2StartTime = '2022-09-17T15:08:02.484Z'
         const stream2EndTime = '2022-09-21T15:56:07.000Z'
         let stream2 = await createStream(stream2Name, stream2StartTime, username)
-        await addSeedUserToStream(stream2, userDb)
+
+        await addSeedUserToStream(api, limits, stream2, userDb, stream2EndTime)
         let { seedUsers: stream2SeedUsers } = await getStreamByName(stream2.properties.name);
-        await updateStreamTweets(api, stream2, stream2SeedUsers.map((u) => u.user), stream2EndTime)
 
         checkTweets = await getUserIndexedTweets("nicktorba")
         userDb = await getUserByUsernameDB("nicktorba")

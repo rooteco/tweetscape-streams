@@ -3,7 +3,7 @@ import { loader, action } from "~/routes/streams/index";
 
 const streamName = "TEST-STREAM-in-index"
 
-describe("Check Page", () => {
+describe("Check Streams Index", () => {
     test("Create a Stream", async () => {
         const formData = new FormData();
         formData.append("name", streamName)
