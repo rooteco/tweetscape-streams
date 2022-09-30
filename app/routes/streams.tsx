@@ -168,18 +168,16 @@ export default function StreamsPage() {
     const errors = useActionData();
 
     return (
-        <div className="max-h-screen h-screen flex flex-row-reverse bg-white">
+        <div className="relative w-full flex flex-row-reverse bg-white">
 
             {/* Outlet for Stream Details and Feed (/$streamName) */}
-
-            <Outlet />
-            {/* <div className="flex-1 px-4 py-2 max-w-lg max-h-min bg-fade z-10">
+            <div className="relative bg-fade flex-1 px-4 py-2 max-w-2xl h-screen z-10">
                 <Outlet />
-            </div> */}
+            </div>
 
-            {/* Either 'Create A Stream and Login/Logout' or 'Export Stream or Delete Stream' */}
-            <div className="relative flex flex-col border-r space-y-16 w-96 pr-6 pb-6">
+            <div className="relative h-screen max-h-screen flex flex-col border-r space-y-16 w-96 pr-6 pb-6 pl-12">
                 <div className="flex flex-row space-x-2 w-full ml-2 mt-4">
+                    {/* Either 'Create A Stream and Login/Logout' or 'Export Stream or Delete Stream' */}
                     {streamsRoot ? <CreateAndLogin user={user} /> : <ExportAndDelete user={user} />}
 
                     <div className="absolute justify-center align-middle -left-36 top-12 flex flex-col space-y-16 z-0">
@@ -190,7 +188,7 @@ export default function StreamsPage() {
 
                 {/* List of Streams */}
                 <div className="flex flex-col space-y-0.5 flex-1 z-10">
-                    <p className="ml-2 text-slate-400 font-light text-sm"> {user ? `@${user.username}'s` : "Public"} Streams </p>
+                    <p className="ml-2 text-slate-400 font-medium text-xs"> {user ? `@${user.username}'s` : "Public"} Streams </p>
                     <div className="accordion-container radial-bg bg-gray-100 border border-gray-200 p-1 grow rounded z-0">
                         <StreamAccordion streams={streams} lists={lists} />
                     </div>
