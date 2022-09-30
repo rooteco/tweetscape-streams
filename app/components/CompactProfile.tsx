@@ -1,5 +1,5 @@
 import { Form } from '@remix-run/react'
-import { userNode } from './StreamAccordion'
+import type { userNode } from './StreamAccordion'
 
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';

@@ -53,44 +53,6 @@ export async function loader({ request, params }: LoaderArgs) {
     const tweets = await getStreamTweets(stream.properties.name, stream.properties.startTime);
     console.timeEnd("getStreamTweets")
 
-    // console.log(tweets.map((item) => (item.author.properties.username)))
-
-    // Getting Recommended Users
-    // The getStreamRecommendedUsers returns a list of nodes, and a count of the number of seed users those accounts as followed by
-    // This makes sure that we check all the way down to 2 overlapping seed users to make sure recommendations are provided
-    /* 
-    let recommendedUsers = [];
-    if (seedUsers.length > 1) {
-        recommendedUsers = await getStreamRecommendedUsers(stream.properties.name)
-    }
-
-    let numSeedUsersFollowedBy = seedUsers.length + 1;
-    let recommendedUsersTested: any[] = [];
-    if (recommendedUsers.length > 0) {
-        while (recommendedUsersTested.length < 5 && numSeedUsersFollowedBy > 1) {
-            recommendedUsersTested = [];
-            numSeedUsersFollowedBy--;
-            recommendedUsers[0].map((row: any) => {
-                if (row.count.toInt() >= numSeedUsersFollowedBy) {
-                    recommendedUsersTested.push(row.item)
-                }
-            })
-            // console.log(`found ${recommendedUsersTested.length} users followed by ${numSeedUsersFollowedBy} users`)
-        }
-    
-    }
-
-    recommendedUsersTested.sort((a, b) => a.properties['public_metrics.followers_count'] - b.properties['public_metrics.followers_count'])
-
-
-    let userLists = [];
-    const { api, uid, session } = await getClient(request)
-    if (api) {
-        const meData = await api.v2.me({ "user.fields": USER_FIELDS });
-        userLists = await getAllUserLists(meData.data.username)
-    }
-    */
-
     return json({
         "stream": stream,
         "tweets": tweets,
@@ -271,7 +233,6 @@ export default function Feed() {
                                 </button>
                             </Form>
                         </div>
-
                     </div>
 
                     <div className="flex flex-row hidden">

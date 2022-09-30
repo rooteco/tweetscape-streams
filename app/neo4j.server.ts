@@ -1,4 +1,5 @@
-import neo4j, { Driver, Session } from 'neo4j-driver'
+import type { Driver} from 'neo4j-driver';
+import neo4j, { Session } from 'neo4j-driver'
 // import { int, isInt } from 'neo4j-driver'
 
 let driver: Driver;

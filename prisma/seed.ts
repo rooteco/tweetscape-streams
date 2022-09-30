@@ -1,5 +1,7 @@
 import { objectEnumValues } from "@prisma/client/runtime";
 
+import { PrismaClient } from '@prisma/client';
+
 const twitterUserData = [
     {
         location: 'San Francisco Bay Area, CA',
@@ -90,8 +92,6 @@ const followsData = [
         followingId: "803693608419422209"
     },
 ]
-
-import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 export async function seed() {
