@@ -21,7 +21,8 @@ import type {
     TweetV2,
     TweetV2ListTweetsPaginator,
     UserV2,
- MediaObjectV2, TwitterApi} from 'twitter-api-v2';
+    MediaObjectV2, TwitterApi
+} from 'twitter-api-v2';
 
 export function flattenTwitterUserPublicMetrics(data: Array<any>) {
     for (const obj of data) {
@@ -690,13 +691,12 @@ export async function addSeedUserToStream(
     api: TwitterApi,
     limits: any,
     stream: Node,
-    user: any // has already been added to db before calling this func
+    user: any, // has already been added to db before calling this func
+    now: string = (new Date()).toISOString()
 ) {
     try {
         log.debug(`adding user '${user.properties.username}' to stream '${stream.properties.name}`)
         // Add new seedUsers relation to Stream
-        const now: string = (new Date()).toISOString()
-
         const reses = await Promise.all([
             getTweetsFromAuthorIdForStream(
                 api,
@@ -926,6 +926,10 @@ export async function updateStreamTweets(api: TwitterApi, stream: Node, seedUser
     await Promise.all(seedUsers.map((user: any) => {
         let tweetTimeMax = new Date(Math.max.apply(null, tweets.map((t) => new Date(t.created_at))))
         let tweetTimeMin = new Date(Math.min.apply(null, tweets.map((t) => new Date(t.created_at))))
+
+        console.log("TWEETTIMEMAX")
+        console.log(tweetTimeMax)
+        console.log(tweets.map((t) => new Date(t.created_at)))
 
         let newMax = user.properties.tweetscapeIndexedTweetsEndTime;
         let newMin = user.properties.tweetscapeIndexedTweetsStartTime;
