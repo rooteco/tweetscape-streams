@@ -2,11 +2,13 @@ import React from 'react'
 import { Link } from '@remix-run/react'
 import { Form } from '@remix-run/react'
 import Add from '@mui/icons-material/Add'
+import LoginIcon from '@mui/icons-material/Login'
+import { Logout } from '@mui/icons-material'
 
 function CreateAndLogin({ user }) {
     return (
         <div className="h-full flex flex-col space-y-2 z-10">
-            <Link to="/streams" className="button-big py-2 pl-2 pr-8 rounded-2xl text-xl flex space-x-3 items-center" style={{ color: "#439AAF" }}>
+            <Link to="/streams" className="button-big py-2 pl-2 pr-8 rounded-2xl text-xl flex space-x-2 items-center" style={{ color: "#439AAF" }}>
                 <div id="icon" className="center rounded-full hover:bg-slate-300/50">
                     <Add sx={{ fontSize: "2.5rem", fontWeight: "bold", opacity: "0.2" }} />
                 </div>
@@ -33,10 +35,13 @@ function CreateAndLogin({ user }) {
                     </Form>
                     :
                     <Link
-                        className=' mx-auto pill flex truncate items-center text-white text-xs bg-sky-500 rounded-full px-2 h-6'
+                        className=' w-fit pill truncate items-center py-1 pl-1 pr-8 rounded-full text-sm flex space-x-2'
                         style={{ background: "#E5ECF7", border: "1 solid #D2DCED" }}
                         to='/oauth'
                     >
+                        <div id="icon" className="center rounded-full hover:bg-slate-300/50">
+                            <LoginIcon sx={{ fontSize: "1.5rem", padding: "0.25rem", fontWeight: "bold", opacity: "0.2" }} />
+                        </div>
                         <span>Login</span>
                     </Link>
                 }

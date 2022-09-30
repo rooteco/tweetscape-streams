@@ -33,6 +33,7 @@ import UpdateIcon from '@mui/icons-material/Update';
 
 import Tweet from '~/components/Tweet';
 
+import { useParams } from "@remix-run/react";
 
 export async function loader({ request, params }: LoaderArgs) {
     // TODO: refactor to get only tweets and annotations
@@ -209,6 +210,7 @@ export const action: ActionFunction = async ({
 export default function Feed() {
     // Responsible for rendering a feed & annotations
     console.log("STREAMNAME LOADER")
+    
     let transition = useTransition();
     let busy = transition.submission;
 
@@ -232,9 +234,9 @@ export default function Feed() {
     }
 
     return (
-        <div className="flex px-4 py-2 max-w-4xl max-h-min bg-fade z-10">
+        <div className="flex px-4 py-2 max-h-min z-10">
             <div className='relative max-h-screen overflow-y-auto'>
-                <div className="sticky top-0 mx-auto backdrop-blur-xl p-1 rounded-xl">
+                <div className="sticky top-0 mx-auto backdrop-blur-lg p-1 rounded-xl">
                     <div className="flex flex-row justify-between p-3 bg-slate-50 rounded-lg">
                         <p className="text-xl font-medium">{stream.properties.name}</p>
                         {/* DEV: Update Stream Tweets / Stream Follower Network */}
