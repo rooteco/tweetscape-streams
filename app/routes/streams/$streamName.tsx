@@ -245,7 +245,7 @@ export default function Feed() {
                     </div>
                 </div>
 
-                <div className="h-full mx-2">
+                <div className="h-full 2xl:w-1/2 lg:mx-2 2xl:mx-auto">
                     {busy ?
                         <div>LOADING</div> :
                         tweets
