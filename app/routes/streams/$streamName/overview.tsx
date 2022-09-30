@@ -6,7 +6,10 @@ import HubIcon from '@mui/icons-material/Hub';
 import { couldStartTrivia } from "typescript";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 
+
 import { Link, useParams } from "@remix-run/react";
+
+import Chip from '@mui/material/Chip';
 
 export async function loader({ request, params }: LoaderArgs) {
     return {}
@@ -15,7 +18,9 @@ export async function loader({ request, params }: LoaderArgs) {
 export default function Overview() {
     // Responsible for rendering the overview page for a stream
 
-    const {streamName} = useParams();
+    const params = useParams();
+    console.log(params)
+
     const loaderData = useLoaderData();
     const matches = useMatches(); // gives access to all the routes, https://remix.run/docs/en/v1/api/remix#usematches
     const tweets = matches.filter((route) => route.id == 'routes/streams/$streamName')[0].data.tweets
@@ -92,30 +97,60 @@ export default function Overview() {
 
     return (
         <>
-            <div className='relative max-h-screen px-4'>
-                <div className="sticky top-0 mx-auto backdrop-blur-xl p-1 rounded-xl">
+            <div className='w-full px-4'>
+                <div className="w-full mx-auto overflow-scroll p-2 sm:max-h-[40vh] xl:max-h-[30vh]">
 
-                    <p>num tweets today: <b>{numTweetsToday}</b></p>
-                    <p>num tweets in last week: <b>{numTweetsLastWeek}</b></p>
-                    <p className="text-md">Tweet Distribution</p>
+                    <div className="flex gap-2">
+                        <p>Tweets Today <b>{numTweetsToday}</b></p>
+                        <p>Tweets Last Week <b>{numTweetsLastWeek}</b></p>
+
+                    </div>
+
+                    <p className="text-md font-medium my-4">Tweet Distribution</p>
+                    <div className="flex flex-wrap gap-1 px-1">
+                        {
+                            tweetAuthorCountRows.map((row) => (
+                                <Chip
+                                    key={row.name}
+                                    label={row.split('=')[0]}
+                                    size="small"
+                                    sx={{ backgroundColor: '#FFFFFF', border: '1px solid #DDDAF8', color: '#374151', fontSize: '0.75rem' }}
+                                    avatar={<div style={{ backgroundColor: "#E7E5FC", borderRadius: "50%", fontSize: '0.5rem' }} className="w-6 h-6 flex items-align text-center justify-center text-xs">{row.split('=')[1]}</div>}
+                                />))
+                        }
+                    </div>
+
+
+                    <p className="text-md font-medium my-4">Top Referenced Accounts of Stream</p>
                     {
-                        tweetAuthorCountRows.map((row) => (<p>{row}</p>))
-                    }
-                    <p className="text-md text-bold">Top Referenced Accounts of Stream</p>
-                    {
-                        referencedAccountCounts.slice(0, 6).map((row) => (
-                            <p>{`${row.key} referenced ${row.value} times`}</p>
-                        ))
-                    }
-                    <p className="text-md text-bold">Top Referenced Entities of Stream</p>
+                        referencedAccountCounts.slice(0, 6).map((row) => {
+                            if (typeof (row.key) == "string") {
+                                return (
+                                    <Chip
+                                        key={row.key}
+                                        label={row.key}
+                                        size="small"
+                                        sx={{ backgroundColor: '#FFFFFF', border: '1px solid #DDDAF8', color: '#374151', fontSize: '0.75rem' }}
+                                    />
+                                )
+                            }
+                        })
+                    } 
+                    
+                    <p className="text-md font-medium my-4">Top Referenced Entities of Stream</p>
                     {
                         entityCountsArray.slice(0, 6).map((row) => (
-                            <p>{`${row.key} referenced ${row.value} times`}</p>
+                            <Chip
+                                key={row.key}
+                                label={row.key}
+                                size="small"
+                                sx={{ backgroundColor: '#FFFFFF', border: '1px solid #DDDAF8', color: '#374151', fontSize: '0.75rem' }}
+                            />
                         ))
                     }
                 </div>
             </div>
-            
+
         </>
 
     );
