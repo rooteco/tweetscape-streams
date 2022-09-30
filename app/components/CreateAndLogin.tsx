@@ -35,13 +35,10 @@ function CreateAndLogin({ user }) {
                     </Form>
                     :
                     <Link
-                        className=' w-fit pill truncate items-center py-1 pl-1 pr-8 rounded-full text-sm flex space-x-2'
+                        className='pill items-center justify-center rounded-full text-xs h-8 flex space-x-2'
                         style={{ background: "#E5ECF7", border: "1 solid #D2DCED" }}
                         to='/oauth'
                     >
-                        <div id="icon" className="center rounded-full hover:bg-slate-300/50">
-                            <LoginIcon sx={{ fontSize: "1.5rem", padding: "0.25rem", fontWeight: "bold", opacity: "0.2" }} />
-                        </div>
                         <span>Login</span>
                     </Link>
                 }

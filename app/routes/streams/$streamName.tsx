@@ -37,8 +37,8 @@ import UpdateIcon from '@mui/icons-material/Update';
 
 import Tweet from '~/components/Tweet';
 
-import { useParams } from "@remix-run/react";
-import { Expand } from "@mui/icons-material";
+import { useParams, useLocation } from "@remix-run/react";
+import { Expand, ExpandCircleDownTwoTone } from "@mui/icons-material";
 
 
 
@@ -180,9 +180,10 @@ export default function Feed() {
     // Responsible for rendering a feed & annotations
     console.log("STREAMNAME LOADER")
 
-    const { streamName, overview } = useParams();
+    const { streamName } = useParams();
     
-    const [expanded, setExpanded] = useState(false);
+    const overview = useLocation().pathname.split("/").pop() === "overview"
+    
 
     let transition = useTransition();
     let busy = transition.submission;
@@ -246,17 +247,17 @@ export default function Feed() {
                         </div>
                     </div>
 
-                    <div className="w-full mx-auto flex flex-col items-center">
+                    <div className="relative w-full mx-auto flex flex-col items-center">
                         <Outlet />
-                        {expanded ?
-                            <Link to={`/streams/${streamName}`} onClick = {() => setExpanded(false)}>
-                                <div className="my-1 mx-1 w-6 h-6 text-center cursor-pointer rounded-full bg-slate-100 hover:bg-slate-200">
+                        {overview ?
+                            <Link className = "w-full h-hull"  to={`/streams/${streamName}`}>
+                                <div className="my-1 mx-1  text-center cursor-pointer rounded-full bg-slate-50 hover:bg-slate-200">
                                     <ExpandLessIcon sx={{ fontSize: "1rem" }} />
                                 </div>
                             </Link>
                             :
-                            <Link to={`/streams/${streamName}/overview`} onClick = {() => setExpanded(true)}>
-                                <div className="my-1 mx-1 w-6 h-6 text-center cursor-pointer rounded-full bg-slate-100 hover:bg-slate-200">
+                            <Link className = "w-full h-hull" to={`/streams/${streamName}/overview`}>
+                                <div className="my-1 mx-1  text-center cursor-pointer rounded-full bg-slate-50 hover:bg-slate-200">
                                     <ExpandMoreIcon sx={{ fontSize: "1rem" }} />
                                 </div>
                             </Link>
