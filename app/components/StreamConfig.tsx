@@ -116,18 +116,6 @@ function StreamConfig(props: any) {
                     </button>
                 </Search>
 
-                {/* Delete Stream */}
-                <button
-                    type="submit"
-                    className="shrink w-8 h-8 rounded-full bg-blue-500 text-white hover:bg-blue-600 focus:bg-blue-400"
-                    value="delete"
-                    name="intent"
-                >
-                    <Tooltip title="Delete Stream">
-                        <DeleteIcon sx={{ fontSize: "1.5rem" }} />
-                    </Tooltip>
-
-                </button>
             </Form>
 
             {/* Add from User Lists 
