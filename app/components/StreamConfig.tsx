@@ -87,7 +87,7 @@ function StreamConfig(props: any) {
                 <Search className="relative grow-1 rounded-lg flex justify-between border border-gray-200 backdrop-blur-lg">
                     <ImportSwitch>
                         <ButtonGroup sx={{ border: '1 px solid #e5e5e5' }}>
-                            <Tooltip title="Import from List">
+                            <Tooltip title="Import from List (Coming Soon)">
                                 <Button className="border border-gray-200">
                                     <ReceiptLongIcon sx={search ? { color: "#A5A4A4" } : { color: "#000000" }} />
                                 </Button>
@@ -101,7 +101,7 @@ function StreamConfig(props: any) {
                     </ImportSwitch>
 
 
-                    <StyledInputBase
+                    {/* <StyledInputBase
                         autoFocus
                         name="seedUserHandle"
                         value={handle}
@@ -109,7 +109,13 @@ function StreamConfig(props: any) {
                         inputProps={{ 'aria-label': 'search' }}
                         onChange={(e) => setHandle(e.target.value)}
                     >
-                    </StyledInputBase>
+                    </StyledInputBase> */}
+                    <input
+                        autoFocus
+                        name="seedUserHandle"
+                        type="text"
+                        placeholder='Add handle ...'
+                    />
                     <button
                         type='submit'
                         value="addSeedUser"
@@ -117,7 +123,7 @@ function StreamConfig(props: any) {
                         className={handle.length > 0 ? "" : "invisible"}
                         onClick={() => setHandle("")}
                     >
-                        <span className = "text-xs rounded-full bg-blue-300 px-2 py-1 mr-1 text-blue-50">SUBMIT</span>
+                        <span className="text-xs rounded-full bg-blue-400 px-2 py-1 mr-1 text-white">SUBMIT</span>
                     </button>
                 </Search>
 

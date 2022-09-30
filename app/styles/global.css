@@ -65,7 +65,7 @@ body {
 .MuiAccordion-root .MuiAccordionDetails-root {
     position: relative;
     width: 100%;
-    max-height: 40vh;
+    max-height: 65vh;
     padding: 0.5rem;
     overflow-y: scroll;
     background-color: transparent !important;
@@ -104,6 +104,7 @@ body {
 
 .button-big:hover {
     background: #E9F4F7;
+    transform: scale(1.05);
 }
 
 .pill {
@@ -114,4 +115,15 @@ body {
 
 .pill:hover {
     background: #D7E2F4;
+    transform: scale(1.05);
+}
+
+.pill-red {
+    background: #F7E5EB;
+    border: 1px solid #EDD2D7;    
+}
+
+.pill-red:hover {
+    background: #f0dde4;
+    transform: scale(1.05);
 }

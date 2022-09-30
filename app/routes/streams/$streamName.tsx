@@ -3,11 +3,15 @@ import type { ActionFunction } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { Form, useActionData, useCatch, useLoaderData, Outlet, useTransition } from "@remix-run/react";
 
+import { Link, useParams } from "@remix-run/react";
+
 
 import Downshift from "downshift";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import invariant from "tiny-invariant";
 
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 
 import {
     addTwitterListToStream,
@@ -33,7 +37,10 @@ import UpdateIcon from '@mui/icons-material/Update';
 
 import Tweet from '~/components/Tweet';
 
-import { useParams } from "@remix-run/react";
+import { useParams, useLocation } from "@remix-run/react";
+import { Expand, ExpandCircleDownTwoTone } from "@mui/icons-material";
+
+
 
 export async function loader({ request, params }: LoaderArgs) {
     // TODO: refactor to get only tweets and annotations
@@ -172,7 +179,12 @@ export const action: ActionFunction = async ({
 export default function Feed() {
     // Responsible for rendering a feed & annotations
     console.log("STREAMNAME LOADER")
+
+    const { streamName } = useParams();
     
+    const overview = useLocation().pathname.split("/").pop() === "overview"
+    
+
     let transition = useTransition();
     let busy = transition.submission;
 
@@ -198,7 +210,7 @@ export default function Feed() {
     return (
         <div className="flex px-4 py-2 max-h-min z-10">
             <div className='relative max-h-screen overflow-y-auto'>
-                <div className="sticky top-0 mx-auto backdrop-blur-lg p-1 rounded-xl">
+                <div className="sticky top-0 mx-auto backdrop-blur-lg bg-slate-50 bg-opacity-60 p-1 rounded-xl">
                     <div className="flex flex-row justify-between p-3 bg-slate-50 rounded-lg">
                         <p className="text-xl font-medium">{stream.properties.name}</p>
                         {/* DEV: Update Stream Tweets / Stream Follower Network */}
@@ -235,6 +247,24 @@ export default function Feed() {
                         </div>
                     </div>
 
+                    <div className="relative w-full mx-auto flex flex-col items-center">
+                        <Outlet />
+                        {overview ?
+                            <Link className = "w-full h-hull"  to={`/streams/${streamName}`}>
+                                <div className="my-1 mx-1  text-center cursor-pointer rounded-full bg-slate-50 hover:bg-slate-200">
+                                    <ExpandLessIcon sx={{ fontSize: "1rem" }} />
+                                </div>
+                            </Link>
+                            :
+                            <Link className = "w-full h-hull" to={`/streams/${streamName}/overview`}>
+                                <div className="my-1 mx-1  text-center cursor-pointer rounded-full bg-slate-50 hover:bg-slate-200">
+                                    <ExpandMoreIcon sx={{ fontSize: "1rem" }} />
+                                </div>
+                            </Link>
+                                
+                        }
+                    </div>
+
                     <div className="flex flex-row hidden">
                         <p>Tags</p>
                         <ol>
@@ -259,7 +289,7 @@ export default function Feed() {
                             ))}
                 </div>
             </div>
-            <Outlet />
+
         </div>
     );
 }
