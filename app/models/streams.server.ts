@@ -1,10 +1,10 @@
 
-import { MediaObjectV2, TweetStream, TwitterApi, TwitterApiv2, TwitterV2IncludesHelper, UserSearchV1Paginator } from 'twitter-api-v2';
-import { TwitterApiRateLimitPlugin } from '@twitter-api-v2/plugin-rate-limit';
+import { TweetStream, TwitterApiv2, TwitterV2IncludesHelper, UserSearchV1Paginator } from 'twitter-api-v2';
+import type { TwitterApiRateLimitPlugin } from '@twitter-api-v2/plugin-rate-limit';
 
 import { log } from '~/log.server';
 import { driver } from "~/neo4j.server";
-import { Record, Node } from 'neo4j-driver'
+import type { Record, Node } from 'neo4j-driver'
 import { getListUsers, USER_FIELDS } from '~/twitter.server';
 import { createUserDb } from "~/models/user.server";
 
@@ -21,7 +21,7 @@ import type {
     TweetV2,
     TweetV2ListTweetsPaginator,
     UserV2,
-} from 'twitter-api-v2';
+ MediaObjectV2, TwitterApi} from 'twitter-api-v2';
 
 export function flattenTwitterUserPublicMetrics(data: Array<any>) {
     for (const obj of data) {
@@ -400,7 +400,7 @@ async function getSavedFollows(username: string) {
     return users;
 }
 
-async function addUsersFollowedBy(users: any, { username: username }) {
+async function addUsersFollowedBy(users: any, { username }) {
     const session = driver.session()
     // Create a node within a write transaction
     try {
