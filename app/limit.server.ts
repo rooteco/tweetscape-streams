@@ -7,9 +7,10 @@ import type {
 } from '@twitter-api-v2/plugin-rate-limit';
 import { TwitterApiRateLimitMemoryStore } from '@twitter-api-v2/plugin-rate-limit';
 import type { TwitterRateLimit } from 'twitter-api-v2';
-
-import { log, parse, stringify } from '~/utils.server';
+import { log } from '~/log.server';
 import { redis } from '~/redis.server';
+
+const { parse, stringify } = JSON;
 
 let connectionPromise: Promise<void>;
 if (!redis.isOpen) connectionPromise = redis.connect();
@@ -17,7 +18,7 @@ if (!redis.isOpen) connectionPromise = redis.connect();
 export class TwitterApiRateLimitDBStore implements ITwitterApiRateLimitStore {
   private store = new TwitterApiRateLimitMemoryStore();
 
-  public constructor(private uid: bigint) { }
+  public constructor(private uid: string) { }
 
   private key(endpoint: string, method = 'GET') {
     const hash = createHash('sha256');

@@ -3,10 +3,10 @@ import type { LoaderArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { Form, Link, NavLink, Outlet, useLoaderData } from "@remix-run/react";
 import invariant from "tiny-invariant";
-import { Record } from 'neo4j-driver'
+import type { Record } from 'neo4j-driver'
 import { driver } from "~/neo4j.server";
 
-import { getTweet } from "~/models/tweets.server";
+import type { getTweet } from "~/models/tweets.server";
 
 type LoaderData = {
     // this is a handy way to say: "posts is whatever type getStreams resolves to"
