@@ -1,0 +1,117 @@
+html,
+body {
+    margin: 0;
+    height: 100%;
+    overflow: hidden
+}
+
+.MuiAccordion-root {
+    margin-bottom: 0.25rem;
+    border-radius: 4px !important;
+    background-color: transparent !important;
+    flex-grow: 0;
+}
+
+.MuiAccordion-root.Mui-expanded {
+    margin-bottom: 0.25rem !important;
+    flex-grow: 1;
+}
+
+.MuiAccordion-root::before {
+    /* Remove border */
+    display: none !important;
+}
+
+.MuiAccordion-root .MuiAccordionSummary-root {
+    flex-direction: row-reverse;
+
+    background-color: white;
+    width: 100%;
+    max-height: 2.5rem;
+    min-height: min-content;
+    border-radius: 4px !important;
+    gap: 10px;
+    padding: 8px 10px 8px 10px;
+}
+
+.MuiAccordion-root .MuiAccordionSummary-root:hover {
+    background-color: #fafafa;
+}
+
+
+.MuiAccordionSummary-content.MuiAccordionSummary-contentGutters {
+    justify-content: space-between;
+
+}
+
+.MuiAccordionSummary-content.MuiAccordionSummary-contentGutters .MuiChip-root {
+    display: none;
+}
+
+.MuiAccordionSummary-content:hover.MuiAccordionSummary-contentGutters .MuiChip-root {
+    display: flex;
+}
+
+
+
+.MuiAccordion-root .MuiAccordionSummary-root.Mui-expanded {
+    min-height: min-content;
+}
+
+.MuiAccordionSummary-root .MuiAccordionSummary-expandIconWrapper.Mui-expanded {
+    transform: rotate(90deg);
+}
+
+.MuiAccordion-root .MuiAccordionDetails-root {
+    position: relative;
+    width: 100%;
+    max-height: 40vh;
+    padding: 0.5rem;
+    overflow-y: scroll;
+    background-color: transparent !important;
+}
+
+.radial-bg {
+    background: radial-gradient(90% 60% at 20% -15%, rgba(96, 143, 237, 0.20) 5%, rgba(255, 255, 255, 0) 100%)
+        , radial-gradient(220% 60% at 30% 100%, rgba(174, 224, 240, 0.45) 0%, rgba(244, 250, 252, 0) 56.96%)
+        , #F7F7F8;
+    background-blend-mode: multiply, multiply, normal;
+}
+
+.accordion-container {
+    border-radius: 6px;
+    background-color: #F7F7F8;
+    box-shadow: 0px 2px 16px 0px rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(210, 210, 210, 0.25);
+}
+
+.bg-fade {
+    background: linear-gradient(90deg, rgba(240, 240, 240, 0.45) 0%, rgba(255, 255, 255, 1) 35%);
+}
+
+.button-big {
+    border-radius: 36px;
+    background: #F2FAFC;
+    border: 1px solid #e2e7f2;
+    border-radius: 36px;
+
+}
+
+.button-big:hover #icon {
+    background-color: #D8EDF2;
+
+}
+
+.button-big:hover {
+    background: #E9F4F7;
+}
+
+.pill {
+    background: #E5ECF7;
+    border: 1px solid #D2DCED;
+    color: #4173C2;
+}
+
+.pill:hover {
+    background: #D7E2F4;
+}

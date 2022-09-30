@@ -1,14 +1,16 @@
 import type { ActionArgs, LoaderFunction, LoaderArgs } from "@remix-run/node";
 import type { Session } from '@remix-run/node';
 import { json, redirect } from "@remix-run/node";
-import { Form, useActionData, Link, useLoaderData } from "@remix-run/react";
+import { Form, useActionData, Link, useMatches } from "@remix-run/react";
 import * as React from "react";
 import BirdIcon from '~/icons/bird';
 import { commitSession, getSession } from '~/session.server';
-import { getClient } from '~/twitter.server';
+import { getClient, USER_FIELDS } from '~/twitter.server';
 import { createStream, getStreamByName } from "~/models/streams.server";
 import { getUserByUsernameDB, createUserDb } from "~/models/user.server";
 import { flattenTwitterUserPublicMetrics } from "~/models/user.server";
+
+import { Paper } from "@mui/material";
 
 export function getUserIdFromSession(session: Session) {
     const userId = session.get('uid') as string | undefined;
@@ -24,7 +26,7 @@ type ActionData =
 
 export async function action({ request }: ActionArgs) {
     const formData = await request.formData();
-    const name: string = formData.get("name");
+    const name: string = formData.get("name") as string;
     let { stream, seedUsers } = await getStreamByName(name);
     if (stream) {
         let errors: ActionData = {
@@ -34,49 +36,30 @@ export async function action({ request }: ActionArgs) {
     }
     const { api, uid, session } = await getClient(request);
     let user = null;
-    if (!uid) {
+    if (!api) {
+        console.log("YOU ARE NOT LOGGED IN")
         return null
     }
-    const meData = await api.v2.me({ "user.fields": "created_at,description,entities,id,location,name,pinned_tweet_id,profile_image_url,protected,public_metrics,url,username,verified,withheld", });
+    const meData = await api.v2.me({ "user.fields": USER_FIELDS });
     user = meData.data;
     let username = user.username;
     let userDb = await getUserByUsernameDB(username)
     if (!userDb) {
         createUserDb(flattenTwitterUserPublicMetrics([user])[0])
     }
-    const startTime = "2022-08-24T13:58:40Z";
-    const endTime = "2022-08-31T13:58:40Z";
-    stream = await createStream(name, startTime, endTime, username)
-    return redirect(`/streams/${stream.properties.name}`);
-}
-
-
-type LoaderData = {
-    user: any
-}
-
-export const loader: LoaderFunction = async ({ request }: LoaderArgs) => {
-    const session = await getSession(request.headers.get('Cookie'));
-    const uid = getUserIdFromSession(session);
-    let user = null;
-    if (uid) {
-        const { api, uid, session } = await getClient(request);
-        const meData = await api.v2.me({ "user.fields": "created_at,description,entities,id,location,name,pinned_tweet_id,profile_image_url,protected,public_metrics,url,username,verified,withheld", });
-        user = meData.data;
-    }
-    return json<LoaderData>(
-        {
-            user: user,
-        },
-    )
+    const endTime = new Date()
+    const startTime = new Date(endTime.getFullYear(), endTime.getMonth(), endTime.getDate() - 7, endTime.getHours(), endTime.getMinutes())
+    stream = await createStream(name, startTime.toISOString(), username)
+    return stream;
 }
 
 export default function NewNotePage() {
+    const matches = useMatches(); // gives access to all the routes, https://remix.run/docs/en/v1/api/remix#usematches
+    const user = matches.filter((route) => route.id == 'routes/streams')[0].data.user
     const actionData = useActionData<typeof action>();
     const titleRef = React.useRef<HTMLInputElement>(null);
     const bodyRef = React.useRef<HTMLTextAreaElement>(null);
     const errors = useActionData();
-    const user = useLoaderData().user;
 
     React.useEffect(() => {
         if (actionData?.errors?.title) {
@@ -87,40 +70,45 @@ export default function NewNotePage() {
     }, [actionData]);
 
     return (
-        <div>
-            <div className="flex-1 p-6">
-                {
-                    user && (
-                        <div>
-                            <h1>Create New Stream</h1>
-                            <Form method="post" className='flex my-8 max-w-sm'>
-                                <label> Stream Name
+
+        <div className="flex h-full w-full justify-center align-middle items-center">
+            {
+                user && (
+                    <Paper variant="outlined" sx={{ width: "fit-content", borderRadius: 4}}>
+                        <div className="flex flex-col p-4 space-y-2">
+                            <h1 className="text-lg font-medium pb-6">Create a New Stream</h1>
+                            <Form method="post" className='flex flex-col space-x-1 space-y-6 max-w-sm'>
+                                <label className="flex flex-col text-sm"> Stream Name
                                     {errors?.streamName ? (
                                         <em className="text-red-600">{errors.streamName}</em>
                                     ) : null}
-                                    <input name="name" type="text" className='flex-1 rounded border-2 border-black px-2 py-1' />{" "}
+                                    <input name="name" type="text" className='flex-1 rounded border border-gray-200 bg-gray-100 px-2 py-1' />{" "}
                                 </label>
-                                <br />
-                                <button type="submit" className='ml-2 inline-block rounded border-2 border-black bg-black px-2 py-1 text-white'>Create Stream</button>
+                                <button type="submit" className='ml-1 inline-block rounded-full border-2  pill px-2 py-1 text-white'>Create Stream</button>
                             </Form>
                         </div>
-                    )
-                }
-                {!user && (
-                    <div>
-                        <p className="pb-4">Choose a stream from the sidebar to explore, or login with twitter to create your own</p>
-                        <div className="flex">
-                            <Link
-                                className='hover:bg-blue-500 active:bg-blue-600 w-auto mr-1.5 flex truncate items-center text-white text-xs bg-sky-500 rounded px-2 h-6'
-                                to='/oauth'
-                            >
-                                <BirdIcon className='shrink-0 w-3.5 h-3.5 mr-1 fill-white' />
-                                <span>Login with Twitter to Create Streams</span>
-                            </Link>
+                    </Paper>
+                )
+            }
+            {!user && (
+                <div>
+                    <Paper variant="outlined" sx={{ width: "fit-content", maxWidth: "30vw", borderRadius: 4 }}>
+                        <div className="flex flex-col p-4 space-y-2">
+                            <p>Choose a stream from the sidebar to explore, or login with twitter to create your own</p>
+                            <div className="flex">
+                                <Link
+                                    className='hover:bg-blue-500 active:bg-blue-600 w-auto mr-1.5 flex truncate items-center text-white text-xs bg-sky-500 rounded px-2 h-6'
+                                    to='/oauth'
+                                >
+                                    <BirdIcon className='shrink-0 w-3.5 h-3.5 mr-1 fill-white' />
+                                    <span>Login with Twitter to Create Streams</span>
+                                </Link>
+                            </div>
                         </div>
-                    </div>
-                )}
-            </div>
+                    </Paper>
+
+                </div>
+            )}
         </div>
     );
 }

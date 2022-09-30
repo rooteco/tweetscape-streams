@@ -22,9 +22,8 @@ import { TwitterApiRateLimitPlugin } from '@twitter-api-v2/plugin-rate-limit';
 import invariant from 'tiny-invariant';
 import type { Session } from '@remix-run/node';
 import { prisma } from "~/db.server";
-import type { users } from "@prisma/client";
-
-
+import { flattenTwitterUserPublicMetrics } from '~/models/streams.server'
+import { getUserByUsernameDB } from '~/models/user.server'
 // import type {
 //     Annotation,
 //     AnnotationType,
@@ -50,15 +49,22 @@ import { log } from "~/log.server";
 export { TwitterApi, TwitterV2IncludesHelper } from 'twitter-api-v2';
 
 export const USER_FIELDS: TTweetv2UserField[] = [
+    'created_at',
+    'description',
+    'entities',
     'id',
+    'location',
     'name',
+    'pinned_tweet_id',
+    'profile_image_url',
+    'protected',
+    'public_metrics',
+    'url',
     'username',
     'verified',
-    'description',
-    'profile_image_url',
-    'public_metrics',
-    'created_at',
+    // 'withheld',
 ];
+
 export const TWEET_FIELDS: TTweetv2TweetField[] = [
     'created_at',
     'entities',
@@ -71,6 +77,72 @@ export const TWEET_EXPANSIONS: TTweetv2Expansion[] = [
     'referenced_tweets.id.author_id',
     'entities.mentions.username',
 ];
+
+export async function getUserTwitterLists(api: TwitterApi, user: UserV2) {
+    try {
+        const create = {
+            followedLists: [] as ListV2[],
+            ownedLists: [] as ListV2[]
+        };
+        log.info(`Fetching followed lists for ${user.username}...`);
+        const resFollowed = await api.v2.listFollowed(user.id, {
+            'list.fields': [
+                'created_at',
+                'follower_count',
+                'member_count',
+                'private',
+                'description',
+                'owner_id',
+            ],
+            'expansions': ['owner_id'],
+            'user.fields': USER_FIELDS,
+        });
+        const includes = new TwitterV2IncludesHelper(resFollowed);
+        resFollowed.lists
+            .map((l: ListV2) => {
+                create.followedLists.push(l)
+            });
+
+
+        log.info(`Fetching owned lists for ${user.username}...`);
+        const resOwned = await api.v2.listsOwned(user.id, {
+            'list.fields': [
+                'created_at',
+                'follower_count',
+                'member_count',
+                'private',
+                'description',
+                'owner_id',
+            ],
+        });
+        resOwned.lists.map((l: ListV2) => create.ownedLists.push(l));
+
+        return create;
+    } catch (e) {
+        return handleTwitterApiError(e);
+    }
+}
+
+export async function getListUsers(api: TwitterApi, listId: string) {
+    const membersOfList = await api.v2.listMembers(listId, {
+        "user.fields": USER_FIELDS
+    });
+    let users: UserV2[] = [];
+    for await (const user of membersOfList) {
+        users.push(user)
+    }
+    return flattenTwitterUserPublicMetrics(users);
+}
+
+export async function createList(api: TwitterApi, listName: string, userUsernames: string[]) {
+    const newList = await api.v2.createList({ name: listName, private: false })
+    let promises = userUsernames.map(async (username) => {
+        let userDb = await getUserByUsernameDB(username)
+        return await api.v2.addListMember(newList.data.id, userDb.properties.id)
+    })
+    const newMembers = await Promise.all(promises)
+    return { list: newList, members: newMembers };
+}
 
 export function handleTwitterApiError(e: unknown): never {
     if (e instanceof ApiResponseError && e.rateLimitError && e.rateLimit) {
@@ -97,16 +169,16 @@ export function getUserIdFromSession(session: Session) {
 
 export async function getTwitterClientForUser(
     uid: string
-    //): Promise<{ api: TwitterApi; limits: TwitterApiRateLimitPlugin }> {
-): Promise<{ api: TwitterApi }> {
+): Promise<{ api: TwitterApi, limits: TwitterApiRateLimitPlugin }> {
     log.info(`Fetching token for user (${uid})...`);
     const token = await prisma.tokens.findUnique({ where: { user_id: uid } });
     invariant(token, `expected token for user (${uid})`);
     const expiration = token.updated_at.valueOf() + token.expires_in * 1000;
-    // const limits = new TwitterApiRateLimitPlugin(
-    //     new TwitterApiRateLimitDBStore(uid)
-    // );
-    let api = new TwitterApi(token.access_token)//, { plugins: [limits] });
+    const limits = new TwitterApiRateLimitPlugin(
+        new TwitterApiRateLimitDBStore(uid)
+    );
+    let api = new TwitterApi(token.access_token, { plugins: [limits] });
+
     if (expiration < new Date().valueOf()) {
         log.info(
             `User (${uid}) access token expired at ${new Date(
@@ -130,17 +202,30 @@ export async function getTwitterClientForUser(
             },
             where: { user_id: String(uid) },
         });
-        api = new TwitterApi(accessToken)//, { plugins: [limits] });
+        api = new TwitterApi(accessToken, { plugins: [limits] });
     }
-    return { api };
+    return { api, limits };
 }
 
 export async function getClient(request: Request) {
     const session = await getSession(request.headers.get('Cookie'));
-    const uid = getUserIdFromSession(session);
-    const client = uid
-        ? await getTwitterClientForUser(uid)
-        : { api: new TwitterApi(process.env.TWITTER_TOKEN as string) };
+    let uid;
+    if (process.env.TEST) {
+        console.log("MANUALLY SETTING UID")
+        uid = process.env.TEST_USER_ID
+    } else {
+        uid = getUserIdFromSession(session)
+    }
+
+    // const client = uid
+    //     ? await getTwitterClientForUser(uid)
+    //     : { api: new TwitterApi(process.env.TWITTER_TOKEN as string) };
+    let client;
+    if (uid) {
+        client = await getTwitterClientForUser(uid)
+    } else {
+        client = null;
+    }
     return { ...client, uid, session };
 }
 

@@ -1,10 +1,8 @@
 import type { Hash } from 'crypto';
 import { TwitterApi } from 'twitter-api-v2';
-
 import type { LoaderFunction } from '@remix-run/node';
 import { nanoid } from 'nanoid';
 import { redirect } from '@remix-run/node';
-
 import { commitSession, getSession } from '~/session.server';
 
 // @see {@link https://github.com/PLhery/node-twitter-api-v2/blob/master/doc/auth.md#create-the-auth-link-1}
