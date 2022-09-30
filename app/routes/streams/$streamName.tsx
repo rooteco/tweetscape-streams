@@ -57,8 +57,23 @@ export async function loader({ request, params }: LoaderArgs) {
     }
 
     console.time("getStreamTweets")
-    const tweets = await getStreamTweets(stream.properties.name, stream.properties.startTime);
+    let tweets = await getStreamTweets(stream.properties.name, stream.properties.startTime);
     console.timeEnd("getStreamTweets")
+
+    console.log("here are tweets")
+    console.log(tweets.map((row) => (row)).slice(0, 3))
+    tweets = tweets.filter((tweetData: any) => {
+        for (let rel of tweetData.refTweetRels) {
+            if (rel.properties.type == "retweeted") {
+                return false
+            } else if (rel.properties.type == "replied_to" && tweetData.tweet.properties.text.length < 150) {
+                return false
+            }
+            else {
+                return true
+            }
+        }
+    })
 
     return json({
         "stream": stream,
@@ -181,9 +196,9 @@ export default function Feed() {
     console.log("STREAMNAME LOADER")
 
     const { streamName } = useParams();
-    
+
     const overview = useLocation().pathname.split("/").pop() === "overview"
-    
+
 
     let transition = useTransition();
     let busy = transition.submission;
@@ -250,18 +265,18 @@ export default function Feed() {
                     <div className="relative w-full mx-auto flex flex-col items-center">
                         <Outlet />
                         {overview ?
-                            <Link className = "w-full h-hull"  to={`/streams/${streamName}`}>
+                            <Link className="w-full h-hull" to={`/streams/${streamName}`}>
                                 <div className="my-1 mx-1  text-center cursor-pointer rounded-full bg-slate-50 hover:bg-slate-200">
                                     <ExpandLessIcon sx={{ fontSize: "1rem" }} />
                                 </div>
                             </Link>
                             :
-                            <Link className = "w-full h-hull" to={`/streams/${streamName}/overview`}>
+                            <Link className="w-full h-hull" to={`/streams/${streamName}/overview`}>
                                 <div className="my-1 mx-1  text-center cursor-pointer rounded-full bg-slate-50 hover:bg-slate-200">
                                     <ExpandMoreIcon sx={{ fontSize: "1rem" }} />
                                 </div>
                             </Link>
-                                
+
                         }
                     </div>
 
