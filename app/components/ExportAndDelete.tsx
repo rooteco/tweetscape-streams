@@ -30,8 +30,8 @@ function ExportAndDelete({ user }) {
                         type="submit"
                         value="delete"
                         name="intent"
-                        className='pill flex items-center justify-center text-xs rounded-full h-8 w-full'
-                        style={{ color: "#4173C2" }}
+                        className='pill-red flex items-center justify-center text-xs rounded-full h-8 w-full'
+                        style={{ color: "#C24158" }}
 
                     >
                         <p>Delete Stream</p>
