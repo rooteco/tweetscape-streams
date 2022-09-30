@@ -14,13 +14,16 @@ import { styled, alpha } from '@mui/material/styles';
 
 import Toolbar from '@mui/material/Toolbar';
 import InputBase from '@mui/material/InputBase';
+import { relative } from "node:path/win32";
 
 const Search = styled('div')(({ theme }) => ({
-    borderRadius: "4px",
+    borderRadius: '10px',
     flexGrow: 1,
+    position: "relative",
+    gap: '4px',
     alignItems: 'center',
     display: 'flex',
-    padding: '2px 4px',
+    padding: '4px',
     backgroundColor: alpha(theme.palette.common.white, 0.65),
     '&:hover': {
         backgroundColor: alpha(theme.palette.common.white, 0.95),
@@ -30,10 +33,6 @@ const Search = styled('div')(({ theme }) => ({
     },
     width: '100%',
     maxWidth: '100%',
-    [theme.breakpoints.up('sm')]: {
-        marginLeft: 0,
-        width: 'auto',
-    },
 }));
 
 const ImportSwitch = styled('div')(({ theme }) => ({
@@ -42,23 +41,31 @@ const ImportSwitch = styled('div')(({ theme }) => ({
     alignItems: 'center',
     justifyContent: 'center',
 
+    '& .MuiButtonGroup-root': {
+        height: '100%',
+    },
+
+
+    '& .MuiButtonBase-root': {
+        border: '1px solid #e5e5e5',
+        backgroundColor: '#f7f7f7',
+        borderRadius: '6px',
+        padding: '4px',
+        height: "100%",
+    }
+
 }));
 
 const StyledInputBase = styled(InputBase)(({ theme }) => ({
     color: 'inherit',
     '& .MuiInputBase-input': {
+        color: 'black',
         padding: theme.spacing(1, 1, 1, 0),
         // vertical padding + font size from searchIcon
         paddingLeft: "0.5rem",
         transition: theme.transitions.create('width'),
         width: '100%',
         maxWidth: "100%",
-        [theme.breakpoints.up('sm')]: {
-            width: '16ch',
-            '&:focus': {
-                width: '20ch',
-            },
-        },
     },
 }));
 
@@ -67,6 +74,7 @@ function StreamConfig(props: any) {
     // Responsible for Stream Management
     // Add seed users from Search or Lists, Delete Stream
     const { streamName, userLists } = props;
+    const [search, setSearch] = useState(true);
     const [handle, setHandle] = useState("");
 
     return (
@@ -76,43 +84,40 @@ function StreamConfig(props: any) {
                 action={`/streams/${streamName}`}
                 className="sticky top-1 w-full mt-1 mx-auto flex items-center z-40"
             >
-                <Search className="grow-1 rounded flex space-x-0 border border-gray-200 backdrop-blur-lg">
+                <Search className="relative grow-1 rounded-lg flex justify-between border border-gray-200 backdrop-blur-lg">
                     <ImportSwitch>
-                        <ButtonGroup className="bg-white" sx={{ border: '1 px solid #e5e5e5' }}>
+                        <ButtonGroup sx={{ border: '1 px solid #e5e5e5' }}>
                             <Tooltip title="Import from List">
                                 <Button className="border border-gray-200">
-                                    <ReceiptLongIcon />
+                                    <ReceiptLongIcon sx={search ? { color: "#A5A4A4" } : { color: "#000000" }} />
                                 </Button>
                             </Tooltip>
                             <Tooltip title="Import from Search">
-                                <Button sx={{ border: '1 px solid #e5e5e5' }}>
-                                    <SearchIcon />
+                                <Button sx={search ? { backgroundColor: "#f1f1f1 !important" } : { backgroundColor: "white !important" }}>
+                                    <SearchIcon sx={search ? { color: "#000000" } : { color: "#A5A4A4" }} />
                                 </Button>
                             </Tooltip>
                         </ButtonGroup>
                     </ImportSwitch>
 
-                    {/* <StyledInputBase
+
+                    <StyledInputBase
                         autoFocus
                         name="seedUserHandle"
                         value={handle}
-                        placeholder='Search handle ...'
+                        placeholder='Add handle ...'
                         inputProps={{ 'aria-label': 'search' }}
                         onChange={(e) => setHandle(e.target.value)}
-                    /> */}
-                    <input
-                        name="seedUserHandle"
-                        type="text"
-                        placeholder='Search handle ...'
-                    />
+                    >
+                    </StyledInputBase>
                     <button
                         type='submit'
-                        className={handle.length > 0 ? 'ml-2 inline-block rounded border-2 border-black bg-black px-2 py-1 text-white' : 'invisible'}
                         value="addSeedUser"
                         name="intent"
+                        className={handle.length > 0 ? "" : "invisible"}
                         onClick={() => setHandle("")}
                     >
-                        <SearchIcon />
+                        <span className = "text-xs rounded-full bg-blue-300 px-2 py-1 mr-1 text-blue-50">SUBMIT</span>
                     </button>
                 </Search>
 
