@@ -111,7 +111,7 @@ export const action: ActionFunction = async ({
                     let errors: ActionData = {
                         seedUserHandle: `user '${seedUserHandle}' already seed user of stream '${stream.properties.name}'`
                     }
-                    return json<ActionData>(errors);
+                    return json<ActionData>(errors) || null;
                 }
             }
             seedUserHandle = seedUserHandle.toLowerCase().replace(/^@/, '')
