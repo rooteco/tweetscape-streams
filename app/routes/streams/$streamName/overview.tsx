@@ -4,17 +4,27 @@ import { Tooltip } from "@mui/material";
 import UpdateIcon from '@mui/icons-material/Update';
 import HubIcon from '@mui/icons-material/Hub';
 import { couldStartTrivia } from "typescript";
+import ExpandLessIcon from "@mui/icons-material/ExpandLess";
+
+
+import { Link, useParams } from "@remix-run/react";
+
+import Chip from '@mui/material/Chip';
 
 export async function loader({ request, params }: LoaderArgs) {
     return {}
 };
 
 export default function Overview() {
-    // Responsible for rendering a feed & annotations
+    // Responsible for rendering the overview page for a stream
+
+    const params = useParams();
+    console.log(params)
 
     const loaderData = useLoaderData();
     const matches = useMatches(); // gives access to all the routes, https://remix.run/docs/en/v1/api/remix#usematches
     const tweets = matches.filter((route) => route.id == 'routes/streams/$streamName')[0].data.tweets
+
     const now = new Date()
     const todayMinus7Days = new Date();
     todayMinus7Days.setDate(todayMinus7Days.getDate() - 7);
@@ -86,63 +96,62 @@ export default function Overview() {
     // }
 
     return (
-        <div className='relative max-h-screen px-4'>
-            <div className="sticky top-0 mx-auto backdrop-blur-xl p-1 rounded-xl">
-                <div className="flex flex-row justify-between p-3 bg-slate-50 rounded-lg">
-                    <p className="text-xl font-medium px-2">OVERVIEW</p>
-                    {/* DEV: Update Stream Tweets / Stream Follower Network */}
-                    <div className="flex flex-row space-x-2">
-                        <Form
-                            method='post'
-                        >
-                            <button
-                                type='submit'
-                                className='inline-block rounded border border-gray-300 bg-gray-200 w-8 h-8 text-white text-xs'
-                                value="updateStreamTweets"
-                                name="intent"
-                            >
-                                <Tooltip title="Update Stream Tweets">
-                                    <UpdateIcon fontSize="small" />
-                                </Tooltip>
+        <>
+            <div className='w-full px-4'>
+                <div className="w-full mx-auto overflow-scroll p-2 sm:max-h-[40vh] xl:max-h-[30vh]">
 
-                            </button>
-                        </Form>
-                        <Form
-                            method='post'
-                        >
-                            <button
-                                type='submit'
-                                className='\inline-block rounded border border-gray-300 bg-gray-200 w-8 h-8 text-white text-xs'
-                                value="updateStreamFollowsNetwork"
-                                name="intent"
-                            >
-                                <Tooltip title="Update Stream Follower">
-                                    <HubIcon fontSize="small" />
-                                </Tooltip>
-                            </button>
-                        </Form>
+                    <div className="flex gap-2">
+                        <p>Tweets Today <b>{numTweetsToday}</b></p>
+                        <p>Tweets Last Week <b>{numTweetsLastWeek}</b></p>
+
                     </div>
+
+                    <p className="text-md font-medium my-4">Tweet Distribution</p>
+                    <div className="flex flex-wrap gap-1 px-1">
+                        {
+                            tweetAuthorCountRows.map((row) => (
+                                <Chip
+                                    key={row.name}
+                                    label={row.split('=')[0]}
+                                    size="small"
+                                    sx={{ backgroundColor: '#FFFFFF', border: '1px solid #DDDAF8', color: '#374151', fontSize: '0.75rem' }}
+                                    avatar={<div style={{ backgroundColor: "#E7E5FC", borderRadius: "50%", fontSize: '0.5rem' }} className="w-6 h-6 flex items-align text-center justify-center text-xs">{row.split('=')[1]}</div>}
+                                />))
+                        }
+                    </div>
+
+
+                    <p className="text-md font-medium my-4">Top Referenced Accounts of Stream</p>
+                    {
+                        referencedAccountCounts.slice(0, 6).map((row) => {
+                            if (typeof (row.key) == "string") {
+                                return (
+                                    <Chip
+                                        key={row.key}
+                                        label={row.key}
+                                        size="small"
+                                        sx={{ backgroundColor: '#FFFFFF', border: '1px solid #DDDAF8', color: '#374151', fontSize: '0.75rem' }}
+                                    />
+                                )
+                            }
+                        })
+                    } 
+                    
+                    <p className="text-md font-medium my-4">Top Referenced Entities of Stream</p>
+                    {
+                        entityCountsArray.slice(0, 6).map((row) => (
+                            <Chip
+                                key={row.key}
+                                label={row.key}
+                                size="small"
+                                sx={{ backgroundColor: '#FFFFFF', border: '1px solid #DDDAF8', color: '#374151', fontSize: '0.75rem' }}
+                            />
+                        ))
+                    }
                 </div>
-                <p>num tweets today: <b>{numTweetsToday}</b></p>
-                <p>num tweets in last week: <b>{numTweetsLastWeek}</b></p>
-                <h1 className="text-2xl">Tweet Distribution</h1>
-                {
-                    tweetAuthorCountRows.map((row) => (<p>{row}</p>))
-                }
-                <h1 className="text-2xl text-bold">Top Referenced Accounts of Stream</h1>
-                {
-                    referencedAccountCounts.slice(0, 6).map((row) => (
-                        <p>{`${row.key} referenced ${row.value} times`}</p>
-                    ))
-                }
-                <h1 className="text-2xl text-bold">Top Referenced Entities of Stream</h1>
-                {
-                    entityCountsArray.slice(0, 6).map((row) => (
-                        <p>{`${row.key} referenced ${row.value} times`}</p>
-                    ))
-                }
             </div>
-        </div>
+
+        </>
 
     );
 }
