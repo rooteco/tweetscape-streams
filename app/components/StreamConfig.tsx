@@ -101,7 +101,7 @@ function StreamConfig(props: any) {
                     </ImportSwitch>
 
 
-                    <StyledInputBase
+                    {/* <StyledInputBase
                         autoFocus
                         name="seedUserHandle"
                         value={handle}
@@ -109,7 +109,13 @@ function StreamConfig(props: any) {
                         inputProps={{ 'aria-label': 'search' }}
                         onChange={(e) => setHandle(e.target.value)}
                     >
-                    </StyledInputBase>
+                    </StyledInputBase> */}
+                    <input
+                        autoFocus
+                        name="seedUserHandle"
+                        type="text"
+                        placeholder='Add handle ...'
+                    />
                     <button
                         type='submit'
                         value="addSeedUser"
@@ -117,7 +123,7 @@ function StreamConfig(props: any) {
                         className={handle.length > 0 ? "" : "invisible"}
                         onClick={() => setHandle("")}
                     >
-                        <span className = "text-xs rounded-full bg-blue-400 px-2 py-1 mr-1 text-white">SUBMIT</span>
+                        <span className="text-xs rounded-full bg-blue-400 px-2 py-1 mr-1 text-white">SUBMIT</span>
                     </button>
                 </Search>
 
