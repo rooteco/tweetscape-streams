@@ -74,7 +74,7 @@ export default function NewNotePage() {
         <div className="flex h-full w-full justify-center align-middle items-center">
             {
                 user && (
-                    <Paper variant="outlined" sx={{ width: "fit-content", borderRadius: 4}}>
+                    <Paper variant="outlined" sx={{ width: "fit-content", borderRadius: 4, backgroundColor: "white"}}>
                         <div className="flex flex-col p-4 space-y-2">
                             <h1 className="text-lg font-medium pb-6">Create a New Stream</h1>
                             <Form method="post" className='flex flex-col space-x-1 space-y-6 max-w-sm'>
@@ -84,7 +84,15 @@ export default function NewNotePage() {
                                     ) : null}
                                     <input name="name" type="text" className='flex-1 rounded border border-gray-200 bg-gray-100 px-2 py-1' />{" "}
                                 </label>
-                                <button type="submit" className='ml-1 inline-block rounded-full border-2  pill px-2 py-1 text-white'>Create Stream</button>
+                                <button 
+                                    type="submit" 
+                                    className='ml-1 inline-block rounded-full border-2  pill px-2 py-1'
+                                    onSubmit={async (event) => {
+                                        event.preventDefault();
+                                    }}
+                                >
+                                    Create Stream
+                                </button>
                             </Form>
                         </div>
                     </Paper>

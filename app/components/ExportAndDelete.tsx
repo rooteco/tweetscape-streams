@@ -22,27 +22,29 @@ function ExportAndDelete({ user }) {
                 </Link>
                 <div>
                     <Form
-                        action="/logout"
+                        action={`/streams/${streamName}`}
                         method="post"
+                    >
+
+                    <button
+                        type="submit"
+                        value="delete"
+                        name="intent"
+                        className='pill flex items-center justify-center text-xs rounded-full h-8 w-full'
+                        style={{ color: "#4173C2" }}
 
                     >
-                        <button
-                            type="submit"
-                            className='pill flex items-center justify-center text-xs rounded-full h-8 w-full'
-                            style={{ color: "#4173C2" }}
-
-                        >
-                            <p>Delete Stream</p>
-                        </button>
-                    </Form>
-                </div>
+                        <p>Delete Stream</p>
+                    </button>
+                </Form>
             </div>
+            </div >
         )
     }
     return (
         <div className="h-full flex flex-col space-y-2 z-10">
             <Link
-                className = "button-big py-2 pl-2 pr-8 rounded-2xl text-xl flex space-x-3 items-center" 
+                className="button-big py-2 pl-2 pr-8 rounded-2xl text-xl flex space-x-3 items-center"
                 style={{ color: "#439AAF" }}
                 to='/oauth'
             >

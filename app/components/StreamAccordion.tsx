@@ -104,15 +104,23 @@ function StreamAccordion({ streams, lists }: { streams: Stream[] }) {
             <AccordionDetails>
               <StreamConfig userLists={lists} streamName={streamName} />
 
-              <div className='mx-2'>
-                <h1> {stream.seedUsers?.length} Seed Users</h1>
+              <div className='mx-2 my-2'>
+                <div className='flex flex-col space-y-1 items-center m-4'> 
+                 <h1 className='font-medium text-gray-600'>{stream.seedUsers?.length} Seed Users </h1>
+                 <p className='text-sm text-center px-4 text-gray-400'>Seed Accounts grow the Recommended Accounts below</p>
+                </div>
+
                 <div className='flex flex-col space-y-2'>
                   {stream.seedUsers && stream.seedUsers.map((user: userNode) => (
                     <CompactProfile user={user} key={user.elementId} streamName={streamName} isSeed />
                   ))}
                 </div>
 
-                <h1> {stream.recommendedUsers ? stream.recommendedUsers.length : 0} Recommended Accounts </h1>
+                <div className='flex flex-col space-y-1 items-center mb-4 mt-12'> 
+                 <h1 className='font-medium text-gray-600'> {stream.recommendedUsers ? stream.recommendedUsers.length : 0} Recommended Accounts </h1>
+                 <p className='text-sm text-center px-4 text-gray-400'>Account Recommendation is using the concept of a ‘meta-follower’ between Seed Accounts to make these recommendations</p>
+                </div>
+
                 <div className='flex flex-col space-y-2'>
                   {stream.recommendedUsers && stream.recommendedUsers.map((user: userNode) => (
                     <CompactProfile user={user} key={user.elementId} streamName={streamName} isSeed={false} />
