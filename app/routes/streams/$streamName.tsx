@@ -83,7 +83,7 @@ export const action: ActionFunction = async ({
     let seedUserHandle: string = formData.get("seedUserHandle");
     if (intent === "delete") {
         let res = await deleteStreamByName(params.streamName);
-        return res
+        return redirect(`/streams`);
     }
 
     const { stream, seedUsers } = await getStreamByName(params.streamName);
@@ -111,7 +111,7 @@ export const action: ActionFunction = async ({
                     let errors: ActionData = {
                         seedUserHandle: `user '${seedUserHandle}' already seed user of stream '${stream.properties.name}'`
                     }
-                    return json<ActionData>(errors);
+                    return json<ActionData>(errors) || null;
                 }
             }
             seedUserHandle = seedUserHandle.toLowerCase().replace(/^@/, '')
@@ -245,7 +245,7 @@ export default function Feed() {
                     </div>
                 </div>
 
-                <div className="h-full mx-2">
+                <div className="h-full 2xl:w-1/2 lg:mx-2 2xl:mx-auto">
                     {busy ?
                         <div>LOADING</div> :
                         tweets
