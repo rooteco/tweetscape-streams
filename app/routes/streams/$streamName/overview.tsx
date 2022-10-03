@@ -102,7 +102,7 @@ export default function Overview() {
 
                     <div className="flex gap-2">
                         <p>Tweets Today <b>{numTweetsToday}</b></p>
-                        <p>Tweets Last Week <b>{numTweetsLastWeek}</b></p>
+                        <p>Tweets in the Last Week <b>{numTweetsLastWeek}</b></p>
 
                     </div>
 
@@ -135,8 +135,8 @@ export default function Overview() {
                                 )
                             }
                         })
-                    } 
-                    
+                    }
+
                     <p className="text-md font-medium my-4">Top Referenced Entities of Stream</p>
                     {
                         entityCountsArray.slice(0, 6).map((row) => (
