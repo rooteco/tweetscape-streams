@@ -1,7 +1,7 @@
 import type { ActionArgs, LoaderArgs } from "@remix-run/node";
 import type { ActionFunction } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { Form, useSearchParams, useActionData, useCatch, useLoaderData, Outlet, useTransition, useFetcher } from "@remix-run/react";
 
 import Tweet from '~/components/Tweet';
@@ -14,10 +14,10 @@ import {
 import { getClient, USER_FIELDS, TWEET_FIELDS, handleTwitterApiError } from '~/twitter.server';
 import { getHomeTimelineTweetsNeo4j, addHomeTimelineTweets } from '~/models/homeTimeline.server';
 import { bulkWrites, addUsers, addTweetMedia, addTweetsFrom } from "~/models/streams.server";
+import { useEffect } from "react";
+import { flattenTweetPublicMetrics, flattenTwitterUserPublicMetrics } from "~/models/streams.server";
 
-import { useParams, useLocation } from "@remix-run/react";
-
-async function getTweetsHomeTimeline(api: TwitterApi, maxResults: number = 100) {//, untilId: string | null = null) {
+async function getTweetsHomeTimeline(api: TwitterApi, maxResults: number = 100, sinceId: string | null = null) {//, untilId: string | null = null) {
     let htReq = {
         'max_results': maxResults,
         'tweet.fields': 'attachments,author_id,context_annotations,conversation_id,created_at,entities,geo,id,in_reply_to_user_id,lang,public_metrics,text,possibly_sensitive,referenced_tweets,reply_settings,source,withheld',
@@ -27,7 +27,14 @@ async function getTweetsHomeTimeline(api: TwitterApi, maxResults: number = 100) 
         'place.fields': 'contained_within,country,country_code,full_name,geo,id,name,place_type',
         'user.fields': USER_FIELDS
     }
+    if (sinceId) {
+        htReq['since_id'] = sinceId
+    }
     const homeTimelineRes = await api.v2.homeTimeline(htReq)
+    if (!homeTimelineRes.data.data) {
+        return { tweets: [], users: [], media: [], refTweets: [] }
+    }
+
     let includes = new TwitterV2IncludesHelper(homeTimelineRes)
 
     let users = flattenTwitterUserPublicMetrics(includes.users);
@@ -35,37 +42,18 @@ async function getTweetsHomeTimeline(api: TwitterApi, maxResults: number = 100) 
     let refTweets = flattenTweetPublicMetrics(includes.tweets)
 
     return { tweets: homeTimelineRes.data.data, users, media, refTweets }
-
-    //     let feedData = homeTimelineRes.data.data.map((tweet, index) => {
-    //         return {
-    //             tweet: tweet,
-    //             author: includes.users.filter((user) => (user.id == tweet.author_id))[0]
-    //         }
-    //     })
-
-    // feedData.sort(
-    //     (a: any, b: any) =>
-    //         new Date(b.tweet.created_at as string).valueOf() -
-    //         new Date(a.tweet.created_at as string).valueOf()
-    // )
-    // return feedData
 }
 
-async function getLatestHomeTimelineNeo4j(api: TwitterApi, loggedInUser: any, limit: number = 10) {
-    let username = loggedInUser.username;
-    let tweets = await getHomeTimelineTweetsNeo4j(username, limit)
-    return tweets
-}
-
-async function saveHomeTimelineTweets(api: TwitterApi, timelineUser: any) {
+async function saveHomeTimelineTweets(api: TwitterApi, timelineUser: any, sinceId: string | null = null) {
     // save homeTimeline tweets to neo4j
-    let { tweets, users, media, refTweets } = await getTweetsHomeTimeline(api)
-    bulkWrites(users, addUsers)
-    bulkWrites(media, addTweetMedia)
-    bulkWrites(refTweets, addTweetsFrom)
-    // bulkWrites(tweets, addTweetsFrom) // we replace this with addHomeTimelineData to include [:HOMETIMELINE] edge
-    // bulkWrites(tweets, addHomeTimelineTweets)
-    await addHomeTimelineTweets(tweets, timelineUser)
+    let { tweets, users, media, refTweets } = await getTweetsHomeTimeline(api, 100, sinceId)
+    console.log(`pull ${tweets.length} new tweets for ${timelineUser.username}`)
+    await Promise.all([
+        bulkWrites(users, addUsers),
+        bulkWrites(media, addTweetMedia),
+        bulkWrites(refTweets, addTweetsFrom),
+        addHomeTimelineTweets(tweets, timelineUser)
+    ])
 }
 
 
@@ -75,22 +63,23 @@ export async function loader({ request, params }: LoaderArgs) {
         throw {} // TODO: make this better...
     }
     const loggedInUser: UserV2 = (await api.v2.me({ "user.fields": USER_FIELDS })).data;
-    console.log("logged in user")
-    console.log(loggedInUser)
+    const num1 = Math.floor(Math.random() * 100)
+    console.time(`homeTimeline${num1}`)
     let latestTweetNeo4j = await getHomeTimelineTweetsNeo4j(loggedInUser.username, 1)
-    console.log("empty feed response")
-    console.log(latestTweetNeo4j)
+    console.timeEnd(`homeTimeline${num1}`)
     let tweets
     if (latestTweetNeo4j.length < 1) {
         let res = await saveHomeTimelineTweets(api, loggedInUser)
         tweets = await getHomeTimelineTweetsNeo4j(loggedInUser.username, 100)
-        console.log(`tweets length = ${tweets.length}`)
-        console.log(tweets[0])
         return tweets
     }
-    // console.log(`tweets length = ${tweets.length}`)
-    // console.log(tweets[0])
-    return {}
+    let latestSavedId = latestTweetNeo4j[0].tweet.properties.id
+    let res = await saveHomeTimelineTweets(api, loggedInUser, latestSavedId)
+    const num = Math.floor(Math.random() * 100)
+    console.time(`homeTimeline${num}`)
+    tweets = await getHomeTimelineTweetsNeo4j(loggedInUser.username, 100)
+    console.timeLog(`homeTimeline${num}`)
+    return tweets
 }
 
 export const action: ActionFunction = async ({
@@ -98,138 +87,156 @@ export const action: ActionFunction = async ({
 }) => {
     // Responsible for editing the stream
     // structure from https://egghead.io/lessons/remix-add-delete-functionality-to-posts-page-in-remix, which was from https://github.com/remix-run/remix/discussions/3138
-
-    const url = new URL(request.url);
-    const entities = url.searchParams.getAll("caEntityCount");
+    console.log("I'M IN ACTION")
+    // const url = new URL(request.url);
+    // const entities = url.searchParams.getAll("caEntityCount");
     const formData = await request.formData();
     const newEntity = formData.get("caEntityCount")
-    console.log(`newEntity = ${newEntity}`)
-    console.log(`currentEntities= ${entities}`)
-    if (entities.indexOf(newEntity) != -1) {
-        entities.pop(newEntity)
-    } else {
-        entities.push(newEntity)
-    }
-    console.log(`newly minted entities = ${entities}`)
-    return entities
+    const hideEntity = formData.get("hideTopic")
+
+    console.log(`adding or removing this entity = ${newEntity}`)
+    return json({ newEntity, hideEntity })
 }
 
 export default function HomeTimeline() {
     // Responsible for rendering a feed & annotations
+    const num1 = Math.floor(Math.random() * 100)
+    console.time(`userLoaderData${num1}`)
     const feedData = useLoaderData();
-    console.log(feedData.slice(0, 2))
-    const entities = useActionData();
-    if (entities) {
-        console.log("RIGHT UNDER ACTION CALL")
-        console.log(`entities=${entities}`)
+    console.timeEnd(`userLoaderData${num1}`)
+    const actionData = useActionData();
+    console.log("ACTION DATA")
+    console.log(actionData)
+    let newEntity: string | null = null
+    let hideEntity: string | null = null
+    if (actionData) {
+        newEntity = actionData.newEntity
+        hideEntity = actionData.hideEntity
     }
-    let transition = useTransition();
-    let busy = transition.submission;
-
     const [searchParams, setSearchParams] = useSearchParams()
+    const entitySearchParams = searchParams.getAll("caEntityCount")
+    const hideTopicParams = searchParams.getAll("hideTopic")
 
     useEffect(() => {
-        console.log(`entities = ${entities}`)
-        if (entities) {
-            var params = new URLSearchParams();
-            entities.map((entity) => {
-                params.append("caEntityCount", entity)
-            })
-            setSearchParams(params)
+        if (newEntity && entitySearchParams.indexOf(newEntity) == -1) {
+            console.log(`adding ${newEntity} to list of current entities`)
+            searchParams.append("caEntityCount", newEntity)
+            setSearchParams(searchParams)
+        } else if (newEntity && entitySearchParams.indexOf(newEntity) != -1) {
+            console.log(`removing entity ${newEntity} from list of current entities`)
+            // thanks to this person: https://github.com/whatwg/url/issues/335#issuecomment-1142139561
+            const allValues = searchParams.getAll("caEntityCount")
+            allValues.splice(allValues.indexOf(newEntity), 1)
+            searchParams.delete("caEntityCount")
+            allValues.forEach((val) => searchParams.append("caEntityCount", val))
+            setSearchParams(searchParams)
         }
-    }, [entities])
 
-    const entitySearchParams = searchParams.getAll("caEntityCount")
-    const entityAnnotationCount = new Map()
+        if (hideEntity && hideTopicParams.indexOf(hideEntity) == -1) {
+            console.log(`adding ${hideEntity} to list of topics to hide`)
+            searchParams.append("hideTopic", hideEntity)
+            setSearchParams(searchParams)
+        } else if (hideEntity && hideTopicParams.indexOf(hideEntity) != -1) {
+            console.log(`removing entity ${hideEntity} from list of topics top hide`)
+            // thanks to this person: https://github.com/whatwg/url/issues/335#issuecomment-1142139561
+            const allValues = searchParams.getAll("hideTopic")
+            allValues.splice(allValues.indexOf(hideEntity), 1)
+            searchParams.delete("hideTopic")
+            allValues.forEach((val) => searchParams.append("hideTopic", val))
+            setSearchParams(searchParams)
+        }
+    }, [newEntity, hideEntity])
+    let caEntities = searchParams.getAll("caEntityCount")
+    let hideTopics = searchParams.getAll("hideTopic")
+    console.log("HIDE TOPICS")
+    console.log(hideTopics)
+    let transition = useTransition();
+    let busy = transition.submission;
     const caEntityCount = new Map()
-    const caDomainCount = new Map()
 
-    feedData.map((row, index) => {
-        if (row.annotation) {
-            for (const entity of row.annotation) {
-                const curCount = entityAnnotationCount.get(entity.properties.normalized_text)
-                if (curCount) {
-                    entityAnnotationCount.set(entity.normalized_text, curCount + 1)
-                } else {
-                    entityAnnotationCount.set(entity.normalized_text, 1)
-                }
-            }
+    const num = Math.floor(Math.random() * 100)
+    console.time(`feedDataMap${num}`)
+    const emptyTopic = {
+        labels: ['Entity'],
+        properties: { name: 'No Labels', },
+    }
+    feedData.map((row, index: number) => {
+        if (row.entities.length == 0) {
+            row.entities.push(emptyTopic)
         }
-        if (row.tweet.context_annotations) {
-            let ca = row.tweet.context_annotations.filter((ca) => (ca.domain.name == "Unified Twitter Taxonomy"))
-            ca.forEach((ca, index) => {
-                const curEntityCount = caEntityCount.get(ca.entity.name)
-
+        if (row.entities.length > 0) {
+            // let ca = row.entities.filter((ca) => (ca.domain.name == "Unified Twitter Taxonomy"))
+            row.entities.forEach((entity: Record, index: number) => {
+                const curEntityCount = caEntityCount.get(entity.properties.name)
                 if (curEntityCount) {
-                    caEntityCount.set(ca.entity.name, curEntityCount + 1)
+                    caEntityCount.set(entity.properties.name, curEntityCount + 1)
                 } else {
-                    caEntityCount.set(ca.entity.name, 1)
+                    caEntityCount.set(entity.properties.name, 1)
                 }
             })
         }
     })
+    console.timeEnd(`feedDataMap${num}`)
 
-    // let feedDataShow = feedData;
+    let feedDataShow = feedData;
     // if (searchParams.getAll("caEntityCount").length > 0) {
-    //     feedDataShow = feedData.filter(
-    //         (tweet) => (tweet.tweet.context_annotations)
-    //     ).filter(
-    //         (tweet) => {
-    //             let cas = tweet.tweet.context_annotations.filter((ca) => (ca.domain.name == "Unified Twitter Taxonomy"))
-    //             for (let ca of cas) {
-
-    //                 if (searchParams.getAll("caEntityCount").indexOf(ca.entity.name) != -1) {
-    //                     return true
-    //                 }
-    //             }
-    //             return false
-    //         }
-    //     )
-    // }
+    if (hideTopics.length > 0) {
+        feedDataShow = feedData.filter(
+            (tweet) => {
+                for (let ca of tweet.entities) {
+                    if (hideTopics.indexOf(ca.properties.name) != -1) {
+                        return false
+                    }
+                }
+                return true
+            }
+        )
+    }
+    if (caEntities.length > 0) {
+        feedDataShow = feedDataShow.filter(
+            (tweet) => {
+                for (let ca of tweet.entities) {
+                    // if (searchParams.getAll("caEntityCount").indexOf(ca.properties.name) != -1) {
+                    if (caEntities.indexOf(ca.properties.name) != -1) {
+                        return true
+                    }
+                }
+                return false
+            }
+        )
+    }
 
     return (
-        <div className="flex px-4 py-2 max-h-min z-10">
+        <div className="flex px-4 py-2 max-h-min z-10 bg-gray-200">
             <div className='relative max-h-screen overflow-y-auto'>
                 <div className="flex">
                     <div className="max-w-sm">
-                        <h1>Entity Annotations</h1>
-                        <div className="flex flex-wrap">
-                            {Array.from(entityAnnotationCount).sort((a, b) => b[1] - a[1]).map(([keyValue, value]) => (
-                                <EntityAnnotationChip keyValue={keyValue} value={value} entitySearchParams={entitySearchParams} key={`entityAnnotations-${keyValue}`} />
+                        <h1 className="text-2xl">Twitter Topics</h1>
+                        <div className="flex flex-wrap max-w-sm">
+                            {Array.from(caEntityCount).sort((a, b) => b[1] - a[1]).map(([keyValue, value]) => (
+                                <EntityAnnotationChip keyValue={keyValue} value={value} caEntities={caEntities} hideTopics={hideTopics} key={`entityAnnotations-${keyValue}`} />
                             ))}
                         </div>
-                        <div>
-                            <h1>Context Annotation Entities</h1>
-                            <div className="flex flex-wrap max-w-sm">
-                                {Array.from(caEntityCount).sort((a, b) => b[1] - a[1]).map(([keyValue, value]) => (
-                                    <EntityAnnotationChip keyValue={keyValue} value={value} entitySearchParams={entitySearchParams} key={`entityAnnotations-${keyValue}`} />
-                                ))}
-                            </div>
-                        </div>
                     </div>
-                    <div>
-                        <h1 className="text-2xl">{`Home Timeline, ${feedData.length} tweets with selected tags`}</h1>
-                        <div className="max-w-sm h-full">
+                    <div className="grow">
+                        <h1 className="text-2xl">{`Home Timeline, ${feedDataShow.length} tweets with selected tags`}</h1>
+                        <div className="h-full">
                             {busy ?
                                 <div>LOADING</div> :
-                                feedData
+                                feedDataShow
                                     .map((tweet: any) => (
-                                        <div key={`showTweets-${tweet.tweet.id}`}>
+                                        <div key={`showTweets-${tweet.tweet.properties.id}`}>
                                             <Tweet key={tweet.tweet.id} tweet={tweet} />
                                             <div className="flex flex-wrap">
                                                 {
-                                                    tweet.tweet.context_annotations &&
-                                                    tweet.tweet.context_annotations.filter((ca) => (ca.domain.name == "Unified Twitter Taxonomy")).map((ca, index) => (
-                                                        <span
-                                                            key={`${ca.domain.name}-${index}`}
-                                                            className="px-4 py-2 rounded-full text-gray-600 bg-indigo-200 font-semibold text-sm flex align-center w-max cursor-pointer hover:bg-gray-400 active:bg-gray-300 transition duration-300 ease">
-                                                            {`${ca.entity.name}`}
-                                                        </span>
+                                                    tweet.entities &&
+                                                    tweet.entities.map((entity, index) => (
+                                                        <div>
+                                                            <EntityAnnotationChip keyValue={entity.properties.name} value={null} caEntities={caEntities} hideTopics={hideTopics} key={`entityAnnotationsUnderTweet-${entity.properties.name}`} />
+                                                        </div>
                                                     ))
                                                 }
                                             </div>
-                                            {/* <pre>{JSON.stringify(tweet.tweet.entities?.annotations, null, 2)}</pre>
-                                    <pre>{JSON.stringify(tweet.tweet.context_annotations, null, 2)}</pre> */}
                                         </div>
                                     ))}
                         </div>
@@ -240,27 +247,25 @@ export default function HomeTimeline() {
     );
 }
 
-function EntityAnnotationChip({ keyValue, value, entitySearchParams }) {
-    let transition = useTransition();
-    const entities = useActionData();
-    if (entities) {
-        console.log("RIGHT UNDER ACTION CALL in chip")
-        console.log(`entities=${entities}`)
+function EntityAnnotationChip({ keyValue, value, caEntities, hideTopics }) {
+    if (!caEntities) {
+        caEntities = []
     }
-    // const ref = useRef();
-
+    let transition = useTransition();
     let isFetching = transition.submission?.formData.get("caEntityCount") == keyValue;
-
-    // useEffect(() => {
-    //     if (fetcher.type === "done" && fetcher.data.ok) {
-    //         ref.current.reset();
-    //     }
-    // }, [fetcher])
-
     if (isFetching) {
         return (
             <p>LOADING...</p>
         )
+    }
+
+    let bg
+    if (hideTopics.indexOf(keyValue) > -1) {
+        bg = "bg-red-300 hover:bg-blue-500"
+    } else if (caEntities.indexOf(keyValue) > -1) {
+        bg = 'bg-green-200 hover:bg-blue-500'
+    } else {
+        bg = 'bg-blue-200 hover:bg-blue-300'
     }
 
     return (
@@ -269,10 +274,23 @@ function EntityAnnotationChip({ keyValue, value, entitySearchParams }) {
         >
             <span
                 className={`
-                    ${entitySearchParams.indexOf(keyValue) > -1 ? 'bg-blue-200 hover:bg-blue-500' : 'bg-gray-200 hover:bg-blue-300'}
+                    ${bg}
                     px-4 py-2 rounded-full text-gray-500  font-semibold text-sm flex align-center w-max cursor-pointer active:bg-gray-300 transition duration-300 ease`}>
                 <button className="" type="submit" name="caEntityCount" value={keyValue}>
-                    {`${keyValue}, ${value}`}
+                    {`${keyValue} ${value ? ', ' + value : ''}`}
+                </button>
+                <button
+                    type="submit"
+                    name="hideTopic"
+                    value={keyValue}
+                    className="bg-transparent hover:bg-red-200 focus:outline-none">
+                    <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="times"
+                        className="w-3 ml-3" role="img" xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 352 512">
+                        <path fill="currentColor"
+                            d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z">
+                        </path>
+                    </svg>
                 </button>
             </span>
         </Form>
@@ -295,66 +313,4 @@ export function CatchBoundary() {
     throw new Error(`Unexpected caught response with status: ${caught.status}`);
 }
 
-import { TimeAgo } from '~/components/timeago';
-import { useEffect } from "react";
-import { flattenTweetPublicMetrics, flattenTwitterUserPublicMetrics } from "~/models/streams.server";
-import { write } from "fs";
-import TweetsPage from "./timeline";
 
-// function Tweet({ tweet }) {
-//     return (
-//         <div key={tweet.tweet.id} className='mx-2 my-2 flex py-4 px-3 rounded-lg  bg-white border border-gray-100'>
-//             <img
-//                 className='h-12 w-12 rounded-full border border-gray-300 bg-gray-100'
-//                 alt=''
-//                 src={tweet.author.profile_image_url}
-//             />
-//             <article key={tweet.tweet.id} className='ml-2.5 flex-1'>
-//                 <header>
-//                     <h3>
-//                         <a
-//                             href={`https://twitter.com/${tweet.author.username}`}
-//                             target='_blank'
-//                             rel='noopener noreferrer'
-//                             className='mr-1 font-medium hover:underline'
-//                         >
-//                             {tweet.author.name}
-//                         </a>
-//                         <a
-//                             href={`https://twitter.com/${tweet.author.username}`}
-//                             target='_blank'
-//                             rel='noopener noreferrer'
-//                             className='text-sm text-gray-500'
-//                         >
-//                             @{tweet.author.username}
-//                         </a>
-//                         <span className='mx-1 text-sm text-gray-500'>·</span>
-//                         <a
-//                             href={`https://twitter.com/${tweet.author.username}/status/${tweet.tweet.id}`}
-//                             target='_blank'
-//                             rel='noopener noreferrer'
-//                             className='text-sm text-gray-500 hover:underline'
-//                         >
-//                             <TimeAgo
-//                                 locale='en_short'
-//                                 datetime={new Date(tweet.tweet.created_at ?? new Date())}
-//                             />
-//                         </a>
-//                         <span className='mx-1 text-sm text-gray-500'>·</span>
-//                         <a
-//                             href={`/streams/tweets/${tweet.tweet.id}`}
-//                             target='_blank'
-//                             rel='noopener noreferrer'
-//                             className='text-sm text-gray-500 hover:underline'
-//                         >
-//                             analyze
-//                         </a>
-//                     </h3>
-//                 </header>
-//                 <p
-//                     dangerouslySetInnerHTML={{ __html: tweet.html ?? tweet.tweet.text }}
-//                 />
-//             </article>
-//         </div>
-//     )
-// }

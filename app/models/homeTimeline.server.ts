@@ -17,7 +17,8 @@ export async function addHomeTimelineTweets(tweets: any, timelineUser: any) {
                 tweet.lang = t.lang,
                 tweet.text = t.text,
                 tweet.created_at = t.created_at,
-                tweet.reply_settings = t.reply_settings
+                tweet.reply_settings = t.reply_settings,
+                tweet.author_id = t.author_id
 
             MERGE (user:User {id: t.author_id})
             MERGE (user)-[:POSTED]->(tweet)
@@ -68,7 +69,6 @@ export async function addHomeTimelineTweets(tweets: any, timelineUser: any) {
             { tweets: tweets, timelineUserId: timelineUser.id }
         )
     })
-    console.log("DO I GET HERE?")
     const tweetsSaved = res.records.map((row: any) => {
         return row.get("tweet")
     })
@@ -86,9 +86,11 @@ export async function getHomeTimelineTweetsNeo4j(username: string, limit: number
         return tx.run(`
             MATCH (timelineUser:User {username:$username})-[:HOMETIMELINE]->(t:Tweet)<-[:POSTED]-(u:User)
             OPTIONAL MATCH (t)-[r:REFERENCED]->(ref_t:Tweet)<-[:POSTED]-(ref_a:User)
-            OPTIONAL MATCH (t)-[ar:ANNOTATED]-(a)
             OPTIONAL MATCH (t)-[tr:INCLUDED]->(entity:Entity)-[:CATEGORY]-(d:Domain {name:"Unified Twitter Taxonomy"})
-            RETURN u,t,collect(a) as a, collect(r) as refTweetRels, collect(ref_t) as refTweets,collect(ref_a) as refTweetAuthors, collect(entity) as entities, collect(d) as domains
+            OPTIONAL MATCH (t)-[mr:ATTACHED]->(media:Media)
+            RETURN u,t, collect(r) as refTweetRels, collect(ref_t) as refTweets,
+                collect(ref_a) as refTweetAuthors, collect(entity) as entities, collect(d) as domains,
+                collect(media) as media, collect(mr) as mediaRels
             ORDER by t.created_at DESC 
             LIMIT $limit
         `,
@@ -100,12 +102,13 @@ export async function getHomeTimelineTweetsNeo4j(username: string, limit: number
             return {
                 tweet: row.get('t'),
                 author: row.get('u'),
-                annotation: row.get('a'),
                 refTweets: row.get('refTweets'),
                 refTweetRels: row.get('refTweetRels'),
                 refTweetAuthors: row.get('refTweetAuthors'),
                 entities: row.get('entities'),
-                domains: row.get('domains')
+                domains: row.get('domains'),
+                media: row.get('media'),
+                mediaRels: row.get('mediaRels')
             }
         })
     }

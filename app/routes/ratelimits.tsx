@@ -19,13 +19,15 @@ export async function loader({ request, params }: LoaderArgs) {
     const meLimit = await limits.v2.getRateLimit('users/me')
     const ownedListLimit = await limits.v2.getRateLimit('users/:id/owned_lists')
     const followedListLimit = await limits.v2.getRateLimit('users/:id/followed_lists')
+    const homeTimelineLimit = await limits.v2.getRateLimit('users/:id/timelines/reverse_chronological')
 
     let limitJson = {
         following: {},
         timeline: {},
         meLimit: {},
         ownedListLimit: {},
-        followedListLimit: {}
+        followedListLimit: {},
+        homeTimelineLimit: {}
     }
 
     if (currentRateLimitForFollowing) {
@@ -61,6 +63,13 @@ export async function loader({ request, params }: LoaderArgs) {
             limit: followedListLimit.limit,
             "remaining": followedListLimit.remaining,
             reset: new Date(followedListLimit.reset * 1000).toISOString(),
+        }
+    }
+    if (homeTimelineLimit) {
+        limitJson.homeTimelineLimit = {
+            limit: homeTimelineLimit.limit,
+            "remaining": homeTimelineLimit.remaining,
+            reset: new Date(homeTimelineLimit.reset * 1000).toISOString(),
         }
     }
     return json(limitJson)
