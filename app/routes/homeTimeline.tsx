@@ -2,8 +2,8 @@ import type { ActionArgs, LoaderArgs } from "@remix-run/node";
 import type { ActionFunction } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { useRef, useState } from 'react'
-import { Form, useSearchParams, useActionData, useCatch, useLoaderData, Outlet, useTransition, useFetcher } from "@remix-run/react";
-
+import { Form, Link, useSearchParams, useActionData, useCatch, useLoaderData, Outlet, useTransition, useFetcher } from "@remix-run/react";
+import { prisma } from "~/db.server";
 import Tweet from '~/components/Tweet';
 import {
     TwitterApi,
@@ -11,11 +11,35 @@ import {
     UserV2,
 } from 'twitter-api-v2';
 
+import type { Session } from '@remix-run/node';
+import { commitSession, getSession } from '~/session.server';
 import { getClient, USER_FIELDS, TWEET_FIELDS, handleTwitterApiError } from '~/twitter.server';
 import { getHomeTimelineTweetsNeo4j, addHomeTimelineTweets } from '~/models/homeTimeline.server';
 import { bulkWrites, addUsers, addTweetMedia, addTweetsFrom } from "~/models/streams.server";
 import { useEffect } from "react";
 import { flattenTweetPublicMetrics, flattenTwitterUserPublicMetrics } from "~/models/streams.server";
+import { log } from '~/log.server';
+import { couldStartTrivia } from "typescript";
+
+
+export function getUserIdFromSession(session: Session) {
+    const userId = session.get('uid') as string | undefined;
+    const uid = userId ? String(userId) : undefined;
+    return uid;
+}
+
+function flattenTwitterData(data: Array<any>) {
+    for (const obj of data) {
+        obj.username = obj.username.toLowerCase();
+        obj.public_metrics_followers_count = obj.public_metrics.followers_count;
+        obj.public_metrics_following_count = obj.public_metrics.following_count;
+        obj.public_metrics_tweet_count = obj.public_metrics.tweet_count;
+        obj.public_metrics_listed_count = obj.public_metrics.listed_count;
+        delete obj.public_metrics;
+        delete obj.entities;
+    }
+    return data;
+}
 
 async function getTweetsHomeTimeline(api: TwitterApi, maxResults: number = 100, sinceId: string | null = null) {//, untilId: string | null = null) {
     let htReq = {
@@ -56,17 +80,100 @@ async function saveHomeTimelineTweets(api: TwitterApi, timelineUser: any, sinceI
     ])
 }
 
-
 export async function loader({ request, params }: LoaderArgs) {
-    const { api, limits, uid, session } = await getClient(request);
+
+    let user = null;
+
+    const url = new URL(request.url);
+    const redirectURI: string = process.env.REDIRECT_URI as string;
+    const stateId = url.searchParams.get('state');
+    const code = url.searchParams.get('code');
+
+    let session = await getSession(request.headers.get('Cookie'));
+    let uid = getUserIdFromSession(session);
+    console.log(`UID = ${uid}`);
+    let api;
+
+    if (!uid && (stateId && code)) {
+        console.log("IN HERE NOOOO")
+        const storedStateId = session.get('stateIdTwitter') as string;
+        log.debug(`Checking if state (${stateId}) matches (${storedStateId})...`);
+        if (storedStateId === stateId) {
+            log.info('Logging in with Twitter OAuth2...');
+            const client = new TwitterApi({
+                clientId: process.env.OAUTH_CLIENT_ID as string,
+                clientSecret: process.env.OAUTH_CLIENT_SECRET,
+            });
+            const {
+                client: api,
+                scope,
+                accessToken,
+                refreshToken,
+                expiresIn,
+            } = await client.loginWithOAuth2({
+                code,
+                codeVerifier: session.get('codeVerifier') as string,
+                redirectUri: redirectURI
+            });
+
+            //TODO: INSTANTIATE THIS API WITH THE RATE LIMIT PLUGIN SO IT STORES THIS IN REDIS AND RATE LIMITS ARE ACCURATE...
+
+            log.info('Fetching logged in user from Twitter API...');
+            const { data } = await api.v2.me({ "user.fields": USER_FIELDS });
+            const context = `${data.name} (@${data.username})`;
+            log.info(`Upserting user for ${context}...`);
+            user = flattenTwitterData([data])[0];
+            await prisma.users.upsert({
+                where: { id: user.id },
+                create: user,
+                update: user,
+            })
+            log.info(`Upserting token for ${context}...`);
+            const token = {
+                user_id: user.id,
+                token_type: 'bearer',
+                expires_in: expiresIn,
+                access_token: accessToken,
+                scope: scope.join(' '),
+                refresh_token: refreshToken as string,
+                created_at: new Date(),
+                updated_at: new Date(),
+            };
+            await prisma.tokens.upsert({
+                create: token,
+                update: token,
+                where: { user_id: token.user_id },
+            });
+            log.info(`Setting session uid (${user.id}) for ${context}...`);
+            url.searchParams.delete("state")
+            url.searchParams.delete("code")
+            session.set('uid', user.id.toString());
+            const headers = { 'Set-Cookie': await commitSession(session) };
+            return redirect(url.toString(), {
+                status: 302,
+                headers: headers
+            })
+        }
+    }
+
+    if (uid && stateId && code) {
+        redirect(`/homeTimeline`)
+    }
+
+    if (uid && !api) {
+        console.log("found uid and initing api obj")
+        let clientData = await getClient(request)
+        api = clientData.api
+    }
+
     if (!api) {
-        throw {} // TODO: make this better...
+        return {
+            loggedInUser: null,
+            tweets: []
+        }
     }
     const loggedInUser: UserV2 = (await api.v2.me({ "user.fields": USER_FIELDS })).data;
-    const num1 = Math.floor(Math.random() * 100)
-    console.time(`homeTimeline${num1}`)
     let latestTweetNeo4j = await getHomeTimelineTweetsNeo4j(loggedInUser.username, 1)
-    console.timeEnd(`homeTimeline${num1}`)
     let tweets
     if (latestTweetNeo4j.length < 1) {
         let res = await saveHomeTimelineTweets(api, loggedInUser)
@@ -75,11 +182,11 @@ export async function loader({ request, params }: LoaderArgs) {
     }
     let latestSavedId = latestTweetNeo4j[0].tweet.properties.id
     let res = await saveHomeTimelineTweets(api, loggedInUser, latestSavedId)
-    const num = Math.floor(Math.random() * 100)
-    console.time(`homeTimeline${num}`)
     tweets = await getHomeTimelineTweetsNeo4j(loggedInUser.username, 100)
-    console.timeLog(`homeTimeline${num}`)
-    return tweets
+    return {
+        loggedInUser: loggedInUser,
+        tweets: tweets
+    }
 }
 
 export const action: ActionFunction = async ({
@@ -100,13 +207,23 @@ export const action: ActionFunction = async ({
 
 export default function HomeTimeline() {
     // Responsible for rendering a feed & annotations
-    const num1 = Math.floor(Math.random() * 100)
-    console.time(`userLoaderData${num1}`)
-    const feedData = useLoaderData();
-    console.timeEnd(`userLoaderData${num1}`)
+    const loaderData = useLoaderData();
+    const feedData = loaderData.tweets;
+    const loggedInUser = loaderData.loggedInUser;
+    if (!loggedInUser) {
+        return (
+            <div>
+                <Link
+                    className='pill items-center justify-center rounded-full text-xs h-8 flex space-x-2'
+                    style={{ background: "#E5ECF7", border: "1 solid #D2DCED" }}
+                    to='/oauth'
+                >
+                    <span>Login</span>
+                </Link>
+            </div>
+        )
+    }
     const actionData = useActionData();
-    console.log("ACTION DATA")
-    console.log(actionData)
     let newEntity: string | null = null
     let hideEntity: string | null = null
     if (actionData) {
@@ -211,6 +328,22 @@ export default function HomeTimeline() {
             <div className='relative max-h-screen overflow-y-auto'>
                 <div className="flex">
                     <div className="max-w-sm">
+                        <span>
+                            <Form
+                                action="/logout"
+                                method="post"
+
+                            >
+                                <button
+                                    type="submit"
+                                    className='pill flex items-center justify-center text-xs rounded-full h-8 w-full'
+                                    style={{ color: "#4173C2" }}
+
+                                >
+                                    <p>Logout</p>
+                                </button>
+                            </Form>
+                        </span>
                         <h1 className="text-2xl">Twitter Topics</h1>
                         <div className="flex flex-wrap max-w-sm">
                             {Array.from(caEntityCount).sort((a, b) => b[1] - a[1]).map(([keyValue, value]) => (
@@ -299,7 +432,6 @@ function EntityAnnotationChip({ keyValue, value, caEntities, hideTopics }) {
 
 export function ErrorBoundary({ error }: { error: Error }) {
     console.error(error);
-
     return <div>An unexpected error occurred: {error.message}</div>;
 }
 
