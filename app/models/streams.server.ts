@@ -73,7 +73,11 @@ export async function getTweet(tweetId: string) {
             MATCH (t:Tweet {id: $tweetId})-[r:POSTED]-(u)
             OPTIONAL MATCH (t)-[r]->(referenced)
             OPTIONAL MATCH (t)<-[rb]-(referenced_by)
-            RETURN t, u, collect(referenced) as referenced, collect(r) as refRels, collect(referenced_by) as referencedBy, collect(rb) as refByRels`,
+            OPTIONAL MATCH (t)-[r:REFERENCED]->(ref_t:Tweet)<-[:POSTED]-(ref_a:User)
+            OPTIONAL MATCH (t)-[tr:INCLUDED]->(entity:Entity)-[:CATEGORY]-(d:Domain)
+            WHERE d.name = "Unified Twitter Taxonomy"
+            RETURN t, u, collect(referenced) as referenced, collect(r) as refRels, collect(referenced_by) as referencedBy, collect(rb) as refByRels, collect(entity) as entities, collect(d) as domains
+            `,
             { tweetId }
         )
     })
@@ -84,7 +88,9 @@ export async function getTweet(tweetId: string) {
             referenced: row.get("referenced"),
             refRels: row.get("refRels"),
             referencedBy: row.get("referencedBy"),
-            refByRels: row.get('refByRels')
+            refByRels: row.get('refByRels'),
+            entities: row.get('entities'),
+            domains: row.get('domains')
         }
     })
     await session.close()
@@ -631,10 +637,10 @@ export async function addTweetsFrom(tweets: any) {
                 tweet.lang = t.lang,
                 tweet.text = t.text,
                 tweet.created_at = t.created_at,
-                tweet.reply_settings = t.reply_settings
+                tweet.reply_settings = t.reply_settings,
+                tweet.author_id = t.author_id
 
             MERGE (user:User {id: t.author_id})
-
             MERGE (user)-[:POSTED]->(tweet)
 
             FOREACH (m IN t.entities.mentions |
