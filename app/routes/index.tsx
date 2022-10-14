@@ -4,7 +4,7 @@ import { useOptionalUser } from "~/utils";
 import { redirect } from "@remix-run/server-runtime";
 
 export async function loader() {
-  return redirect("/streams");
+  return redirect("/homeTimeline");
 }
 
 export default function Index() {
