@@ -41,7 +41,7 @@ function flattenTwitterData(data: Array<any>) {
     return data;
 }
 
-async function getTweetsHomeTimeline(api: TwitterApi, maxResults: number = 100, sinceId: string | null = null) {//, untilId: string | null = null) {
+async function getTweetsHomeTimeline(api: TwitterApi, maxResults: number = 100, sinceId: string | null = null, untilId: string | null = null) {//, untilId: string | null = null) {
     let htReq = {
         'max_results': maxResults,
         'tweet.fields': 'attachments,author_id,context_annotations,conversation_id,created_at,entities,geo,id,in_reply_to_user_id,lang,public_metrics,text,possibly_sensitive,referenced_tweets,reply_settings,source,withheld',
@@ -53,6 +53,9 @@ async function getTweetsHomeTimeline(api: TwitterApi, maxResults: number = 100, 
     }
     if (sinceId) {
         htReq['since_id'] = sinceId
+    }
+    if (untilId) {
+        htReq["until_id"] = untilId
     }
     const homeTimelineRes = await api.v2.homeTimeline(htReq)
     if (!homeTimelineRes.data.data) {
@@ -68,9 +71,9 @@ async function getTweetsHomeTimeline(api: TwitterApi, maxResults: number = 100, 
     return { tweets: homeTimelineRes.data.data, users, media, refTweets }
 }
 
-async function saveHomeTimelineTweets(api: TwitterApi, timelineUser: any, sinceId: string | null = null) {
+async function saveHomeTimelineTweets(api: TwitterApi, timelineUser: any, sinceId: string | null = null, untilId: string | null = null) {
     // save homeTimeline tweets to neo4j
-    let { tweets, users, media, refTweets } = await getTweetsHomeTimeline(api, 100, sinceId)
+    let { tweets, users, media, refTweets } = await getTweetsHomeTimeline(api, 100, sinceId, untilId)
     console.log(`pull ${tweets.length} new tweets for ${timelineUser.username}`)
     await Promise.all([
         bulkWrites(users, addUsers),
@@ -86,6 +89,11 @@ export async function loader({ request, params }: LoaderArgs) {
 
     const url = new URL(request.url);
     const redirectURI: string = process.env.REDIRECT_URI as string;
+
+    if (url.searchParams.get("clearAllTags")) {
+        return redirect('/homeTimeline')
+    }
+
     const stateId = url.searchParams.get('state');
     const code = url.searchParams.get('code');
 
@@ -173,6 +181,7 @@ export async function loader({ request, params }: LoaderArgs) {
         }
     }
     const loggedInUser: UserV2 = (await api.v2.me({ "user.fields": USER_FIELDS })).data;
+
     let latestTweetNeo4j = await getHomeTimelineTweetsNeo4j(loggedInUser.username, 1)
     let tweets
     if (latestTweetNeo4j.length < 1) {
@@ -183,6 +192,12 @@ export async function loader({ request, params }: LoaderArgs) {
     let latestSavedId = latestTweetNeo4j[0].tweet.properties.id
     let res = await saveHomeTimelineTweets(api, loggedInUser, latestSavedId)
     tweets = await getHomeTimelineTweetsNeo4j(loggedInUser.username, 100)
+    if (url.searchParams.get("loadMoreTweets")) {
+        console.log("I wonder if this will work...")
+        let untilId = tweets.slice(-1)[0].tweet.properties.id
+        let res = await saveHomeTimelineTweets(api, loggedInUser, null, untilId)
+        return redirect('/homeTimeline')
+    }
     return {
         loggedInUser: loggedInUser,
         tweets: tweets
@@ -342,7 +357,19 @@ export default function HomeTimeline() {
                                 </button>
                             </Form>
                         </span>
-                        <h1 className="text-2xl">Twitter Topics</h1>
+                        <div className="flex">
+                            <h1 className="text-2xl">Twitter Topics</h1>
+                            {
+                                busy ?
+                                    <div>LOADING</div> :
+                                    <Link
+                                        className='bg-purple-200 hover:bg-purple-400 text-xs justify-center items-center px-2 m-2 rounded-full'
+                                        to='/homeTimeline?clearAllTags=True'
+                                    >
+                                        Clear All Filters
+                                    </Link>
+                            }
+                        </div>
                         <div className="flex flex-wrap max-w-sm">
                             {Array.from(caEntityCount).sort((a, b) => b[1] - a[1]).map(([keyValue, value], index) => (
                                 <EntityAnnotationChip keyValue={keyValue} value={value} caEntities={caEntities} hideTopics={hideTopics} key={`entityAnnotations-${keyValue}-${index}`} />
@@ -351,6 +378,17 @@ export default function HomeTimeline() {
                     </div>
                     <div className="grow">
                         <h1 className="text-2xl">{`Home Timeline, ${feedDataShow.length} tweets with selected tags`}</h1>
+                        <p>{`tweets from ${feedDataShow[0].tweet.properties.created_at} to ${feedDataShow.slice(-1)[0].tweet.properties.created_at}`}</p>
+                        {/* {
+                            busy ?
+                                <div>LOADING</div> :
+                                <Link
+                                    className='bg-purple-200 hover:bg-purple-400 text-xs justify-center items-center px-2 m-2 rounded-full'
+                                    to='/homeTimeline?loadMoreTweets=True'
+                                >
+                                    Load More Tweets
+                                </Link>
+                        } */}
                         <div className="h-full">
                             {busy ?
                                 <div>LOADING</div> :
