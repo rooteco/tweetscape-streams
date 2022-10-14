@@ -41,7 +41,7 @@ import { getUserByUsernameDB } from '~/models/user.server'
 // } from '~/types';
 
 // import { getUserIdFromSession, log } from '~/utils.server';
-import { TwitterApiRateLimitDBStore } from '~/limit.server';
+// import { TwitterApiRateLimitDBStore } from '~/limit.server';
 // import { prisma } from '~/db.server';
 import { getSession } from '~/session.server';
 import { log } from "~/log.server";
@@ -174,9 +174,10 @@ export async function getTwitterClientForUser(
     const token = await prisma.tokens.findUnique({ where: { user_id: uid } });
     invariant(token, `expected token for user (${uid})`);
     const expiration = token.updated_at.valueOf() + token.expires_in * 1000;
-    const limits = new TwitterApiRateLimitPlugin(
-        new TwitterApiRateLimitDBStore(uid)
-    );
+    // const limits = new TwitterApiRateLimitPlugin(
+    //     new TwitterApiRateLimitDBStore(uid)
+    // );
+    const limits = new TwitterApiRateLimitPlugin();
     let api = new TwitterApi(token.access_token, { plugins: [limits] });
 
     if (expiration < new Date().valueOf()) {
