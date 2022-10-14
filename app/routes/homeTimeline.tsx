@@ -332,13 +332,11 @@ export default function HomeTimeline() {
                             <Form
                                 action="/logout"
                                 method="post"
-
                             >
                                 <button
                                     type="submit"
                                     className='pill flex items-center justify-center text-xs rounded-full h-8 w-full'
                                     style={{ color: "#4173C2" }}
-
                                 >
                                     <p>Logout</p>
                                 </button>
@@ -346,8 +344,8 @@ export default function HomeTimeline() {
                         </span>
                         <h1 className="text-2xl">Twitter Topics</h1>
                         <div className="flex flex-wrap max-w-sm">
-                            {Array.from(caEntityCount).sort((a, b) => b[1] - a[1]).map(([keyValue, value]) => (
-                                <EntityAnnotationChip keyValue={keyValue} value={value} caEntities={caEntities} hideTopics={hideTopics} key={`entityAnnotations-${keyValue}`} />
+                            {Array.from(caEntityCount).sort((a, b) => b[1] - a[1]).map(([keyValue, value], index) => (
+                                <EntityAnnotationChip keyValue={keyValue} value={value} caEntities={caEntities} hideTopics={hideTopics} key={`entityAnnotations-${keyValue}-${index}`} />
                             ))}
                         </div>
                     </div>
@@ -357,15 +355,15 @@ export default function HomeTimeline() {
                             {busy ?
                                 <div>LOADING</div> :
                                 feedDataShow
-                                    .map((tweet: any) => (
-                                        <div key={`showTweets-${tweet.tweet.properties.id}`}>
-                                            <Tweet key={tweet.tweet.id} tweet={tweet} />
+                                    .map((tweet: any, index: number) => (
+                                        <div key={`showTweets-${tweet.tweet.properties.id}-${index}`}>
+                                            <Tweet tweet={tweet} />
                                             <div className="flex flex-wrap">
                                                 {
                                                     tweet.entities &&
-                                                    tweet.entities.map((entity, index) => (
+                                                    tweet.entities.map((entity: Record, index: number) => (
                                                         <div>
-                                                            <EntityAnnotationChip keyValue={entity.properties.name} value={null} caEntities={caEntities} hideTopics={hideTopics} key={`entityAnnotationsUnderTweet-${entity.properties.name}`} />
+                                                            <EntityAnnotationChip keyValue={entity.properties.name} value={null} caEntities={caEntities} hideTopics={hideTopics} key={`entityAnnotationsUnderTweet-${entity.properties.name}-${index}`} />
                                                         </div>
                                                     ))
                                                 }
