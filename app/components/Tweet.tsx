@@ -52,13 +52,19 @@ function Tweet({ tweet }) {
             {
                 repliedToTweet.tweet ?
                     <div>
-                        <Tweet key={repliedToTweet.tweet.properties.id} tweet={repliedToTweet} />
+                        <Tweet tweet={repliedToTweet} />
                         <p>reply to ^^</p>
                     </div>
                     : null
             }
             {
-                retweet ? <p className="text-gray-400">{tweet.author.properties.username} retweeted </p> : null
+                retweet ?
+                    <a
+                        href={`https://twitter.com/${tweet.author.properties.username}`}
+                        target='_blank'
+                        rel='noopener noreferrer'
+                        className='text-gray-400 mr-1 font-medium hover:underline'
+                    >{tweet.author.properties.username} retweeted</a> : null
             }
             <div className='mx-2 flex'>
                 <img
@@ -66,7 +72,7 @@ function Tweet({ tweet }) {
                     alt=''
                     src={tweetAuthor.properties.profile_image_url}
                 />
-                <article key={tweet.tweet.properties.id} className='ml-2.5 flex-1'>
+                <article className='ml-2.5 flex-1'>
                     <header>
                         <h3>
                             <a
@@ -108,7 +114,7 @@ function Tweet({ tweet }) {
                             </a>
                         </h3>
                     </header>
-                    <p dangerouslySetInnerHTML={{ __html: tweetText }} />
+                    <p className="text-2xl" dangerouslySetInnerHTML={{ __html: tweetText }} />
                     <div className="flex flex-wrap">
                         {
                             tweet.media ?
@@ -129,7 +135,7 @@ function Tweet({ tweet }) {
             {
                 quoteTweet.tweet ?
                     <div className="pl-6">
-                        <Tweet key={quoteTweet.tweet.properties.id} tweet={quoteTweet} />
+                        <Tweet tweet={quoteTweet} />
                     </div>
 
                     : null
