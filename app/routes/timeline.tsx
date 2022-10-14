@@ -16,6 +16,8 @@
 // import mergeRefs from 'react-merge-refs';
 // import Tweet from '~/components/Tweet';
 
+console.log("yo")
+
 // // import type { Cluster, Rekt, TweetFull, TweetJS, User } from '~/types';
 // // import {
 // //     DEFAULT_TIME,
