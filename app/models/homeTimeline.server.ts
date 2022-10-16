@@ -76,25 +76,28 @@ export async function addHomeTimelineTweets(tweets: any, timelineUser: any) {
     return tweetsSaved;
 };
 
-
-
-export async function getHomeTimelineTweetsNeo4j(username: string, limit: number = 100) {
+export async function getHomeTimelineTweetsNeo4j(username: string, limit: number | null = 100) {
     //THIS EXCLUDES RETWEETS RIGHT NOW
     const session = driver.session()
     // Create a node within a write transaction
+    let params = { username: username }
+    let query = `
+        MATCH (timelineUser:User {username:$username})-[:HOMETIMELINE]->(t:Tweet)<-[:POSTED]-(u:User)
+        OPTIONAL MATCH (t)-[r:REFERENCED]->(ref_t:Tweet)<-[:POSTED]-(ref_a:User)
+        OPTIONAL MATCH (t)-[tr:INCLUDED]->(entity:Entity)-[:CATEGORY]-(d:Domain {name:"Unified Twitter Taxonomy"})
+        OPTIONAL MATCH (t)-[mr:ATTACHED]->(media:Media)
+        RETURN u,t, collect(r) as refTweetRels, collect(ref_t) as refTweets,
+            collect(ref_a) as refTweetAuthors, collect(entity) as entities, collect(d) as domains,
+            collect(media) as media, collect(mr) as mediaRels
+        ORDER by t.created_at DESC \
+    `
+    if (limit) {
+        query += `LIMIT $limit`
+        params.limit = int(limit)
+    }
+
     const res = await session.executeRead((tx: any) => {
-        return tx.run(`
-            MATCH (timelineUser:User {username:$username})-[:HOMETIMELINE]->(t:Tweet)<-[:POSTED]-(u:User)
-            OPTIONAL MATCH (t)-[r:REFERENCED]->(ref_t:Tweet)<-[:POSTED]-(ref_a:User)
-            OPTIONAL MATCH (t)-[tr:INCLUDED]->(entity:Entity)-[:CATEGORY]-(d:Domain {name:"Unified Twitter Taxonomy"})
-            OPTIONAL MATCH (t)-[mr:ATTACHED]->(media:Media)
-            RETURN u,t, collect(r) as refTweetRels, collect(ref_t) as refTweets,
-                collect(ref_a) as refTweetAuthors, collect(entity) as entities, collect(d) as domains,
-                collect(media) as media, collect(mr) as mediaRels
-            ORDER by t.created_at DESC 
-            LIMIT $limit
-        `,
-            { username: username, limit: int(limit) })
+        return tx.run(query, params)
     })
     let tweets = [];
     if (res.records.length > 0) {
@@ -114,4 +117,28 @@ export async function getHomeTimelineTweetsNeo4j(username: string, limit: number
     }
     await session.close()
     return tweets;
+}
+
+export async function homeTimelineEntityCounts(username: string) {
+    const session = driver.session()
+    let params = { username: username }
+    let query = `
+        MATCH (timelineUser:User {username:$username})-[:HOMETIMELINE]->(t:Tweet)<-[:POSTED]-(u:User)
+        OPTIONAL MATCH (t)-[r:REFERENCED]->(ref_t:Tweet)<-[:POSTED]-(ref_a:User)
+        OPTIONAL MATCH (t)-[tr:INCLUDED]->(entity:Entity)-[:CATEGORY]-(d:Domain {name:"Unified Twitter Taxonomy"})
+        WITH collect(entity) as entities
+        RETURN apoc.coll.frequencies(entities) as entityDistribution, size(entities) as numRecords
+        `
+    const res = await session.executeRead((tx: any) => {
+        return tx.run(query, params)
+    })
+    let data;
+    if (res.records.length > 0) {
+        data = {
+            "entityDistribution": res.records[0].get("entityDistribution"),
+            "numRecords": res.records[0].get("numRecords")
+        }
+    }
+    await session.close()
+    return data;
 }
