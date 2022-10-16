@@ -114,7 +114,7 @@ function Tweet({ tweet }) {
                             </a>
                         </h3>
                     </header>
-                    <p className="text-2xl" dangerouslySetInnerHTML={{ __html: tweetText }} />
+                    <p className="text-md" dangerouslySetInnerHTML={{ __html: tweetText }} />
                     <div className="flex flex-wrap">
                         {
                             tweet.media ?
