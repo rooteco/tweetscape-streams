@@ -10,16 +10,16 @@ import {
     TwitterV2IncludesHelper,
     UserV2,
 } from 'twitter-api-v2';
+import { TimeAgo } from '~/components/timeago';
 
 import type { Session } from '@remix-run/node';
 import { commitSession, getSession } from '~/session.server';
 import { getClient, USER_FIELDS, TWEET_FIELDS, handleTwitterApiError } from '~/twitter.server';
-import { getHomeTimelineTweetsNeo4j, addHomeTimelineTweets } from '~/models/homeTimeline.server';
+import { getHomeTimelineTweetsNeo4j, addHomeTimelineTweets, homeTimelineEntityCounts } from '~/models/homeTimeline.server';
 import { bulkWrites, addUsers, addTweetMedia, addTweetsFrom } from "~/models/streams.server";
 import { useEffect } from "react";
 import { flattenTweetPublicMetrics, flattenTwitterUserPublicMetrics } from "~/models/streams.server";
 import { log } from '~/log.server';
-import { couldStartTrivia } from "typescript";
 
 
 export function getUserIdFromSession(session: Session) {
@@ -191,13 +191,29 @@ export async function loader({ request, params }: LoaderArgs) {
     }
     let latestSavedId = latestTweetNeo4j[0].tweet.properties.id
     let res = await saveHomeTimelineTweets(api, loggedInUser, latestSavedId)
+    console.time("GETTING ALL TWEETS")
     tweets = await getHomeTimelineTweetsNeo4j(loggedInUser.username, 100)
+    console.timeEnd("GETTING ALL TWEETS")
     if (url.searchParams.get("loadMoreTweets")) {
         console.log("I wonder if this will work...")
         let untilId = tweets.slice(-1)[0].tweet.properties.id
         let res = await saveHomeTimelineTweets(api, loggedInUser, null, untilId)
         return redirect('/homeTimeline')
     }
+    console.time("entityFrequency")
+    const data = await homeTimelineEntityCounts(loggedInUser.username)
+    console.timeEnd("entityFrequency")
+    const entityDist = data?.entityDistribution;
+    const numRecords = data?.numRecords;
+    entityDist.sort((a, b) => {
+        return b.count.toInt() - a.count.toInt()
+    })
+    console.log("ENTITY FREQUENCY")
+    console.log(tweets.length)
+    console.log(numRecords.toInt())
+    console.log(entityDist.slice(0, 2))
+    console.log(entityDist.map((row) => row.count.toInt()).reduce((partialSum, a) => partialSum + a, 0))
+    // console.log(entityDist.map((row) => ({ "item": row.item.properties, "count": row.count.toInt() })))
     return {
         loggedInUser: loggedInUser,
         tweets: tweets
@@ -379,6 +395,15 @@ export default function HomeTimeline() {
                     <div className="grow">
                         <h1 className="text-2xl">{`Home Timeline, ${feedDataShow.length} tweets with selected tags`}</h1>
                         <p>{`tweets from ${feedDataShow[0].tweet.properties.created_at} to ${feedDataShow.slice(-1)[0].tweet.properties.created_at}`}</p>
+                        <span>Newest loaded Tweet:</span><TimeAgo
+                            locale='en_short'
+                            datetime={new Date(feedDataShow[0].tweet.properties.created_at)}
+                        />
+                        <p></p>
+                        <span>Oldest loaded Tweet:</span><TimeAgo
+                            locale='en_short'
+                            datetime={new Date(feedDataShow.slice(-1)[0].tweet.properties.created_at)}
+                        />
                         {/* {
                             busy ?
                                 <div>LOADING</div> :
