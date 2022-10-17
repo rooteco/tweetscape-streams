@@ -186,3 +186,22 @@ export async function homeTimelineEntityCounts(username: string) {
     await session.close()
     return data;
 }
+
+export async function getUser(uid: string) {
+    const session = driver.session()
+    // Create a node within a write transaction
+    const res = await session.executeRead((tx: any) => {
+        return tx.run(`
+            MATCH (user:User {id: $uid})
+            RETURN user
+            `,
+            { uid }
+        )
+    })
+    let user;
+    if (res.records.length == 1) {
+        user = res.records[0].get("user")
+    }
+    await session.close()
+    return user;
+}

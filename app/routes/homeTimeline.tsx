@@ -15,7 +15,7 @@ import { TimeAgo } from '~/components/timeago';
 import type { Session } from '@remix-run/node';
 import { commitSession, getSession } from '~/session.server';
 import { getClient, USER_FIELDS, TWEET_FIELDS, handleTwitterApiError } from '~/twitter.server';
-import { getHomeTimelineTweetsNeo4j, addHomeTimelineTweets, homeTimelineEntityCounts } from '~/models/homeTimeline.server';
+import { getUser, getHomeTimelineTweetsNeo4j, addHomeTimelineTweets, homeTimelineEntityCounts } from '~/models/homeTimeline.server';
 import { bulkWrites, addUsers, addTweetMedia, addTweetsFrom } from "~/models/streams.server";
 import { useEffect } from "react";
 import { flattenTweetPublicMetrics, flattenTwitterUserPublicMetrics } from "~/models/streams.server";
@@ -84,9 +84,7 @@ async function saveHomeTimelineTweets(api: TwitterApi, timelineUser: any, sinceI
 }
 
 export async function loader({ request, params }: LoaderArgs) {
-
     let user = null;
-
     const url = new URL(request.url);
     const redirectURI: string = process.env.REDIRECT_URI as string;
 
@@ -174,13 +172,24 @@ export async function loader({ request, params }: LoaderArgs) {
         api = clientData.api
     }
 
-    if (!api) {
+    if (!api || !uid) {
         return {
             loggedInUser: null,
             tweets: []
         }
     }
-    const loggedInUser: UserV2 = (await api.v2.me({ "user.fields": USER_FIELDS })).data;
+
+    let loggedInUser = (await getUser(uid)).properties
+    console.log("HERE IS LOGGE DIN USER")
+    console.log(loggedInUser)
+    // let loggedInUser;
+    if (!loggedInUser) {
+        loggedInUser = (await api.v2.me({ "user.fields": USER_FIELDS })).data
+        loggedInUser = (await addUsers([loggedInUser]))[0].properties
+    }
+    console.log("LOGGED IN USER")
+    console.log(loggedInUser)
+    // const loggedInUser: UserV2 = (await api.v2.me({ "user.fields": USER_FIELDS })).data;
 
     let latestTweetNeo4j = await getHomeTimelineTweetsNeo4j(loggedInUser.username, 1)
     let tweets
@@ -232,8 +241,43 @@ export const action: ActionFunction = async ({
     const newEntity = formData.get("caEntityCount")
     const hideEntity = formData.get("hideTopic")
 
-    console.log(`adding or removing this entity = ${newEntity}`)
-    return json({ newEntity, hideEntity })
+    const url = new URL(request.url);
+    const showEntityParams = url.searchParams.getAll("caEntityCount")
+
+    if (newEntity && showEntityParams.indexOf(newEntity) == -1) {
+        console.log(`adding ${newEntity} to list of current entities`)
+        url.searchParams.append("caEntityCount", newEntity)
+        console.log(`redirecting to url ${url.toString()}`)
+        return redirect(url.toString())
+    } else if (newEntity && showEntityParams.indexOf(newEntity) != -1) {
+        console.log(`removing entity ${newEntity} from list of current entities`)
+        // thanks to this person: https://github.com/whatwg/url/issues/335#issuecomment-1142139561
+        const allValues = url.searchParams.getAll("caEntityCount")
+        allValues.splice(allValues.indexOf(newEntity), 1)
+        url.searchParams.delete("caEntityCount")
+        allValues.forEach((val) => url.searchParams.append("caEntityCount", val))
+        return redirect(url.toString())
+    }
+
+    const hideTopicParams = url.searchParams.getAll("hideTopic")
+
+    if (hideEntity && hideTopicParams.indexOf(hideEntity) == -1) {
+        console.log(`adding ${hideEntity} to list of topics to hide`)
+        url.searchParams.append("hideTopic", hideEntity)
+        return redirect(url.toString())
+    } else if (hideEntity && hideTopicParams.indexOf(hideEntity) != -1) {
+        console.log(`removing entity ${hideEntity} from list of topics top hide`)
+        // thanks to this person: https://github.com/whatwg/url/issues/335#issuecomment-1142139561
+        const allValues = url.searchParams.getAll("hideTopic")
+        allValues.splice(allValues.indexOf(hideEntity), 1)
+        url.searchParams.delete("hideTopic")
+        allValues.forEach((val) => url.searchParams.append("hideTopic", val))
+        return redirect(url.toString())
+    }
+
+
+    // console.log(`adding or removing this entity = ${newEntity}`)
+    // return json({ newEntity, hideEntity })
 }
 
 export default function HomeTimeline() {
