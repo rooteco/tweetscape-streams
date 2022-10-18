@@ -15,7 +15,7 @@ import { TimeAgo } from '~/components/timeago';
 import type { Session } from '@remix-run/node';
 import { commitSession, getSession } from '~/session.server';
 import { getClient, USER_FIELDS, TWEET_FIELDS, handleTwitterApiError } from '~/twitter.server';
-import { getUser, getHomeTimelineTweetsNeo4j, addHomeTimelineTweets, homeTimelineEntityCounts } from '~/models/homeTimeline.server';
+import { numHomeTimelineTweetsIndexed, getUser, getHomeTimelineTweetsNeo4j, addHomeTimelineTweets, homeTimelineEntityCounts, getHomeTimelineTweetsNeo4jByTags } from '~/models/homeTimeline.server';
 import { bulkWrites, addUsers, addTweetMedia, addTweetsFrom } from "~/models/streams.server";
 import { useEffect } from "react";
 import { flattenTweetPublicMetrics, flattenTwitterUserPublicMetrics } from "~/models/streams.server";
@@ -41,7 +41,14 @@ function flattenTwitterData(data: Array<any>) {
     return data;
 }
 
-async function getTweetsHomeTimeline(api: TwitterApi, maxResults: number = 100, sinceId: string | null = null, untilId: string | null = null) {//, untilId: string | null = null) {
+async function saveHomeTimelineTweets(
+    api: TwitterApi,
+    timelineUser: UserV2,
+    maxResults: number = 100,
+    maxPages: number = 2,
+    sinceId: string | null = null,
+    untilId: string | null = null
+) {
     let htReq = {
         'max_results': maxResults,
         'tweet.fields': 'attachments,author_id,context_annotations,conversation_id,created_at,entities,geo,id,in_reply_to_user_id,lang,public_metrics,text,possibly_sensitive,referenced_tweets,reply_settings,source,withheld',
@@ -58,30 +65,53 @@ async function getTweetsHomeTimeline(api: TwitterApi, maxResults: number = 100, 
         htReq["until_id"] = untilId
     }
     const homeTimelineRes = await api.v2.homeTimeline(htReq)
+    let includes = new TwitterV2IncludesHelper(homeTimelineRes)
+
     if (!homeTimelineRes.data.data) {
         return { tweets: [], users: [], media: [], refTweets: [] }
     }
-
-    let includes = new TwitterV2IncludesHelper(homeTimelineRes)
 
     let users = flattenTwitterUserPublicMetrics(includes.users);
     let media = includes.media;
     let refTweets = flattenTweetPublicMetrics(includes.tweets)
 
-    return { tweets: homeTimelineRes.data.data, users, media, refTweets }
-}
-
-async function saveHomeTimelineTweets(api: TwitterApi, timelineUser: any, sinceId: string | null = null, untilId: string | null = null) {
-    // save homeTimeline tweets to neo4j
-    let { tweets, users, media, refTweets } = await getTweetsHomeTimeline(api, 100, sinceId, untilId)
-    console.log(`pull ${tweets.length} new tweets for ${timelineUser.username}`)
     await Promise.all([
         bulkWrites(users, addUsers),
         bulkWrites(media, addTweetMedia),
         bulkWrites(refTweets, addTweetsFrom),
-        addHomeTimelineTweets(tweets, timelineUser)
+        addHomeTimelineTweets(homeTimelineRes.data.data, timelineUser)
     ])
+
+    let pageCount = 1;
+    while (!homeTimelineRes.done && pageCount < maxPages) {
+        let next = await homeTimelineRes.next()
+        console.log("NEXT PAGE SIZE")
+        console.log(next.data.data.length)
+        let includes = new TwitterV2IncludesHelper(next)
+        let users = flattenTwitterUserPublicMetrics(includes.users);
+        let media = includes.media;
+        let refTweets = flattenTweetPublicMetrics(includes.tweets)
+        await Promise.all([
+            bulkWrites(users, addUsers),
+            bulkWrites(media, addTweetMedia),
+            bulkWrites(refTweets, addTweetsFrom),
+            addHomeTimelineTweets(next.data.data, timelineUser)
+        ])
+        pageCount++;
+    }
 }
+
+// async function saveHomeTimelineTweets(api: TwitterApi, timelineUser: UserV2, sinceId: string | null = null, untilId: string | null = null) {
+//     // save homeTimeline tweets to neo4j
+//     let { tweets, users, media, refTweets } = await getTweetsHomeTimeline(api, 100, sinceId, untilId)
+//     console.log(`pull ${tweets.length} new tweets for ${timelineUser.username}`)
+//     await Promise.all([
+//         bulkWrites(users, addUsers),
+//         bulkWrites(media, addTweetMedia),
+//         bulkWrites(refTweets, addTweetsFrom),
+//         addHomeTimelineTweets(tweets, timelineUser)
+//     ])
+// }
 
 export async function loader({ request, params }: LoaderArgs) {
     let user = null;
@@ -179,53 +209,64 @@ export async function loader({ request, params }: LoaderArgs) {
         }
     }
 
-    let loggedInUser = (await getUser(uid)).properties
-    console.log("HERE IS LOGGE DIN USER")
-    console.log(loggedInUser)
-    // let loggedInUser;
+    let loggedInUser = (await getUser(uid))
+    if (loggedInUser) {
+        loggedInUser = loggedInUser.properties as UserV2
+    }
     if (!loggedInUser) {
         loggedInUser = (await api.v2.me({ "user.fields": USER_FIELDS })).data
-        loggedInUser = (await addUsers([loggedInUser]))[0].properties
+        loggedInUser = (await addUsers([loggedInUser]))[0].properties as UserV2
     }
-    console.log("LOGGED IN USER")
-    console.log(loggedInUser)
-    // const loggedInUser: UserV2 = (await api.v2.me({ "user.fields": USER_FIELDS })).data;
 
-    let latestTweetNeo4j = await getHomeTimelineTweetsNeo4j(loggedInUser.username, 1)
-    let tweets
-    if (latestTweetNeo4j.length < 1) {
-        let res = await saveHomeTimelineTweets(api, loggedInUser)
-        tweets = await getHomeTimelineTweetsNeo4j(loggedInUser.username, 100)
-        return tweets
-    }
-    let latestSavedId = latestTweetNeo4j[0].tweet.properties.id
-    let res = await saveHomeTimelineTweets(api, loggedInUser, latestSavedId)
-    console.time("GETTING ALL TWEETS")
-    tweets = await getHomeTimelineTweetsNeo4j(loggedInUser.username, 100)
-    console.timeEnd("GETTING ALL TWEETS")
+    let latestTweetNeo4j = await getHomeTimelineTweetsNeo4j(loggedInUser.username, 1, "DESC")
+    let earliestTweetNeo4j = await getHomeTimelineTweetsNeo4j(loggedInUser.username, 1, "ASC")
+
+
     if (url.searchParams.get("loadMoreTweets")) {
-        console.log("I wonder if this will work...")
-        let untilId = tweets.slice(-1)[0].tweet.properties.id
-        let res = await saveHomeTimelineTweets(api, loggedInUser, null, untilId)
-        return redirect('/homeTimeline')
+        console.log("LOADING MORE TWEETS")
+        console.log(url.toString())
+        console.log(url.searchParams)
+        let untilId = earliestTweetNeo4j[0].tweet.properties.id
+        console.log("until id")
+        console.log(untilId)
+        let res = await saveHomeTimelineTweets(api, loggedInUser, 100, 1, null, untilId)
+        url.searchParams.delete("loadMoreTweets")
+        console.log("url after deletion")
+        console.log(url.toString())
+        return redirect(url.toString())
+    }
+
+    let tweets;
+    if (latestTweetNeo4j.length < 1) {
+        await saveHomeTimelineTweets(api, loggedInUser)
+    } else {
+        let latestSavedId = latestTweetNeo4j[0].tweet.properties.id
+        let earliestSavedId = earliestTweetNeo4j[0].tweet.properties.id
+        await Promise.all([
+            saveHomeTimelineTweets(api, loggedInUser, 100, 2, latestSavedId),
+            // saveHomeTimelineTweets(api, loggedInUser, 100, 2, null, earliestSavedId)
+        ])
+    }
+    if (url.searchParams.getAll("caEntityCount").length > 0) {
+        console.log("USING TAGS")
+        console.log(url.searchParams.getAll("caEntityCount"))
+        tweets = await getHomeTimelineTweetsNeo4jByTags(loggedInUser.username, null, 0, url.searchParams.getAll("caEntityCount"))
+        console.log(tweets.length)
+    } else {
+        tweets = await getHomeTimelineTweetsNeo4j(loggedInUser.username, 100, 'DESC')
     }
     console.time("entityFrequency")
     const data = await homeTimelineEntityCounts(loggedInUser.username)
     console.timeEnd("entityFrequency")
-    const entityDist = data?.entityDistribution;
-    const numRecords = data?.numRecords;
-    entityDist.sort((a, b) => {
-        return b.count.toInt() - a.count.toInt()
+    data?.entityDistribution.sort((a, b) => {
+        return b.count - a.count
     })
-    console.log("ENTITY FREQUENCY")
-    console.log(tweets.length)
-    console.log(numRecords.toInt())
-    console.log(entityDist.slice(0, 2))
-    console.log(entityDist.map((row) => row.count.toInt()).reduce((partialSum, a) => partialSum + a, 0))
-    // console.log(entityDist.map((row) => ({ "item": row.item.properties, "count": row.count.toInt() })))
+    const numTweets = await numHomeTimelineTweetsIndexed(loggedInUser.username)
     return {
         loggedInUser: loggedInUser,
-        tweets: tweets
+        tweets: tweets,
+        entityDist: data?.entityDistribution,
+        numTweets: numTweets,
     }
 }
 
@@ -284,7 +325,18 @@ export default function HomeTimeline() {
     // Responsible for rendering a feed & annotations
     const loaderData = useLoaderData();
     const feedData = loaderData.tweets;
+    const emptyTopic = {
+        labels: ['Entity'],
+        properties: { name: 'No Labels', },
+    }
+    feedData.forEach((row, index: number) => {
+        if (row.entities.length == 0) {
+            row.entities.push(emptyTopic)
+        }
+    })
     const loggedInUser = loaderData.loggedInUser;
+    const entityDistribution = loaderData.entityDist;
+    const numTweets = loaderData.numTweets;
     if (!loggedInUser) {
         return (
             <div>
@@ -298,105 +350,18 @@ export default function HomeTimeline() {
             </div>
         )
     }
-    const actionData = useActionData();
-    let newEntity: string | null = null
-    let hideEntity: string | null = null
-    if (actionData) {
-        newEntity = actionData.newEntity
-        hideEntity = actionData.hideEntity
-    }
     const [searchParams, setSearchParams] = useSearchParams()
-    const entitySearchParams = searchParams.getAll("caEntityCount")
-    const hideTopicParams = searchParams.getAll("hideTopic")
-
-    useEffect(() => {
-        if (newEntity && entitySearchParams.indexOf(newEntity) == -1) {
-            console.log(`adding ${newEntity} to list of current entities`)
-            searchParams.append("caEntityCount", newEntity)
-            setSearchParams(searchParams)
-        } else if (newEntity && entitySearchParams.indexOf(newEntity) != -1) {
-            console.log(`removing entity ${newEntity} from list of current entities`)
-            // thanks to this person: https://github.com/whatwg/url/issues/335#issuecomment-1142139561
-            const allValues = searchParams.getAll("caEntityCount")
-            allValues.splice(allValues.indexOf(newEntity), 1)
-            searchParams.delete("caEntityCount")
-            allValues.forEach((val) => searchParams.append("caEntityCount", val))
-            setSearchParams(searchParams)
-        }
-
-        if (hideEntity && hideTopicParams.indexOf(hideEntity) == -1) {
-            console.log(`adding ${hideEntity} to list of topics to hide`)
-            searchParams.append("hideTopic", hideEntity)
-            setSearchParams(searchParams)
-        } else if (hideEntity && hideTopicParams.indexOf(hideEntity) != -1) {
-            console.log(`removing entity ${hideEntity} from list of topics top hide`)
-            // thanks to this person: https://github.com/whatwg/url/issues/335#issuecomment-1142139561
-            const allValues = searchParams.getAll("hideTopic")
-            allValues.splice(allValues.indexOf(hideEntity), 1)
-            searchParams.delete("hideTopic")
-            allValues.forEach((val) => searchParams.append("hideTopic", val))
-            setSearchParams(searchParams)
-        }
-    }, [newEntity, hideEntity])
+    console.log("here are search params")
+    console.log(searchParams.toString())
     let caEntities = searchParams.getAll("caEntityCount")
     let hideTopics = searchParams.getAll("hideTopic")
-    console.log("HIDE TOPICS")
-    console.log(hideTopics)
+
+    useEffect(() => {
+
+    }, [feedData, entityDistribution])
+
     let transition = useTransition();
     let busy = transition.submission;
-    const caEntityCount = new Map()
-
-    const num = Math.floor(Math.random() * 100)
-    console.time(`feedDataMap${num}`)
-    const emptyTopic = {
-        labels: ['Entity'],
-        properties: { name: 'No Labels', },
-    }
-    feedData.map((row, index: number) => {
-        if (row.entities.length == 0) {
-            row.entities.push(emptyTopic)
-        }
-        if (row.entities.length > 0) {
-            // let ca = row.entities.filter((ca) => (ca.domain.name == "Unified Twitter Taxonomy"))
-            row.entities.forEach((entity: Record, index: number) => {
-                const curEntityCount = caEntityCount.get(entity.properties.name)
-                if (curEntityCount) {
-                    caEntityCount.set(entity.properties.name, curEntityCount + 1)
-                } else {
-                    caEntityCount.set(entity.properties.name, 1)
-                }
-            })
-        }
-    })
-    console.timeEnd(`feedDataMap${num}`)
-
-    let feedDataShow = feedData;
-    // if (searchParams.getAll("caEntityCount").length > 0) {
-    if (hideTopics.length > 0) {
-        feedDataShow = feedData.filter(
-            (tweet) => {
-                for (let ca of tweet.entities) {
-                    if (hideTopics.indexOf(ca.properties.name) != -1) {
-                        return false
-                    }
-                }
-                return true
-            }
-        )
-    }
-    if (caEntities.length > 0) {
-        feedDataShow = feedDataShow.filter(
-            (tweet) => {
-                for (let ca of tweet.entities) {
-                    // if (searchParams.getAll("caEntityCount").indexOf(ca.properties.name) != -1) {
-                    if (caEntities.indexOf(ca.properties.name) != -1) {
-                        return true
-                    }
-                }
-                return false
-            }
-        )
-    }
 
     return (
         <div className="flex px-4 py-2 max-h-min z-10 bg-gray-200">
@@ -431,37 +396,37 @@ export default function HomeTimeline() {
                             }
                         </div>
                         <div className="flex flex-wrap max-w-sm">
-                            {Array.from(caEntityCount).sort((a, b) => b[1] - a[1]).map(([keyValue, value], index) => (
-                                <EntityAnnotationChip keyValue={keyValue} value={value} caEntities={caEntities} hideTopics={hideTopics} key={`entityAnnotations-${keyValue}-${index}`} />
+                            {entityDistribution.map((entity, index) => (
+                                <EntityAnnotationChip keyValue={entity.item.properties.name} value={entity.count} caEntities={caEntities} hideTopics={hideTopics} key={`entityAnnotations-${entity.item.properties.name}-${index}`} />
                             ))}
                         </div>
                     </div>
                     <div className="grow">
-                        <h1 className="text-2xl">{`Home Timeline, ${feedDataShow.length} tweets with selected tags`}</h1>
-                        <p>{`tweets from ${feedDataShow[0].tweet.properties.created_at} to ${feedDataShow.slice(-1)[0].tweet.properties.created_at}`}</p>
+                        <h1 className="text-2xl">{`Home Timeline, ${numTweets} in total indexed. ${feedData.length} tweets with selected tags`}</h1>
+                        <p>{`tweets from ${feedData[0].tweet.properties.created_at} to ${feedData.slice(-1)[0].tweet.properties.created_at}`}</p>
                         <span>Newest loaded Tweet:</span><TimeAgo
                             locale='en_short'
-                            datetime={new Date(feedDataShow[0].tweet.properties.created_at)}
+                            datetime={new Date(feedData[0].tweet.properties.created_at)}
                         />
                         <p></p>
                         <span>Oldest loaded Tweet:</span><TimeAgo
                             locale='en_short'
-                            datetime={new Date(feedDataShow.slice(-1)[0].tweet.properties.created_at)}
+                            datetime={new Date(feedData.slice(-1)[0].tweet.properties.created_at)}
                         />
-                        {/* {
+                        {
                             busy ?
                                 <div>LOADING</div> :
                                 <Link
                                     className='bg-purple-200 hover:bg-purple-400 text-xs justify-center items-center px-2 m-2 rounded-full'
-                                    to='/homeTimeline?loadMoreTweets=True'
+                                    to={'/homeTimeline?loadMoreTweets=True&' + searchParams.toString()}
                                 >
                                     Load More Tweets
                                 </Link>
-                        } */}
+                        }
                         <div className="h-full">
                             {busy ?
                                 <div>LOADING</div> :
-                                feedDataShow
+                                feedData
                                     .map((tweet: any, index: number) => (
                                         <div key={`showTweets-${tweet.tweet.properties.id}-${index}`}>
                                             <Tweet tweet={tweet} />
