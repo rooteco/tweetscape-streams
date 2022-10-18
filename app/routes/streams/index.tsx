@@ -9,7 +9,7 @@ import { getClient, USER_FIELDS } from '~/twitter.server';
 import { createStream, getStreamByName } from "~/models/streams.server";
 import { getUserByUsernameDB, createUserDb } from "~/models/user.server";
 import { flattenTwitterUserPublicMetrics } from "~/models/user.server";
-
+import type { UserV2 } from 'twitter-api-v2';
 import { Paper } from "@mui/material";
 
 export function getUserIdFromSession(session: Session) {
@@ -41,15 +41,18 @@ export async function action({ request }: ActionArgs) {
         return null
     }
     const meData = await api.v2.me({ "user.fields": USER_FIELDS });
-    user = meData.data;
-    let username = user.username;
-    let userDb = await getUserByUsernameDB(username)
+    user = meData.data as UserV2;
+    let userDb = await getUserByUsernameDB(user.username)
     if (!userDb) {
         createUserDb(flattenTwitterUserPublicMetrics([user])[0])
     }
     const endTime = new Date()
     const startTime = new Date(endTime.getFullYear(), endTime.getMonth(), endTime.getDate() - 7, endTime.getHours(), endTime.getMinutes())
-    stream = await createStream(name, startTime.toISOString(), username)
+    stream = await createStream(api, name, startTime.toISOString(), user)
+    if (stream.errors) {
+        let errors: ActionData = stream.errors;
+        return json<ActionData>(errors);
+    }
     return stream;
 }
 
@@ -74,7 +77,7 @@ export default function NewNotePage() {
         <div className="flex h-full w-full justify-center align-middle items-center">
             {
                 user && (
-                    <Paper variant="outlined" sx={{ width: "fit-content", borderRadius: 4, backgroundColor: "white !important"}}>
+                    <Paper variant="outlined" sx={{ width: "fit-content", borderRadius: 4, backgroundColor: "white !important" }}>
                         <div className="flex flex-col p-4 space-y-2">
                             <h1 className="text-lg font-medium pb-6">Create a New Stream</h1>
                             <Form method="post" className='flex flex-col space-x-1 space-y-6 max-w-sm'>
@@ -84,8 +87,8 @@ export default function NewNotePage() {
                                     ) : null}
                                     <input name="name" type="text" className='flex-1 rounded border border-gray-200 bg-gray-100 px-2 py-1' />{" "}
                                 </label>
-                                <button 
-                                    type="submit" 
+                                <button
+                                    type="submit"
                                     className='ml-1 inline-block rounded-full border-2  pill px-2 py-1'
                                     onSubmit={async (event) => {
                                         event.preventDefault();

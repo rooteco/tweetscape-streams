@@ -78,6 +78,27 @@ export const TWEET_EXPANSIONS: TTweetv2Expansion[] = [
     'entities.mentions.username',
 ];
 
+export async function getUserOwnedTwitterLists(api: TwitterApi, user: UserV2) {
+    try {
+        const ownedLists = [] as ListV2[];
+        log.info(`Fetching owned lists for ${user.username}...`);
+        const resOwned = await api.v2.listsOwned(user.id, {
+            'list.fields': [
+                'created_at',
+                'follower_count',
+                'member_count',
+                'private',
+                'description',
+                'owner_id',
+            ],
+        });
+        resOwned.lists.map((l: ListV2) => ownedLists.push(l));
+        return ownedLists;
+    } catch (e) {
+        return handleTwitterApiError(e);
+    }
+}
+
 export async function getUserTwitterLists(api: TwitterApi, user: UserV2) {
     try {
         const create = {

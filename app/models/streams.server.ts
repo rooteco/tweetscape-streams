@@ -213,7 +213,22 @@ export async function getStreamByName(name: string) {
     return { stream: stream, seedUsers: seedUsers };
 }
 
-export async function createStream(name: string, startTime: string, username: string) {
+import { createList, getUserOwnedTwitterLists } from '~/twitter.server'
+
+export async function createStream(api: TwitterApi, name: string, startTime: string, user: UserV2) {
+    console.time("ownedLists")
+    const userOwnedListsNames = (await getUserOwnedTwitterLists(api, user)).map((row) => (row.name));
+    console.timeEnd("ownedLists")
+    console.log(userOwnedListsNames)
+    if (userOwnedListsNames.indexOf(name) > -1) {
+        return {
+            "errors": {
+                "streamName": `You already have a list named '${name}', you should import that list instead of creating a new stream`
+            }
+        }
+    }
+
+    const { list, members } = await createList(api, name, [])
     const session = driver.session()
     // Create a node within a write transaction
     let streamData = {
@@ -227,7 +242,7 @@ export async function createStream(name: string, startTime: string, username: st
             SET s = $streamData
             MERGE (u)-[:CREATED]->(s)
             RETURN s`,
-            { streamData: streamData, username: username }
+            { streamData: streamData, username: user.username }
         )
     })
     // Get the `p` value from the first record
