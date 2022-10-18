@@ -718,6 +718,18 @@ export async function addSeedUserToStream(
     try {
         log.debug(`adding user '${user.properties.username}' to stream '${stream.properties.name}`)
         // Add new seedUsers relation to Stream
+        api.v2.addListMember(stream.properties.twitterListId, user.properties.id)
+        return await streamContainsUser(user.properties.username, stream.properties.name)
+    } catch (e) {
+        log.error(`Error fetching tweets: ${JSON.stringify(e, null, 2)}`);
+        throw e;
+    }
+};
+
+) {
+    try {
+        log.debug(`adding user '${user.properties.username}' to stream '${stream.properties.name}`)
+        // Add new seedUsers relation to Stream
         const reses = await Promise.all([
             getTweetsFromAuthorIdForStream(
                 api,
