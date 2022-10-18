@@ -27,7 +27,6 @@ function Tweet({ tweet }) {
 
     let retweet = false
     let tweetAuthor = tweet.author
-
     tweet.refTweetRels.forEach((rel, index) => {
         if (rel.properties.type == 'quoted') {
             quoteTweet.tweet = tweet.refTweets[index]
@@ -131,7 +130,7 @@ function Tweet({ tweet }) {
                 </article>
             </div>
             {
-                (quoteTweet.tweet & !repliedToTweet.tweet) ?
+                (quoteTweet.tweet & !repliedToTweet.tweet) ? // TODO: Get quotes to show up right even when they are a reply
                     <div className="pl-6">
                         <Tweet tweet={quoteTweet} />
                     </div>
