@@ -1010,6 +1010,74 @@ async function updateUserTweetscapeTweetIndexTimes(user: Node, startTime: string
     return streams;
 }
 
+export async function getStreamTweetsFromList(api: TwitterApi, stream: Node, name: string, startTime: string) {
+    const listTweetsRes = await api.v2.listTweets(
+        stream.properties.twitterListId,
+        {
+            'expansions': 'author_id,in_reply_to_user_id,referenced_tweets.id,referenced_tweets.id.author_id,entities.mentions.username,attachments.poll_ids,attachments.media_keys,geo.place_id',
+            'tweet.fields': 'attachments,author_id,context_annotations,conversation_id,created_at,entities,geo,id,in_reply_to_user_id,lang,public_metrics,text,possibly_sensitive,referenced_tweets,reply_settings,source,withheld',
+            'user.fields': USER_FIELDS,
+            'media.fields': 'alt_text,duration_ms,height,media_key,preview_image_url,type,url,width,public_metrics',
+            'poll.fields': 'duration_minutes,end_datetime,id,options,voting_status',
+            'place.fields': 'contained_within,country,country_code,full_name,geo,id,name,place_type',
+            'max_results': 20,
+        }
+    )
+
+    let media = []
+    let users = []
+    let refTweets = []
+    let tweetsFromList = []
+
+    let includes = new TwitterV2IncludesHelper(listTweetsRes)
+    users.push(...flattenTwitterUserPublicMetrics(includes.users))
+    media.push(...includes.media)
+    refTweets.push(...flattenTweetPublicMetrics(includes.tweets))
+    if (listTweetsRes.data.data && listTweetsRes.data.data.length > 0) {
+        tweetsFromList.push(...listTweetsRes.data.data)
+    }
+
+    console.log(`writing ${tweetsFromList.length} tweets for list stream ${name}`)
+    await Promise.all([
+        bulkWrites(users, addUsers),
+        bulkWrites(media, addTweetMedia),
+        bulkWrites(refTweets, addTweetsFrom),
+        bulkWrites(tweetsFromList, addTweetsFrom)
+    ])
+
+    //THIS EXCLUDES RETWEETS RIGHT NOW
+    const session = driver.session()
+    // Create a node within a write transaction
+
+    const res = await session.executeRead((tx: any) => {
+        return tx.run(`
+            MATCH (s:Stream {name: $name} )-[:CONTAINS]->(u:User)-[:POSTED]->(t:Tweet)
+            OPTIONAL MATCH (t)-[r:REFERENCED]->(ref_t:Tweet)<-[:POSTED]-(ref_a:User)
+            OPTIONAL MATCH (t)-[ar:ANNOTATED]-(a)
+            OPTIONAL MATCH (t)-[tr:INCLUDED]->(entity)
+            RETURN u,t,collect(a) as a, collect(r) as refTweetRels, collect(ref_t) as refTweets,collect(ref_a) as refTweetAuthors, collect(entity) as entities
+            ORDER by t.created_at DESC
+        `,
+            { name: name, startTime: startTime })
+    })
+    let tweets = [];
+    if (res.records.length > 0) {
+        tweets = res.records.map((row: Record) => {
+            return {
+                tweet: row.get('t'),
+                author: row.get('u'),
+                annotation: row.get('a'),
+                refTweets: row.get('refTweets'),
+                refTweetRels: row.get('refTweetRels'),
+                refTweetAuthors: row.get('refTweetAuthors'),
+                entities: row.get('entities')
+            }
+        })
+    }
+    await session.close()
+    return tweets;
+}
+
 export async function getStreamTweets(name: string, startTime: string) {
     //THIS EXCLUDES RETWEETS RIGHT NOW
     const session = driver.session()
