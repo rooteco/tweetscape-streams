@@ -234,6 +234,7 @@ export async function createStream(api: TwitterApi, name: string, startTime: str
     let streamData = {
         name,
         startTime,
+        twitterListId: list.data.id,
     }
     const res = await session.executeWrite((tx: any) => {
         return tx.run(`
