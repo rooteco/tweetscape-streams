@@ -131,7 +131,7 @@ function Tweet({ tweet }) {
                 </article>
             </div>
             {
-                quoteTweet.tweet ?
+                (quoteTweet.tweet & !repliedToTweet.tweet) ?
                     <div className="pl-6">
                         <Tweet tweet={quoteTweet} />
                     </div>
