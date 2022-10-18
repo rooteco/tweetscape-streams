@@ -104,7 +104,8 @@ export const action: ActionFunction = async ({
     const intent = formData.get("intent");
     let seedUserHandle: string = formData.get("seedUserHandle");
     if (intent === "delete") {
-        let res = await deleteStreamByName(params.streamName);
+        const { api, limits, uid, session } = await getClient(request);
+        let res = await deleteStreamByName(api, params.streamName);
         return redirect(`/streams`);
     }
 
