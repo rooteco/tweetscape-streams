@@ -2,12 +2,7 @@ import type { ActionArgs, LoaderArgs } from "@remix-run/node";
 import type { ActionFunction } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { Form, useActionData, useCatch, useLoaderData, Outlet, useTransition } from "@remix-run/react";
-
 import { Link, useParams } from "@remix-run/react";
-
-
-import Downshift from "downshift";
-import { useEffect, useState } from "react";
 import invariant from "tiny-invariant";
 
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -23,7 +18,8 @@ import {
     removeSeedUserFromStream,
     getAllUserLists,
     updateStreamTweets,
-    updateStreamFollowsNetwork
+    updateStreamFollowsNetwork,
+    getStreamTweetsFromList
 } from "~/models/streams.server";
 
 
@@ -36,7 +32,7 @@ import HubIcon from '@mui/icons-material/Hub';
 import UpdateIcon from '@mui/icons-material/Update';
 
 import Tweet from '~/components/Tweet';
-
+import ContextAnnotationChip from '~/components/ContextAnnotationChip';
 import { useParams, useLocation } from "@remix-run/react";
 import { Expand, ExpandCircleDownTwoTone } from "@mui/icons-material";
 
@@ -56,24 +52,22 @@ export async function loader({ request, params }: LoaderArgs) {
         throw new Response("Not Found", { status: 404 });
     }
 
-    console.time("getStreamTweets")
-    let tweets = await getStreamTweets(stream.properties.name, stream.properties.startTime);
-    console.timeEnd("getStreamTweets")
+    const { api, limits, uid, session } = await getClient(request);
+    let tweets = await getStreamTweetsFromList(api, stream, stream.properties.name, stream.properties.startTime);
 
-    console.log("here are tweets")
-    console.log(tweets.map((row) => (row)).slice(0, 3))
-    tweets = tweets.filter((tweetData: any) => {
-        for (let rel of tweetData.refTweetRels) {
-            if (rel.properties.type == "retweeted") {
-                return false
-            } else if (rel.properties.type == "replied_to" && tweetData.tweet.properties.text.length < 150) {
-                return false
-            }
-            else {
-                return true
-            }
-        }
-    })
+    // TWEET FILTERING IDKKKK MAN
+    // tweets = tweets.filter((tweetData: any) => {
+    //     for (let rel of tweetData.refTweetRels) {
+    //         if (rel.properties.type == "retweeted") {
+    //             return false
+    //         } else if (rel.properties.type == "replied_to" && tweetData.tweet.properties.text.length < 150) {
+    //             return false
+    //         }
+    //         else {
+    //             return true
+    //         }
+    //     }
+    // })
 
     return json({
         "stream": stream,
@@ -122,9 +116,7 @@ export const action: ActionFunction = async ({
             const hasErrors = Object.values(errors).some(
                 (errorMessage) => errorMessage
             );
-            console.log(hasErrors);
             if (hasErrors) {
-                console.log(errors)
                 return json<ActionData>(errors);
             }
             const { api, limits, uid, session } = await getClient(request);
@@ -151,19 +143,13 @@ export const action: ActionFunction = async ({
                     return json<ActionData>(errors); // throw error if user is not found;
                 } else {
                     user = await createUserDb(user)
-                    console.time("addSeedUserToStream")
-                    addedUser = await addSeedUserToStream(api, limits, stream, user)
-                    console.timeEnd("addSeedUserToStream")
                 }
-            } else {
-                console.time("addSeedUserToStream")
-                addedUser = await addSeedUserToStream(api, limits, stream, user)
-                console.timeEnd("addSeedUserToStream")
             }
+            console.time("addSeedUserToStream")
+            addedUser = await addSeedUserToStream(api, limits, stream, user)
+            console.timeEnd("addSeedUserToStream")
             console.log(`Added user ${user.properties.username} to stream ${stream.properties.name}`)
-            // return redirect(`/streams/${params.streamName}/overview`)
-            return addedUser;
-
+            return redirect(`/streams/${params.streamName}/overview`)
         } else if (intent === "removeSeedUser") {
             let user = await getUserByUsernameDB(seedUserHandle);
             console.log(stream.properties.name)
@@ -173,20 +159,21 @@ export const action: ActionFunction = async ({
                 user.properties.username
             )
             return deletedRel;
-        } else if (intent === "addSeedUsersFromList") {
-            const { api, uid, session } = await getClient(request);
-            let listId = formData.get("listId") as string;
-            addTwitterListToStream(api, stream, listId);
-            return null;
-        } else if (intent === "updateStreamTweets") {
-            const { api, limits } = await getClient(request);
-            updateStreamTweets(api, stream, seedUsers.map((item: any) => (item.user)))
-            return null;
-        } else if (intent === "updateStreamFollowsNetwork") {
-            const { api, limits } = await getClient(request);
-            updateStreamFollowsNetwork(api, limits, stream, seedUsers)
-            return null;
         }
+        // else if (intent === "addSeedUsersFromList") {
+        //     const { api, uid, session } = await getClient(request);
+        //     let listId = formData.get("listId") as string;
+        //     addTwitterListToStream(api, stream, listId);
+        //     return null;
+        // } else if (intent === "updateStreamTweets") {
+        //     const { api, limits } = await getClient(request);
+        //     updateStreamTweets(api, stream, seedUsers.map((item: any) => (item.user)))
+        //     return null;
+        // } else if (intent === "updateStreamFollowsNetwork") {
+        //     const { api, limits } = await getClient(request);
+        //     updateStreamFollowsNetwork(api, limits, stream, seedUsers)
+        //     return null;
+        // }
     } catch (e) {
         return handleTwitterApiError(e);
     }
