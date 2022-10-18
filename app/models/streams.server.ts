@@ -726,6 +726,12 @@ export async function addSeedUserToStream(
     }
 };
 
+export async function addSeedUserToStreamOld(
+    api: TwitterApi,
+    limits: any,
+    stream: Node,
+    user: any, // has already been added to db before calling this func
+    now: string = (new Date()).toISOString()
 ) {
     try {
         log.debug(`adding user '${user.properties.username}' to stream '${stream.properties.name}`)
