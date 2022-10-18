@@ -194,17 +194,21 @@ export const action: ActionFunction = async ({
 
 export default function Feed() {
     // Responsible for rendering a feed & annotations
-    console.log("STREAMNAME LOADER")
-
     const { streamName } = useParams();
-
     const overview = useLocation().pathname.split("/").pop() === "overview"
-
-
     let transition = useTransition();
     let busy = transition.submission;
 
     const { tweets, stream } = useLoaderData();
+    const emptyTopic = {
+        labels: ['Entity'],
+        properties: { name: 'No Labels', },
+    }
+    tweets.forEach((row, index: number) => {
+        if (row.entities.length == 0) {
+            row.entities.push(emptyTopic)
+        }
+    })
 
     let annotations = new Set();
     for (const t of tweets) {
@@ -294,15 +298,21 @@ export default function Feed() {
                 <div className="h-full 2xl:w-1/2 lg:mx-2 2xl:mx-auto">
                     {busy ?
                         <div>LOADING</div> :
-                        tweets
-                            .sort(
-                                (a: any, b: any) =>
-                                    new Date(b.tweet.created_at as string).valueOf() -
-                                    new Date(a.tweet.created_at as string).valueOf()
-                            )
-                            .map((tweet: any) => (
+                        tweets.map((tweet: any, index: number) => (
+                            <div key={`showTweets-${tweet.tweet.properties.id}-${index}`}>
                                 <Tweet key={tweet.tweet.id} tweet={tweet} />
-                            ))}
+                                <div className="flex flex-wrap">
+                                    {
+                                        tweet.entities &&
+                                        tweet.entities.map((entity: Record, index: number) => (
+                                            <div>
+                                                <ContextAnnotationChip keyValue={entity.properties.name} value={null} caEntities={[]} hideTopics={[]} key={`entityAnnotationsUnderTweet-${entity.properties.name}-${index}`} />
+                                            </div>
+                                        ))
+                                    }
+                                </div>
+                            </div>
+                        ))}
                 </div>
             </div>
 
