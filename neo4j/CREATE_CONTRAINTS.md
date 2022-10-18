@@ -4,6 +4,9 @@ CREATE CONSTRAINT FOR (h:Tag) REQUIRE h.name IS UNIQUE
 CREATE CONSTRAINT FOR (l:Link) REQUIRE l.url IS UNIQUE
 
 
+CREATE CONSTRAINT FOR (e:Entity) REQUIRE e.id IS UNIQUE
+CREATE CONSTRAINT FOR (d:Domain) REQUIRE d.id IS UNIQUE
+
 # deleting duplicates
 MATCH (t:Tweet)
 WITH collect(t.id) as t_coll
