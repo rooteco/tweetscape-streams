@@ -252,7 +252,10 @@ export async function createStream(api: TwitterApi, name: string, startTime: str
     return node;
 }
 
-export async function deleteStreamByName(name: string) {
+export async function deleteStreamByName(api: TwitterApi, name: string) {
+    const stream = (await getStreamByName(name)).stream
+    console.log("HERE IS STREAM")
+    console.log(stream.properties)
     const session = driver.session()
     // Create a node within a write transaction
     const res = await session.executeWrite((tx: any) => {
@@ -261,6 +264,8 @@ export async function deleteStreamByName(name: string) {
         DETACH DELETE s`,
             { name })
     })
+    await api.v2.removeList(stream.properties.twitterListId)
+    console.log(`deleted stream '${name}' and twitter list with id ${stream.properties.twitterListId}`)
 }
 
 export async function removeSeedUserFromStream(streamName: string, username: string) {
