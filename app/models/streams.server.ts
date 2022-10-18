@@ -1054,13 +1054,25 @@ export async function getStreamTweetsFromList(api: TwitterApi, stream: Node, nam
         return tx.run(`
             MATCH (s:Stream {name: $name} )-[:CONTAINS]->(u:User)-[:POSTED]->(t:Tweet)
             OPTIONAL MATCH (t)-[r:REFERENCED]->(ref_t:Tweet)<-[:POSTED]-(ref_a:User)
+            OPTIONAL MATCH (t)-[tr:INCLUDED]->(entity:Entity)-[:CATEGORY]-(d:Domain {name:"Unified Twitter Taxonomy"})
+            OPTIONAL MATCH (t)-[mr:ATTACHED]->(media:Media)
             OPTIONAL MATCH (t)-[ar:ANNOTATED]-(a)
-            OPTIONAL MATCH (t)-[tr:INCLUDED]->(entity)
-            RETURN u,t,collect(a) as a, collect(r) as refTweetRels, collect(ref_t) as refTweets,collect(ref_a) as refTweetAuthors, collect(entity) as entities
+            RETURN u,t,
+                collect(DISTINCT a) as a, 
+                collect(DISTINCT r) as refTweetRels, 
+                collect(DISTINCT ref_t) as refTweets,
+                collect(DISTINCT ref_a) as refTweetAuthors, 
+                collect(DISTINCT entity) as entities,
+                collect(DISTINCT d) as domains,
+                collect(DISTINCT media) as media, 
+                collect(DISTINCT mr) as mediaRels
+
             ORDER by t.created_at DESC
         `,
             { name: name, startTime: startTime })
     })
+
+
     let tweets = [];
     if (res.records.length > 0) {
         tweets = res.records.map((row: Record) => {
@@ -1071,7 +1083,10 @@ export async function getStreamTweetsFromList(api: TwitterApi, stream: Node, nam
                 refTweets: row.get('refTweets'),
                 refTweetRels: row.get('refTweetRels'),
                 refTweetAuthors: row.get('refTweetAuthors'),
-                entities: row.get('entities')
+                entities: row.get('entities'),
+                domains: row.get('domains'),
+                media: row.get('media'),
+                mediaRels: row.get('mediaRels')
             }
         })
     }
