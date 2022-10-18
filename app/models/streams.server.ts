@@ -652,7 +652,8 @@ export async function addTweetsFrom(tweets: any) {
                 tweet.lang = t.lang,
                 tweet.text = t.text,
                 tweet.created_at = t.created_at,
-                tweet.reply_settings = t.reply_settings
+                tweet.reply_settings = t.reply_settings,
+                tweet.author_id = t.author_id
 
             MERGE (user:User {id: t.author_id})
 
@@ -1111,7 +1112,6 @@ export async function getStreamTweets(name: string, startTime: string) {
     await session.close()
     return tweets;
 }
-
 
 export async function getStreamRecommendedUsers(name: string) {
     //THIS EXCLUDES RETWEETS RIGHT NOW
