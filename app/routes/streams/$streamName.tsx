@@ -17,7 +17,6 @@ import {
     removeSeedUserFromStream,
     getStreamTweetsFromList,
     createStream,
-    updateStreamNode
 } from "~/models/streams.server";
 
 
@@ -32,8 +31,6 @@ import UpdateIcon from '@mui/icons-material/Update';
 import Tweet from '~/components/Tweet';
 import ContextAnnotationChip from '~/components/ContextAnnotationChip';
 import { useParams, useLocation } from "@remix-run/react";
-import { ConstructionOutlined, Expand, ExpandCircleDownTwoTone } from "@mui/icons-material";
-
 
 
 export async function loader({ request, params }: LoaderArgs) {
@@ -42,16 +39,22 @@ export async function loader({ request, params }: LoaderArgs) {
 
     invariant(params.streamName, "streamName not found");
     console.time("getStreamByName")
-    let { stream, seedUsers } = await getStreamByName(params.streamName)
+    let { stream, creator, seedUsers } = await getStreamByName(params.streamName)
     console.timeEnd("getStreamByName")
     if (!stream) {
         throw new Response("Not Found", { status: 404 });
     }
-    const { api, limits, uid, session } = await getClient(request);
+    const { api, uid, session } = await getClient(request);
     // 2
     if (!stream.properties.twitterListId) { // this is for legacy streams
+        let loggedInUser = (await api.v2.me()).data;
+        if (loggedInUser.username != creator.properties.username) {
+            throw json(
+                { message: "Sorry, you didn't create this stream and it is out of date... please check back later" }
+                , 603
+            );
+        }
         stream = await createStream(
-            api,
             stream.properties.name,
             stream.properties.startTime,
             (await api.v2.me()).data,
@@ -69,6 +72,13 @@ export async function loader({ request, params }: LoaderArgs) {
         console.log(list)
         if (list.errors && list.errors[0].title == "Not Found Error") {
             console.log("list dissapeared... creating a new one")
+            let loggedInUser = (await api.v2.me()).data;
+            if (loggedInUser.username != creator.properties.username) {
+                throw json(
+                    { message: "FUCK Sorry, you didn't create this stream and it is out of date... please check back later" }
+                    , 603
+                );
+            }
             let newList = await createList(api, stream.properties.name, seedUsers.map((user) => (user.user.properties.username)))
             list = newList.list
             await createStream(
@@ -357,6 +367,8 @@ export function CatchBoundary() {
 
     if (caught.status === 404) {
         return <div>Note not found, {caught.data}</div>;
+    } else if (caught.status === 603) {
+        return <div>{caught.data.message}</div>
     }
 
     throw new Error(`Unexpected caught response with status: ${caught.status}`);
