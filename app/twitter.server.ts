@@ -79,24 +79,25 @@ export const TWEET_EXPANSIONS: TTweetv2Expansion[] = [
 ];
 
 export async function getUserOwnedTwitterLists(api: TwitterApi, user: UserV2) {
-    try {
-        const ownedLists = [] as ListV2[];
-        log.info(`Fetching owned lists for ${user.username}...`);
-        const resOwned = await api.v2.listsOwned(user.id, {
-            'list.fields': [
-                'created_at',
-                'follower_count',
-                'member_count',
-                'private',
-                'description',
-                'owner_id',
-            ],
-        });
-        resOwned.lists.map((l: ListV2) => ownedLists.push(l));
-        return ownedLists;
-    } catch (e) {
-        return handleTwitterApiError(e);
-    }
+    const ownedLists = [] as ListV2[];
+    log.info(`Fetching owned lists for ${user.username}...`);
+    let id = (await api.v2.me()).data.id
+    const resOwned = await api.v2.listsOwned(
+        id,
+        // {
+        //     'list.fields': [
+        //         'created_at',
+        //         'follower_count',
+        //         'member_count',
+        //         'private',
+        //         'description',
+        //         'owner_id'
+        //     ]
+        // }
+    );
+    console.log("this request WORKED")
+    resOwned.lists.map((l: ListV2) => ownedLists.push(l));
+    return ownedLists;
 }
 
 export async function getUserTwitterLists(api: TwitterApi, user: UserV2) {
@@ -190,9 +191,12 @@ export function getUserIdFromSession(session: Session) {
 
 export async function getTwitterClientForUser(
     uid: string
-): Promise<{ api: TwitterApi }> { //}, limits: TwitterApiRateLimitPlugin }> {
+): Promise<{ api: TwitterApi | null }> { //}, limits: TwitterApiRateLimitPlugin }> {
     log.info(`Fetching token for user (${uid})...`);
     const token = await prisma.tokens.findUnique({ where: { user_id: uid } });
+    if (!token) {
+        return { api: null }
+    }
     invariant(token, `expected token for user (${uid})`);
     const expiration = token.updated_at.valueOf() + token.expires_in * 1000;
     // const limits = new TwitterApiRateLimitPlugin(

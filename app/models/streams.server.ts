@@ -10,7 +10,7 @@ import type {
     ListV2,
     TweetV2,
     UserV2,
-    MediaObjectV2, TwitterApi
+    MediaObjectV2
 } from 'twitter-api-v2';
 
 export function flattenTwitterUserPublicMetrics(data: Array<any>) {
@@ -85,12 +85,14 @@ export async function getStreams() {
     // Create a node within a write transaction
     const res = await session.executeRead((tx: any) => {
         return tx.run(`
-        MATCH (s:Stream )
-        RETURN s`,
+        MATCH (s:Stream)-[r:CREATED]-(u)
+        OPTIONAL MATCH (s)-[seedUserRel:CONTAINS]->(seedUser:User) 
+        RETURN s,u,collect(seedUser) as seedUsers
+        `
         )
     })
     const streams = res.records.map((row: Record) => {
-        return row.get('s')
+        return { stream: row.get('s'), creator: row.get('u'), seedUsers: row.get('seedUsers') }
     })
     await session.close()
     return streams;
@@ -196,12 +198,41 @@ export async function getStreamByName(name: string) {
     return { stream: stream, seedUsers: seedUsers };
 }
 
+import invariant from "tiny-invariant";
+import {
+    ApiResponseError,
+    TwitterApi,
+} from 'twitter-api-v2';
+import { prisma } from "~/db.server";
+import { getTwitterClientForUser } from '~/twitter.server';
+
+// export async function migrateStream(api: TwitterApiV2, stream) {
+//     const streams = await getStreams() //[{stream:, creator:, seedUsers:}]
+//     // const ntStreams = streams.filter((row) => (row.creator.properties.username == "nicktorba" && row.stream.properties.name == 'leo-group-1'))
+//     await createStream(api, stream.properties.name, stream.properties.startTime, (await api.v2.me()).data)
+//     // userStreams.forEach(async (row, index) => {
+//     //     console.log(`runninng migration for stream '${row.stream.properties.name}'`)
+//     //     console.log(`CREATOR=${row.creator.properties.username}`)
+//     //     console.log("here is the api for ")
+//     //     console.log(row.creator.properties.username)
+//     //     console.log(`creating stream ${row.stream.properties.name} created by ${row.creator.properties.username}`)
+//     //     await createStream(api, row.stream.properties.name, row.stream.properties.startTime, row.creator.properties)
+//     //     row.seedUsers.forEach(async (seedUser) => {
+//     //         console.log("------")
+//     //         console.log(seedUser.properties.username)
+//     //         console.log(row.stream.properties.id)
+//     //         console.log(row.stream.properties.twitterListId)
+//     //         await api.v2.addListMember(row.stream.properties.twitterListId, seedUser.properties.id)
+//     //     })
+
+//     // })
+// }
+
 import { createList, getUserOwnedTwitterLists } from '~/twitter.server'
+import { ConstructionOutlined } from '@mui/icons-material';
 
 export async function createStream(api: TwitterApi, name: string, startTime: string, user: UserV2) {
-    console.time("ownedLists")
     const userOwnedListsNames = (await getUserOwnedTwitterLists(api, user)).map((row) => (row.name));
-    console.timeEnd("ownedLists")
     console.log(userOwnedListsNames)
     if (userOwnedListsNames.indexOf(name) > -1) {
         return {
@@ -210,7 +241,6 @@ export async function createStream(api: TwitterApi, name: string, startTime: str
             }
         }
     }
-
     const { list, members } = await createList(api, name, [])
     const session = driver.session()
     // Create a node within a write transaction
