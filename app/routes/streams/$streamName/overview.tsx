@@ -15,12 +15,8 @@ export async function loader({ request, params }: LoaderArgs) {
 
 export default function Overview() {
     // Responsible for rendering the overview page for a stream
-
     const params = useParams();
-    console.log(params)
-
     const loaderData = useLoaderData();
-    console.log(loaderData)
     const entityDistribution = loaderData.entityDistribution
     const matches = useMatches(); // gives access to all the routes, https://remix.run/docs/en/v1/api/remix#usematches
     const tweets = matches.filter((route) => route.id == 'routes/streams/$streamName')[0].data.tweets
