@@ -157,10 +157,11 @@ export async function getListUsers(api: TwitterApi, listId: string) {
 }
 
 export async function createList(api: TwitterApi, listName: string, userUsernames: string[]) {
+    console.log(`creating list ${listName}`)
     const newList = await api.v2.createList({ name: listName, private: false })
     let promises = userUsernames.map(async (username) => {
         let userDb = await getUserByUsernameDB(username)
-        return await api.v2.addListMember(newList.data.id, userDb.properties.id)
+        return api.v2.addListMember(newList.data.id, userDb.properties.id)
     })
     const newMembers = await Promise.all(promises)
     return { list: newList, members: newMembers };

@@ -4,9 +4,10 @@ import { json, redirect } from "@remix-run/node";
 import { Form, useActionData, useCatch, useLoaderData, Outlet, useTransition } from "@remix-run/react";
 import { Link, useParams } from "@remix-run/react";
 import invariant from "tiny-invariant";
-
+import { ApiResponseError } from "twitter-api-v2";
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import { log } from '~/log.server';
 
 import {
     deleteStreamByName,
@@ -21,7 +22,7 @@ import {
 
 
 import { getUserByUsernameDB, createUserDb } from "~/models/user.server";
-import { getClient, USER_FIELDS, handleTwitterApiError, getUserOwnedTwitterLists, createList } from '~/twitter.server';
+import { createList, getClient, USER_FIELDS, handleTwitterApiError, getUserOwnedTwitterLists } from '~/twitter.server';
 
 import { Tooltip } from "@mui/material";
 
@@ -43,12 +44,12 @@ export async function loader({ request, params }: LoaderArgs) {
     console.time("getStreamByName")
     let { stream, seedUsers } = await getStreamByName(params.streamName)
     console.timeEnd("getStreamByName")
-
     if (!stream) {
         throw new Response("Not Found", { status: 404 });
     }
     const { api, limits, uid, session } = await getClient(request);
-    if (!stream.properties.twitterListId) {
+    // 2
+    if (!stream.properties.twitterListId) { // this is for legacy streams
         stream = await createStream(
             api,
             stream.properties.name,
@@ -62,16 +63,42 @@ export async function loader({ request, params }: LoaderArgs) {
             await addSeedUserToStream(api, stream, user.user)
         })
     } else {
-        const listMembers = await api.v2.listMembers(stream.properties.twitterListId)
-        if (listMembers.data.meta.result_count != seedUsers.length) {
-            seedUsers.forEach(async (user) => {
-                console.log(user.user)
-                await addSeedUserToStream(api, stream, user.user)
-            })
+        let list
+        //3, load list 
+        list = await api.v2.list(stream.properties.twitterListId)
+        console.log(list)
+        if (list.errors && list.errors[0].title == "Not Found Error") {
+            console.log("list dissapeared... creating a new one")
+            let newList = await createList(api, stream.properties.name, seedUsers.map((user) => (user.user.properties.username)))
+            list = newList.list
+            await createStream(
+                stream.properties.name,
+                stream.properties.startTime,
+                (await api.v2.me()).data,
+                list.data.id
+            )
         }
-    }
 
-    let tweets = await getStreamTweetsFromList(api, stream, stream.properties.name, stream.properties.startTime);
+        let listMembers
+        try {
+            listMembers = await api.v2.listMembers(list.data.id)
+        } catch (e) {
+            log.error(`error getting listMembers for '${list.data}': ${JSON.stringify(e, null, 2)}`);
+        }
+        // Assume equal for now
+        // if (listMembers.data.meta.result_count != seedUsers.length) {
+        //     seedUsers.forEach(async (user) => {
+        //         console.log(user.user)
+        //         await addSeedUserToStream(api, stream, user.user)
+        //     })
+        // }
+        let tweets = await getStreamTweetsFromList(api, stream, stream.properties.name, stream.properties.startTime);
+        return json({
+            "stream": stream,
+            "tweets": tweets,
+            seedUsers: seedUsers,
+        });
+    }
 
     // TWEET FILTERING IDKKKK MAN
     // tweets = tweets.filter((tweetData: any) => {
@@ -128,7 +155,6 @@ export const action: ActionFunction = async ({
         let errors: ActionData = {
             errors: seedUserHandle ? null : "seedUserHandle is required"
         }
-
         const hasErrors = Object.values(errors).some(
             (errorMessage) => errorMessage
         );
@@ -168,6 +194,8 @@ export const action: ActionFunction = async ({
         return redirect(`/streams/${params.streamName}/overview`)
     } else if (intent === "removeSeedUser") {
         let user = await getUserByUsernameDB(seedUserHandle);
+        const { api, uid, session } = await getClient(request);
+        await api.v2.removeListMember(stream.properties.twitterListId, user.properties.id)
         let deletedRel = await removeSeedUserFromStream(
             stream.properties.name,
             user.properties.username
