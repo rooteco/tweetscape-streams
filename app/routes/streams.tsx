@@ -18,6 +18,7 @@ import { getClient, USER_FIELDS } from '~/twitter.server';
 import type { ListV2 } from 'twitter-api-v2';
 import {
     getStreams,
+    migrateStreams,
     getAllStreams,
     addUserOwnedLists,
     addUserFollowedLists
@@ -62,7 +63,6 @@ function flattenTwitterData(data: Array<any>) {
 // export async function loader({ request }: LoaderArgs) {
 export const loader: LoaderFunction = async ({ request }: LoaderArgs) => {
     let allStreams = await getAllStreams();
-
     let user = null;
     let userLists = { followedLists: [] as ListV2[], ownedLists: [] as ListV2[] }
 
@@ -75,7 +75,6 @@ export const loader: LoaderFunction = async ({ request }: LoaderArgs) => {
     let session = await getSession(request.headers.get('Cookie'));
     let uid = getUserIdFromSession(session);
     console.log(`UID = ${uid}`);
-
 
 
     if (process.env.test) {
@@ -145,6 +144,7 @@ export const loader: LoaderFunction = async ({ request }: LoaderArgs) => {
             let followed = await addUserFollowedLists(user, userLists.followedLists)
         }
     }
+    const { api } = await getClient(request);
     const headers = { 'Set-Cookie': await commitSession(session) };
     return json<LoaderData>(
         {

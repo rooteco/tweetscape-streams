@@ -9,17 +9,13 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 
 import {
-    addTwitterListToStream,
-    getStreamRecommendedUsers,
-    getStreamTweets, deleteStreamByName,
+    deleteStreamByName,
     addSeedUserToStream,
     getUserFromTwitter,
     getStreamByName,
     removeSeedUserFromStream,
-    getAllUserLists,
-    updateStreamTweets,
-    updateStreamFollowsNetwork,
-    getStreamTweetsFromList
+    getStreamTweetsFromList,
+    createStream
 } from "~/models/streams.server";
 
 
@@ -53,6 +49,13 @@ export async function loader({ request, params }: LoaderArgs) {
     }
 
     const { api, limits, uid, session } = await getClient(request);
+    if (!stream.properties.twitterListId) {
+        await createStream(
+            api, stream.properties.name,
+            stream.properties.startTime,
+            (await api.v2.me()).data)
+
+    }
     let tweets = await getStreamTweetsFromList(api, stream, stream.properties.name, stream.properties.startTime);
 
     // TWEET FILTERING IDKKKK MAN
