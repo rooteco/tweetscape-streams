@@ -1060,7 +1060,7 @@ export async function getStreamTweetsFromList(api: TwitterApi, stream: Node, nam
             OPTIONAL MATCH (t)-[ar:ANNOTATED]-(a)
             RETURN u,t,
                 collect(DISTINCT a) as a, 
-                collect(r) as refTweetRels, 
+                collect(DISTINCT r) as refTweetRels, 
                 collect(DISTINCT ref_t) as refTweets,
                 collect(ref_a) as refTweetAuthors, 
                 collect(DISTINCT entity) as entities,
