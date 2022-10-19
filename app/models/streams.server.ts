@@ -186,7 +186,7 @@ export async function getStreamByName(name: string) {
 
     if (streamRes.records.length > 0) {
         stream = streamRes.records[0].get("s"); // Stream will be the same for all users
-        seedUsers = streamRes.records.map((row: Record) => {
+        seedUsers = streamRes.records.filter((row: Record) => (row.get("u") && row.get("r"))).map((row: Record) => {
             return {
                 user: row.get('u'),
                 rel: row.get('r')
@@ -203,52 +203,14 @@ import {
     ApiResponseError,
     TwitterApi,
 } from 'twitter-api-v2';
-import { prisma } from "~/db.server";
-import { getTwitterClientForUser } from '~/twitter.server';
 
-// export async function migrateStream(api: TwitterApiV2, stream) {
-//     const streams = await getStreams() //[{stream:, creator:, seedUsers:}]
-//     // const ntStreams = streams.filter((row) => (row.creator.properties.username == "nicktorba" && row.stream.properties.name == 'leo-group-1'))
-//     await createStream(api, stream.properties.name, stream.properties.startTime, (await api.v2.me()).data)
-//     // userStreams.forEach(async (row, index) => {
-//     //     console.log(`runninng migration for stream '${row.stream.properties.name}'`)
-//     //     console.log(`CREATOR=${row.creator.properties.username}`)
-//     //     console.log("here is the api for ")
-//     //     console.log(row.creator.properties.username)
-//     //     console.log(`creating stream ${row.stream.properties.name} created by ${row.creator.properties.username}`)
-//     //     await createStream(api, row.stream.properties.name, row.stream.properties.startTime, row.creator.properties)
-//     //     row.seedUsers.forEach(async (seedUser) => {
-//     //         console.log("------")
-//     //         console.log(seedUser.properties.username)
-//     //         console.log(row.stream.properties.id)
-//     //         console.log(row.stream.properties.twitterListId)
-//     //         await api.v2.addListMember(row.stream.properties.twitterListId, seedUser.properties.id)
-//     //     })
-
-//     // })
-// }
-
-import { createList, getUserOwnedTwitterLists } from '~/twitter.server'
-import { ConstructionOutlined } from '@mui/icons-material';
-
-export async function createStream(api: TwitterApi, name: string, startTime: string, user: UserV2, seedUsers = []) {
-    // const userOwnedListsNames = (await getUserOwnedTwitterLists(api, user)).map((row) => (row.name));
-    // console.log(userOwnedListsNames)
-    // if (userOwnedListsNames.indexOf(name) > -1) {
-    //     return {
-    //         "errors": {
-    //             "streamName": `You already have a list named '${name}', you should import that list instead of creating a new stream`
-    //         }
-    //     }
-    // }
-
-    const { list, members } = await createList(api, name, seedUsers)
+export async function createStream(name: string, startTime: string, user: UserV2, twitterListId: string) {
     const session = driver.session()
     // Create a node within a write transaction
     let streamData = {
         name,
         startTime,
-        twitterListId: list.data.id,
+        twitterListId: twitterListId,
     }
     const res = await session.executeWrite((tx: any) => {
         return tx.run(`
@@ -1043,18 +1005,23 @@ async function updateUserTweetscapeTweetIndexTimes(user: Node, startTime: string
 }
 
 export async function getStreamTweetsFromList(api: TwitterApi, stream: Node, name: string, startTime: string) {
-    const listTweetsRes = await api.v2.listTweets(
-        stream.properties.twitterListId,
-        {
-            'expansions': 'author_id,in_reply_to_user_id,referenced_tweets.id,referenced_tweets.id.author_id,entities.mentions.username,attachments.poll_ids,attachments.media_keys,geo.place_id',
-            'tweet.fields': 'attachments,author_id,context_annotations,conversation_id,created_at,entities,geo,id,in_reply_to_user_id,lang,public_metrics,text,possibly_sensitive,referenced_tweets,reply_settings,source,withheld',
-            'user.fields': USER_FIELDS,
-            'media.fields': 'alt_text,duration_ms,height,media_key,preview_image_url,type,url,width,public_metrics',
-            'poll.fields': 'duration_minutes,end_datetime,id,options,voting_status',
-            'place.fields': 'contained_within,country,country_code,full_name,geo,id,name,place_type',
-            'max_results': 20,
-        }
-    )
+    let listTweetsRes
+    try {
+        listTweetsRes = await api.v2.listTweets(
+            stream.properties.twitterListId,
+            {
+                'expansions': 'author_id,in_reply_to_user_id,referenced_tweets.id,referenced_tweets.id.author_id,entities.mentions.username,attachments.poll_ids,attachments.media_keys,geo.place_id',
+                'tweet.fields': 'attachments,author_id,context_annotations,conversation_id,created_at,entities,geo,id,in_reply_to_user_id,lang,public_metrics,text,possibly_sensitive,referenced_tweets,reply_settings,source,withheld',
+                'user.fields': USER_FIELDS,
+                'media.fields': 'alt_text,duration_ms,height,media_key,preview_image_url,type,url,width,public_metrics',
+                'poll.fields': 'duration_minutes,end_datetime,id,options,voting_status',
+                'place.fields': 'contained_within,country,country_code,full_name,geo,id,name,place_type',
+                'max_results': 20,
+            }
+        )
+    } catch (e) {
+        log.error(`error getting list tweets for '${name}': ${JSON.stringify(e, null, 2)}`);
+    }
 
     let media = []
     let users = []

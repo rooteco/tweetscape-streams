@@ -11,6 +11,8 @@ import { getUserByUsernameDB, createUserDb } from "~/models/user.server";
 import { flattenTwitterUserPublicMetrics } from "~/models/user.server";
 import type { UserV2 } from 'twitter-api-v2';
 import { Paper } from "@mui/material";
+import { createList, getUserOwnedTwitterLists } from '~/twitter.server'
+
 
 export function getUserIdFromSession(session: Session) {
     const userId = session.get('uid') as string | undefined;
@@ -34,6 +36,7 @@ export async function action({ request }: ActionArgs) {
         }
         return json<ActionData>(errors);
     }
+
     const { api, uid, session } = await getClient(request);
     let user = null;
     if (!api) {
@@ -46,9 +49,20 @@ export async function action({ request }: ActionArgs) {
     if (!userDb) {
         createUserDb(flattenTwitterUserPublicMetrics([user])[0])
     }
+
+    const userOwnedListsNames = (await getUserOwnedTwitterLists(api, user)).map((row) => (row.name));
+    if (userOwnedListsNames.indexOf(name) > -1) {
+        let errors: ActionData = {
+            "streamName": `You already have a list named '${name}', you should import that list instead of creating a new stream`
+        }
+        return json<ActionData>(errors)
+    }
+    console.log(`Creating Twitter List ${name}`)
+    const { list, members } = await createList(api, name, [])
+
     const endTime = new Date()
     const startTime = new Date(endTime.getFullYear(), endTime.getMonth(), endTime.getDate() - 7, endTime.getHours(), endTime.getMinutes())
-    stream = await createStream(api, name, startTime.toISOString(), user)
+    stream = await createStream(name, startTime.toISOString(), user, list.data.id)
     if (stream.errors) {
         let errors: ActionData = stream.errors;
         return json<ActionData>(errors);
