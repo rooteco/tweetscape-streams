@@ -231,17 +231,18 @@ import { getTwitterClientForUser } from '~/twitter.server';
 import { createList, getUserOwnedTwitterLists } from '~/twitter.server'
 import { ConstructionOutlined } from '@mui/icons-material';
 
-export async function createStream(api: TwitterApi, name: string, startTime: string, user: UserV2) {
-    const userOwnedListsNames = (await getUserOwnedTwitterLists(api, user)).map((row) => (row.name));
-    console.log(userOwnedListsNames)
-    if (userOwnedListsNames.indexOf(name) > -1) {
-        return {
-            "errors": {
-                "streamName": `You already have a list named '${name}', you should import that list instead of creating a new stream`
-            }
-        }
-    }
-    const { list, members } = await createList(api, name, [])
+export async function createStream(api: TwitterApi, name: string, startTime: string, user: UserV2, seedUsers = []) {
+    // const userOwnedListsNames = (await getUserOwnedTwitterLists(api, user)).map((row) => (row.name));
+    // console.log(userOwnedListsNames)
+    // if (userOwnedListsNames.indexOf(name) > -1) {
+    //     return {
+    //         "errors": {
+    //             "streamName": `You already have a list named '${name}', you should import that list instead of creating a new stream`
+    //         }
+    //     }
+    // }
+
+    const { list, members } = await createList(api, name, seedUsers)
     const session = driver.session()
     // Create a node within a write transaction
     let streamData = {
@@ -257,6 +258,25 @@ export async function createStream(api: TwitterApi, name: string, startTime: str
             MERGE (u)-[:CREATED]->(s)
             RETURN s`,
             { streamData: streamData, username: user.username }
+        )
+    })
+    // Get the `p` value from the first record
+    const singleRecord = res.records[0]
+    const node = singleRecord.get("s")
+    await session.close()
+    return node;
+}
+
+export async function updateStreamNode(streamData, username) {
+    const session = driver.session()
+    const res = await session.executeWrite((tx: any) => {
+        return tx.run(`
+            MATCH (u:User {username: $username}) 
+            MERGE (s:Stream {name: $streamData.name})
+            SET s = $streamData
+            MERGE (u)-[:CREATED]->(s)
+            RETURN s`,
+            { streamData: streamData, username: username }
         )
     })
     // Get the `p` value from the first record
@@ -722,18 +742,18 @@ export async function addTweetsFrom(tweets: any) {
 
 export async function addSeedUserToStream(
     api: TwitterApi,
-    limits: any,
     stream: Node,
     user: any, // has already been added to db before calling this func
-    now: string = (new Date()).toISOString()
 ) {
     try {
         log.debug(`adding user '${user.properties.username}' to stream '${stream.properties.name}`)
+        log.debug(`${user.properties.id}, ${stream.properties.twitterListId}`)
         // Add new seedUsers relation to Stream
+
         await api.v2.addListMember(stream.properties.twitterListId, user.properties.id)
         return await streamContainsUser(user.properties.username, stream.properties.name)
     } catch (e) {
-        log.error(`Error fetching tweets: ${JSON.stringify(e, null, 2)}`);
+        log.error(`Error adding seed user to stream: ${JSON.stringify(e, null, 2)}`);
         throw e;
     }
 };
