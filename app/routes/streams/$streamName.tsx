@@ -68,7 +68,6 @@ export async function loader({ request, params }: LoaderArgs) {
     //         }
     //     }
     // })
-
     return json({
         "stream": stream,
         "tweets": tweets,

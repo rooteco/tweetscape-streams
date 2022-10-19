@@ -1,18 +1,16 @@
 import type { LoaderArgs } from "@remix-run/node"
-import { Form, useLoaderData, useMatches } from "@remix-run/react";
-import { Tooltip } from "@mui/material";
-import UpdateIcon from '@mui/icons-material/Update';
-import HubIcon from '@mui/icons-material/Hub';
-import { couldStartTrivia } from "typescript";
-import ExpandLessIcon from "@mui/icons-material/ExpandLess";
-
-
+import { useLoaderData, useMatches } from "@remix-run/react";
 import { Link, useParams } from "@remix-run/react";
-
+import { StreamTweetsEntityCounts } from '~/models/streams.server'
 import Chip from '@mui/material/Chip';
+import ContextAnnotationChip from '~/components/ContextAnnotationChip';
+import invariant from "tiny-invariant";
+
 
 export async function loader({ request, params }: LoaderArgs) {
-    return {}
+    invariant(params.streamName, "streamName not found");
+    const entityCountData = await StreamTweetsEntityCounts(params.streamName)
+    return entityCountData
 };
 
 export default function Overview() {
@@ -22,6 +20,8 @@ export default function Overview() {
     console.log(params)
 
     const loaderData = useLoaderData();
+    console.log(loaderData)
+    const entityDistribution = loaderData.entityDistribution
     const matches = useMatches(); // gives access to all the routes, https://remix.run/docs/en/v1/api/remix#usematches
     const tweets = matches.filter((route) => route.id == 'routes/streams/$streamName')[0].data.tweets
 
@@ -148,6 +148,12 @@ export default function Overview() {
                             />
                         ))
                     }
+                    <p className="text-md font-medium my-4">Top Twitter Topics from indexed tweets for this stream</p>
+                    <div className="flex flex-wrap max-w-sm">
+                        {entityDistribution.map((entity, index) => (
+                            <ContextAnnotationChip keyValue={entity.item.properties.name} value={entity.count} caEntities={[]} hideTopics={[]} key={`entityAnnotations-${entity.item.properties.name}-${index}`} />
+                        ))}
+                    </div>
                 </div>
             </div>
 
