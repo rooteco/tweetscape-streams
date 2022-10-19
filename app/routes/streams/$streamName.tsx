@@ -93,7 +93,6 @@ export const action: ActionFunction = async ({
 
     // structure from https://egghead.io/lessons/remix-add-delete-functionality-to-posts-page-in-remix, which was from https://github.com/remix-run/remix/discussions/3138
     invariant(params.streamName, "streamName not found");
-
     const formData = await request.formData();
     const intent = formData.get("intent");
     let seedUserHandle: string = formData.get("seedUserHandle");
@@ -104,6 +103,7 @@ export const action: ActionFunction = async ({
     }
 
     const { stream, seedUsers } = await getStreamByName(params.streamName);
+
     if (!stream) {
         throw new Response("Not Found", { status: 404 });
     }
@@ -152,8 +152,6 @@ export const action: ActionFunction = async ({
             return redirect(`/streams/${params.streamName}/overview`)
         } else if (intent === "removeSeedUser") {
             let user = await getUserByUsernameDB(seedUserHandle);
-            console.log(stream.properties.name)
-            console.log(user.properties.name)
             let deletedRel = await removeSeedUserFromStream(
                 stream.properties.name,
                 user.properties.username
