@@ -190,15 +190,15 @@ export function getUserIdFromSession(session: Session) {
 
 export async function getTwitterClientForUser(
     uid: string
-): Promise<{ api: TwitterApi, limits: TwitterApiRateLimitPlugin }> {
+): Promise<{ api: TwitterApi }> { //}, limits: TwitterApiRateLimitPlugin }> {
     log.info(`Fetching token for user (${uid})...`);
     const token = await prisma.tokens.findUnique({ where: { user_id: uid } });
     invariant(token, `expected token for user (${uid})`);
     const expiration = token.updated_at.valueOf() + token.expires_in * 1000;
-    const limits = new TwitterApiRateLimitPlugin(
-        new TwitterApiRateLimitDBStore(uid)
-    );
-    let api = new TwitterApi(token.access_token, { plugins: [limits] });
+    // const limits = new TwitterApiRateLimitPlugin(
+    //     new TwitterApiRateLimitDBStore(uid)
+    // );
+    let api = new TwitterApi(token.access_token)//, { plugins: [limits] });
 
     if (expiration < new Date().valueOf()) {
         log.info(
@@ -223,9 +223,9 @@ export async function getTwitterClientForUser(
             },
             where: { user_id: String(uid) },
         });
-        api = new TwitterApi(accessToken, { plugins: [limits] });
+        api = new TwitterApi(accessToken)//, { plugins: [limits] });
     }
-    return { api, limits };
+    return { api };
 }
 
 export async function getClient(request: Request) {
