@@ -15,12 +15,13 @@ import {
     getStreamByName,
     removeSeedUserFromStream,
     getStreamTweetsFromList,
-    createStream
+    createStream,
+    updateStreamNode
 } from "~/models/streams.server";
 
 
 import { getUserByUsernameDB, createUserDb } from "~/models/user.server";
-import { getClient, USER_FIELDS, handleTwitterApiError } from '~/twitter.server';
+import { getClient, USER_FIELDS, handleTwitterApiError, getUserOwnedTwitterLists, createList } from '~/twitter.server';
 
 import { Tooltip } from "@mui/material";
 
@@ -30,7 +31,7 @@ import UpdateIcon from '@mui/icons-material/Update';
 import Tweet from '~/components/Tweet';
 import ContextAnnotationChip from '~/components/ContextAnnotationChip';
 import { useParams, useLocation } from "@remix-run/react";
-import { Expand, ExpandCircleDownTwoTone } from "@mui/icons-material";
+import { ConstructionOutlined, Expand, ExpandCircleDownTwoTone } from "@mui/icons-material";
 
 
 
@@ -39,23 +40,37 @@ export async function loader({ request, params }: LoaderArgs) {
     // TODO: move lists and recommended users logic to /streams
 
     invariant(params.streamName, "streamName not found");
-
     console.time("getStreamByName")
-    const { stream, seedUsers } = await getStreamByName(params.streamName)
+    let { stream, seedUsers } = await getStreamByName(params.streamName)
     console.timeEnd("getStreamByName")
 
     if (!stream) {
         throw new Response("Not Found", { status: 404 });
     }
-
     const { api, limits, uid, session } = await getClient(request);
     if (!stream.properties.twitterListId) {
-        await createStream(
-            api, stream.properties.name,
+        stream = await createStream(
+            api,
+            stream.properties.name,
             stream.properties.startTime,
-            (await api.v2.me()).data)
-
+            (await api.v2.me()).data,
+            []
+        )
+        console.log("STREAM")
+        console.log(stream)
+        seedUsers.forEach(async (user) => {
+            await addSeedUserToStream(api, stream, user.user)
+        })
+    } else {
+        const listMembers = await api.v2.listMembers(stream.properties.twitterListId)
+        if (listMembers.data.meta.result_count != seedUsers.length) {
+            seedUsers.forEach(async (user) => {
+                console.log(user.user)
+                await addSeedUserToStream(api, stream, user.user)
+            })
+        }
     }
+
     let tweets = await getStreamTweetsFromList(api, stream, stream.properties.name, stream.properties.startTime);
 
     // TWEET FILTERING IDKKKK MAN
@@ -109,74 +124,70 @@ export const action: ActionFunction = async ({
     if (!stream) {
         throw new Response("Not Found", { status: 404 });
     }
-    try {
-        if (intent === "addSeedUser") {
-            let errors: ActionData = {
-                errors: seedUserHandle ? null : "seedUserHandle is required"
-            }
-
-            const hasErrors = Object.values(errors).some(
-                (errorMessage) => errorMessage
-            );
-            if (hasErrors) {
-                return json<ActionData>(errors);
-            }
-            const { api, limits, uid, session } = await getClient(request);
-            for (const seedUser of seedUsers) {
-                console.log(`${seedUser.user.properties.username} == ${seedUserHandle}`);
-                if (seedUser.user.username == seedUserHandle) {
-                    let errors: ActionData = {
-                        seedUserHandle: `user '${seedUserHandle}' already seed user of stream '${stream.properties.name}'`
-                    }
-                    return json<ActionData>(errors) || null;
-                }
-            }
-            seedUserHandle = seedUserHandle.toLowerCase().replace(/^@/, '')
-            let addedUser;
-            let user = await getUserByUsernameDB(seedUserHandle);
-            if (!user) {
-                console.time("getUserFromTwitter")
-                user = await getUserFromTwitter(api, seedUserHandle); // This func already flattens the data
-                console.timeEnd("getUserFromTwitter")
-                if (!user) {
-                    const errors: ActionData = {
-                        seedUserHandle: `handle '${seedUserHandle}' not found... please check spelling"`
-                    }
-                    return json<ActionData>(errors); // throw error if user is not found;
-                } else {
-                    user = await createUserDb(user)
-                }
-            }
-            console.time("addSeedUserToStream")
-            addedUser = await addSeedUserToStream(api, limits, stream, user)
-            console.timeEnd("addSeedUserToStream")
-            console.log(`Added user ${user.properties.username} to stream ${stream.properties.name}`)
-            return redirect(`/streams/${params.streamName}/overview`)
-        } else if (intent === "removeSeedUser") {
-            let user = await getUserByUsernameDB(seedUserHandle);
-            let deletedRel = await removeSeedUserFromStream(
-                stream.properties.name,
-                user.properties.username
-            )
-            return deletedRel;
+    if (intent === "addSeedUser") {
+        let errors: ActionData = {
+            errors: seedUserHandle ? null : "seedUserHandle is required"
         }
-        // else if (intent === "addSeedUsersFromList") {
-        //     const { api, uid, session } = await getClient(request);
-        //     let listId = formData.get("listId") as string;
-        //     addTwitterListToStream(api, stream, listId);
-        //     return null;
-        // } else if (intent === "updateStreamTweets") {
-        //     const { api, limits } = await getClient(request);
-        //     updateStreamTweets(api, stream, seedUsers.map((item: any) => (item.user)))
-        //     return null;
-        // } else if (intent === "updateStreamFollowsNetwork") {
-        //     const { api, limits } = await getClient(request);
-        //     updateStreamFollowsNetwork(api, limits, stream, seedUsers)
-        //     return null;
-        // }
-    } catch (e) {
-        return handleTwitterApiError(e);
+
+        const hasErrors = Object.values(errors).some(
+            (errorMessage) => errorMessage
+        );
+        if (hasErrors) {
+            return json<ActionData>(errors);
+        }
+        const { api, limits, uid, session } = await getClient(request);
+        for (const seedUser of seedUsers) {
+            console.log(`${seedUser.user.properties.username} == ${seedUserHandle}`);
+            if (seedUser.user.username == seedUserHandle) {
+                let errors: ActionData = {
+                    seedUserHandle: `user '${seedUserHandle}' already seed user of stream '${stream.properties.name}'`
+                }
+                return json<ActionData>(errors) || null;
+            }
+        }
+        seedUserHandle = seedUserHandle.toLowerCase().replace(/^@/, '')
+        let addedUser;
+        let user = await getUserByUsernameDB(seedUserHandle);
+        if (!user) {
+            console.time("getUserFromTwitter")
+            user = await getUserFromTwitter(api, seedUserHandle); // This func already flattens the data
+            console.timeEnd("getUserFromTwitter")
+            if (!user) {
+                const errors: ActionData = {
+                    seedUserHandle: `handle '${seedUserHandle}' not found... please check spelling"`
+                }
+                return json<ActionData>(errors); // throw error if user is not found;
+            } else {
+                user = await createUserDb(user)
+            }
+        }
+        console.time("addSeedUserToStream")
+        addedUser = await addSeedUserToStream(api, stream, user)
+        console.timeEnd("addSeedUserToStream")
+        console.log(`Added user ${user.properties.username} to stream ${stream.properties.name}`)
+        return redirect(`/streams/${params.streamName}/overview`)
+    } else if (intent === "removeSeedUser") {
+        let user = await getUserByUsernameDB(seedUserHandle);
+        let deletedRel = await removeSeedUserFromStream(
+            stream.properties.name,
+            user.properties.username
+        )
+        return deletedRel;
     }
+    // else if (intent === "addSeedUsersFromList") {
+    //     const { api, uid, session } = await getClient(request);
+    //     let listId = formData.get("listId") as string;
+    //     addTwitterListToStream(api, stream, listId);
+    //     return null;
+    // } else if (intent === "updateStreamTweets") {
+    //     const { api, limits } = await getClient(request);
+    //     updateStreamTweets(api, stream, seedUsers.map((item: any) => (item.user)))
+    //     return null;
+    // } else if (intent === "updateStreamFollowsNetwork") {
+    //     const { api, limits } = await getClient(request);
+    //     updateStreamFollowsNetwork(api, limits, stream, seedUsers)
+    //     return null;
+    // }
 }
 
 export default function Feed() {
