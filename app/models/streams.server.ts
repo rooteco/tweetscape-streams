@@ -1050,6 +1050,7 @@ export async function getStreamTweetsFromList(api: TwitterApi, stream: Node, nam
     const session = driver.session()
     // Create a node within a write transaction
 
+    // NOTE: BE V CAREFUL ABOUT WHICH OF THE COLLECT() RETURNS ARE DISTINCT (REF_TWEET_AUTHORS IS AN EXAMPLE OF ONE THAT SHOULD NOT BE)
     const res = await session.executeRead((tx: any) => {
         return tx.run(`
             MATCH (s:Stream {name: $name} )-[:CONTAINS]->(u:User)-[:POSTED]->(t:Tweet)
@@ -1059,9 +1060,9 @@ export async function getStreamTweetsFromList(api: TwitterApi, stream: Node, nam
             OPTIONAL MATCH (t)-[ar:ANNOTATED]-(a)
             RETURN u,t,
                 collect(DISTINCT a) as a, 
-                collect(DISTINCT r) as refTweetRels, 
+                collect(r) as refTweetRels, 
                 collect(DISTINCT ref_t) as refTweets,
-                collect(DISTINCT ref_a) as refTweetAuthors, 
+                collect(ref_a) as refTweetAuthors, 
                 collect(DISTINCT entity) as entities,
                 collect(DISTINCT d) as domains,
                 collect(DISTINCT media) as media, 
