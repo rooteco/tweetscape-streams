@@ -130,15 +130,22 @@ function Tweet({ tweet }) {
                 </article>
             </div>
             {
-                (quoteTweet.tweet & !repliedToTweet.tweet) ? // TODO: Get quotes to show up right even when they are a reply
-                    <div className="pl-6">
-                        <Tweet tweet={quoteTweet} />
-                    </div>
-
-                    : null
+                displayQuoteTweet(quoteTweet)
             }
         </div>
     )
+}
+
+function displayQuoteTweet(quoteTweet) {
+    if (quoteTweet.tweet && quoteTweet.author) {
+        return (
+            <div className="pl-6">
+                <Tweet tweet={quoteTweet} />
+            </div>
+        )
+    } else {
+        return null
+    }
 }
 
 export default Tweet
