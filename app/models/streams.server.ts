@@ -185,28 +185,22 @@ export async function getStreamByName(name: string) {
     const streamRes = await session.executeRead((tx: any) => {
         return tx.run(`
         MATCH (s:Stream {name: $name} )
-        RETURN s
-        LIMIT 1;
+        OPTIONAL MATCH (s)-[r:CONTAINS]->(u:User)
+        RETURN DISTINCT s,u,r
         `,
             { name })
     })
     let stream = null;
+    let seedUsers;
+
     if (streamRes.records.length > 0) {
-        stream = streamRes.records[0].get("s");
-    }
-    let seedUsers: any = [];
-    if (stream) {
-        let seedUsersRes = await session.executeRead((tx: any) => {
-            return tx.run(`
-            MATCH (s:Stream {name: $name} )-[r:CONTAINS]->(u:User)
-            RETURN u,r`,
-                { name })
+        stream = streamRes.records[0].get("s"); // Stream will be the same for all users
+        seedUsers = streamRes.records.map((row: Record) => {
+            return {
+                user: row.get('u'),
+                rel: row.get('r')
+            }
         })
-        if (seedUsersRes.records.length > 0) {
-            seedUsers = seedUsersRes.records.map((row: Record) => {
-                return { user: row.get('u'), rel: row.get('r') }
-            })
-        }
     }
 
     await session.close()
@@ -255,8 +249,6 @@ export async function createStream(api: TwitterApi, name: string, startTime: str
 
 export async function deleteStreamByName(api: TwitterApi, name: string) {
     const stream = (await getStreamByName(name)).stream
-    console.log("HERE IS STREAM")
-    console.log(stream.properties)
     const session = driver.session()
     // Create a node within a write transaction
     const res = await session.executeWrite((tx: any) => {
@@ -719,7 +711,7 @@ export async function addSeedUserToStream(
     try {
         log.debug(`adding user '${user.properties.username}' to stream '${stream.properties.name}`)
         // Add new seedUsers relation to Stream
-        api.v2.addListMember(stream.properties.twitterListId, user.properties.id)
+        await api.v2.addListMember(stream.properties.twitterListId, user.properties.id)
         return await streamContainsUser(user.properties.username, stream.properties.name)
     } catch (e) {
         log.error(`Error fetching tweets: ${JSON.stringify(e, null, 2)}`);
