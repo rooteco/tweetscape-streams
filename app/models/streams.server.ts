@@ -1,25 +1,14 @@
 
-import { TweetStream, TwitterApiv2, TwitterV2IncludesHelper, UserSearchV1Paginator } from 'twitter-api-v2';
+import { TwitterApiv2, TwitterV2IncludesHelper, UserSearchV1Paginator } from 'twitter-api-v2';
 import type { TwitterApiRateLimitPlugin } from '@twitter-api-v2/plugin-rate-limit';
-
 import { log } from '~/log.server';
 import { driver } from "~/neo4j.server";
 import type { Record, Node } from 'neo4j-driver'
 import { getListUsers, USER_FIELDS } from '~/twitter.server';
 import { createUserDb } from "~/models/user.server";
-
 import type {
     ListV2,
-    ReferencedTweetV2,
-    TTweetv2Expansion,
-    TTweetv2TweetField,
-    TTweetv2UserField,
-    TweetEntityAnnotationsV2,
-    TweetEntityHashtagV2,
-    TweetEntityUrlV2,
-    TweetSearchRecentV2Paginator,
     TweetV2,
-    TweetV2ListTweetsPaginator,
     UserV2,
     MediaObjectV2, TwitterApi
 } from 'twitter-api-v2';
@@ -1086,6 +1075,30 @@ export async function getStreamTweetsFromList(api: TwitterApi, stream: Node, nam
     await session.close()
     return tweets;
 }
+
+export async function StreamTweetsEntityCounts(streamName: string) {
+    const session = driver.session()
+    let params = { streamName: streamName }
+    let query = `
+    MATCH (s:Stream {name:$streamName})-[:CONTAINS]->(u:User)-[:POSTED]->(t:Tweet)
+    OPTIONAL MATCH (t)-[tr:INCLUDED]->(entity:Entity)-[:CATEGORY]-(d:Domain {name:"Unified Twitter Taxonomy"})
+    WITH collect(entity) as entities, collect(t) as tweets
+    RETURN apoc.coll.frequencies(entities) as entityDistribution, size(tweets) as numTotalTweets
+        `
+    const res = await session.executeRead((tx: any) => {
+        return tx.run(query, params)
+    })
+    let data;
+    if (res.records.length == 1) {
+        data = {
+            "entityDistribution": res.records[0].get("entityDistribution").map((row) => ({ item: row.item, count: row.count.toInt() })),
+            "numTotalTweets": res.records[0].get("numTotalTweets")
+        }
+    }
+    await session.close()
+    return data;
+}
+
 
 export async function getStreamTweets(name: string, startTime: string) {
     //THIS EXCLUDES RETWEETS RIGHT NOW
