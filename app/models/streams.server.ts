@@ -175,17 +175,19 @@ export async function getStreamByName(name: string) {
     // Create a node within a write transaction
     const streamRes = await session.executeRead((tx: any) => {
         return tx.run(`
-        MATCH (s:Stream {name: $name} )
+        MATCH (s:Stream {name:$name} )<-[:CREATED]-(creator:User)
         OPTIONAL MATCH (s)-[r:CONTAINS]->(u:User)
-        RETURN DISTINCT s,u,r
+        RETURN DISTINCT s, creator,u,r
         `,
             { name })
     })
     let stream = null;
+    let creator = null;
     let seedUsers;
 
     if (streamRes.records.length > 0) {
         stream = streamRes.records[0].get("s"); // Stream will be the same for all users
+        creator = streamRes.records[0].get("creator")
         seedUsers = streamRes.records.filter((row: Record) => (row.get("u") && row.get("r"))).map((row: Record) => {
             return {
                 user: row.get('u'),
@@ -195,7 +197,7 @@ export async function getStreamByName(name: string) {
     }
 
     await session.close()
-    return { stream: stream, seedUsers: seedUsers };
+    return { stream: stream, creator: creator, seedUsers: seedUsers };
 }
 
 import invariant from "tiny-invariant";
@@ -204,7 +206,11 @@ import {
     TwitterApi,
 } from 'twitter-api-v2';
 
-export async function createStream(name: string, startTime: string, user: UserV2, twitterListId: string) {
+export async function createStream(
+    name: string,
+    startTime: string,
+    user: UserV2,
+    twitterListId: string) {
     const session = driver.session()
     // Create a node within a write transaction
     let streamData = {
@@ -220,25 +226,6 @@ export async function createStream(name: string, startTime: string, user: UserV2
             MERGE (u)-[:CREATED]->(s)
             RETURN s`,
             { streamData: streamData, username: user.username }
-        )
-    })
-    // Get the `p` value from the first record
-    const singleRecord = res.records[0]
-    const node = singleRecord.get("s")
-    await session.close()
-    return node;
-}
-
-export async function updateStreamNode(streamData, username) {
-    const session = driver.session()
-    const res = await session.executeWrite((tx: any) => {
-        return tx.run(`
-            MATCH (u:User {username: $username}) 
-            MERGE (s:Stream {name: $streamData.name})
-            SET s = $streamData
-            MERGE (u)-[:CREATED]->(s)
-            RETURN s`,
-            { streamData: streamData, username: username }
         )
     })
     // Get the `p` value from the first record
