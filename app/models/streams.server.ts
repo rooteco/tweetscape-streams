@@ -10,7 +10,8 @@ import type {
     ListV2,
     TweetV2,
     UserV2,
-    MediaObjectV2
+    MediaObjectV2,
+    TweetV2ListTweetsPaginator
 } from 'twitter-api-v2';
 
 export function flattenTwitterUserPublicMetrics(data: Array<any>) {
@@ -205,6 +206,7 @@ import {
     ApiResponseError,
     TwitterApi,
 } from 'twitter-api-v2';
+import { write } from 'fs';
 
 export async function createStream(
     name: string,
@@ -991,6 +993,25 @@ async function updateUserTweetscapeTweetIndexTimes(user: Node, startTime: string
     return streams;
 }
 
+async function writeTweetData(res: TweetV2ListTweetsPaginator) {
+    let media = []
+    let users = []
+    let refTweets = []
+    let tweetsFromList = []
+
+    let includes = new TwitterV2IncludesHelper(res)
+    users.push(...flattenTwitterUserPublicMetrics(includes.users))
+    media.push(...includes.media)
+    refTweets.push(...flattenTweetPublicMetrics(includes.tweets))
+    tweetsFromList.push(...flattenTweetPublicMetrics(res.tweets))
+    await Promise.all([
+        bulkWrites(users, addUsers),
+        bulkWrites(media, addTweetMedia),
+        bulkWrites(refTweets, addTweetsFrom),
+        bulkWrites(tweetsFromList, addTweetsFrom)
+    ])
+}
+
 export async function getStreamTweetsFromList(api: TwitterApi, stream: Node, name: string, startTime: string) {
     let listTweetsRes
     try {
@@ -1003,34 +1024,24 @@ export async function getStreamTweetsFromList(api: TwitterApi, stream: Node, nam
                 'media.fields': 'alt_text,duration_ms,height,media_key,preview_image_url,type,url,width,public_metrics',
                 'poll.fields': 'duration_minutes,end_datetime,id,options,voting_status',
                 'place.fields': 'contained_within,country,country_code,full_name,geo,id,name,place_type',
-                'max_results': 20,
+                'max_results': 100,
             }
         )
+
+        let numPages = 5
+        let results: TweetV2ListTweetsPaginator[] = []
+        results.push(listTweetsRes)
+        for (let step = 0; step < numPages; step++) {
+            let last: TweetV2ListTweetsPaginator = results.slice(-1)[0]
+            console.log(`pulling tweets for page ${step}`)
+            let next = await last.next()
+            await writeTweetData(next)
+            results.push(next)
+        }
     } catch (e) {
         log.error(`error getting list tweets for '${name}': ${JSON.stringify(e, null, 2)}`);
+        throw e
     }
-
-    let media = []
-    let users = []
-    let refTweets = []
-    let tweetsFromList = []
-
-    let includes = new TwitterV2IncludesHelper(listTweetsRes)
-    users.push(...flattenTwitterUserPublicMetrics(includes.users))
-    media.push(...includes.media)
-    refTweets.push(...flattenTweetPublicMetrics(includes.tweets))
-    if (listTweetsRes.data.data && listTweetsRes.data.data.length > 0) {
-        tweetsFromList.push(...listTweetsRes.data.data)
-    }
-
-    console.log(`writing ${tweetsFromList.length} tweets for list stream ${name}`)
-    await Promise.all([
-        bulkWrites(users, addUsers),
-        bulkWrites(media, addTweetMedia),
-        bulkWrites(refTweets, addTweetsFrom),
-        bulkWrites(tweetsFromList, addTweetsFrom)
-    ])
-
     //THIS EXCLUDES RETWEETS RIGHT NOW
     const session = driver.session()
     // Create a node within a write transaction
@@ -1052,7 +1063,6 @@ export async function getStreamTweetsFromList(api: TwitterApi, stream: Node, nam
                 collect(DISTINCT d) as domains,
                 collect(DISTINCT media) as media, 
                 collect(DISTINCT mr) as mediaRels
-
             ORDER by t.created_at DESC
         `,
             { name: name, startTime: startTime })

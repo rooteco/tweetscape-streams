@@ -45,12 +45,14 @@ export async function action({ request }: ActionArgs) {
     }
     const meData = await api.v2.me({ "user.fields": USER_FIELDS });
     user = meData.data as UserV2;
+
     let userDb = await getUserByUsernameDB(user.username)
     if (!userDb) {
         createUserDb(flattenTwitterUserPublicMetrics([user])[0])
     }
 
     const userOwnedListsNames = (await getUserOwnedTwitterLists(api, user)).map((row) => (row.name));
+
     if (userOwnedListsNames.indexOf(name) > -1) {
         let errors: ActionData = {
             "streamName": `You already have a list named '${name}', you should import that list instead of creating a new stream`

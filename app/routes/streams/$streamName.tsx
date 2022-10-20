@@ -44,35 +44,45 @@ export async function loader({ request, params }: LoaderArgs) {
     if (!stream) {
         throw new Response("Not Found", { status: 404 });
     }
+    console.time("getting client in $streamName")
     const { api, uid, session } = await getClient(request);
+    console.timeEnd("getting client in $streamName")
+    console.time("getting loggedInUser in $streamName.tsx")
+    const loggedInUser = (await api.v2.me()).data
+    console.timeEnd("getting loggedInUser in $streamName.tsx")
     // 2
+    let tweets;
     if (!stream.properties.twitterListId) { // this is for legacy streams
-        let loggedInUser = (await api.v2.me()).data;
         if (loggedInUser.username != creator.properties.username) {
             throw json(
                 { message: "Sorry, you didn't create this stream and it is out of date... please check back later" }
                 , 603
             );
         }
+        const { list, members } = await createList(api, stream.properties.name, [])
         stream = await createStream(
             stream.properties.name,
             stream.properties.startTime,
-            (await api.v2.me()).data,
-            []
+            loggedInUser,
+            list.data.id
         )
-        console.log("STREAM")
-        console.log(stream)
         seedUsers.forEach(async (user) => {
             await addSeedUserToStream(api, stream, user.user)
         })
     } else {
         let list
-        //3, load list 
-        list = await api.v2.list(stream.properties.twitterListId)
-        console.log(list)
-        if (list.errors && list.errors[0].title == "Not Found Error") {
+        //3, load list         
+        let listMembers = { errors: [] }
+        try {
+            listMembers = await api.v2.listMembers(stream.properties.twitterListId)
+        } catch (e) {
+            log.error(`error getting listMembers for '${list.data}': ${JSON.stringify(e, null, 2)}`);
+        }
+        if (
+            listMembers?.errors.length > 0 &&
+            listMembers.errors[0].type == 'https://api.twitter.com/2/problems/resource-not-found'
+        ) {
             console.log("list dissapeared... creating a new one")
-            let loggedInUser = (await api.v2.me()).data;
             if (loggedInUser.username != creator.properties.username) {
                 throw json(
                     { message: "FUCK Sorry, you didn't create this stream and it is out of date... please check back later" }
@@ -84,17 +94,14 @@ export async function loader({ request, params }: LoaderArgs) {
             await createStream(
                 stream.properties.name,
                 stream.properties.startTime,
-                (await api.v2.me()).data,
+                loggedInUser,
                 list.data.id
             )
         }
 
-        let listMembers
-        try {
-            listMembers = await api.v2.listMembers(list.data.id)
-        } catch (e) {
-            log.error(`error getting listMembers for '${list.data}': ${JSON.stringify(e, null, 2)}`);
-        }
+        // TODO: update stream :CONTAINS and list members in twitter list
+        // this allows people to add users on twitter and seeing the changes in TWeetscape
+
         // Assume equal for now
         // if (listMembers.data.meta.result_count != seedUsers.length) {
         //     seedUsers.forEach(async (user) => {
@@ -102,13 +109,15 @@ export async function loader({ request, params }: LoaderArgs) {
         //         await addSeedUserToStream(api, stream, user.user)
         //     })
         // }
-        let tweets = await getStreamTweetsFromList(api, stream, stream.properties.name, stream.properties.startTime);
-        return json({
-            "stream": stream,
-            "tweets": tweets,
-            seedUsers: seedUsers,
-        });
     }
+    console.time("getStreamTweetsFromList in $streamName.tsx")
+    tweets = await getStreamTweetsFromList(api, stream, stream.properties.name, stream.properties.startTime);
+    console.timeEnd("getStreamTweetsFromList in $streamName.tsx")
+    return json({
+        "stream": stream,
+        "tweets": tweets,
+        seedUsers: seedUsers,
+    });
 
     // TWEET FILTERING IDKKKK MAN
     // tweets = tweets.filter((tweetData: any) => {
@@ -236,6 +245,7 @@ export default function Feed() {
     let busy = transition.submission;
 
     const { tweets, stream } = useLoaderData();
+
     const emptyTopic = {
         labels: ['Entity'],
         properties: { name: 'No Labels', },
@@ -264,8 +274,8 @@ export default function Feed() {
     }
 
     return (
-        <div className="flex px-4 py-2 max-h-min z-10">
-            <div className='relative max-h-screen overflow-y-auto'>
+        <div className="flex px-4 py-2  z-10">
+            <div className='relative max-h-screen overflow-y-auto pb-12 border-2'>
                 <div className="sticky top-0 mx-auto backdrop-blur-lg bg-slate-50 bg-opacity-60 p-1 rounded-xl">
                     <div className="flex flex-row justify-between p-3 bg-slate-50 rounded-lg">
                         <p className="text-xl font-medium">{stream.properties.name}</p>
@@ -331,7 +341,7 @@ export default function Feed() {
                     </div>
                 </div>
 
-                <div className="h-full 2xl:w-1/2 lg:mx-2 2xl:mx-auto">
+                <div className="grow lg:w-3/4 lg:mx-2 2xl:mx-auto">
                     {busy ?
                         <div>LOADING</div> :
                         tweets.map((tweet: any, index: number) => (

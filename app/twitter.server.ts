@@ -95,7 +95,6 @@ export async function getUserOwnedTwitterLists(api: TwitterApi, user: UserV2) {
         //     ]
         // }
     );
-    console.log("this request WORKED")
     resOwned.lists.map((l: ListV2) => ownedLists.push(l));
     return ownedLists;
 }

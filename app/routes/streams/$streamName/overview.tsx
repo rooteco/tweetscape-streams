@@ -9,7 +9,9 @@ import invariant from "tiny-invariant";
 
 export async function loader({ request, params }: LoaderArgs) {
     invariant(params.streamName, "streamName not found");
+    console.time("StreamTweetsEntityCounts in $streamName/overview")
     const entityCountData = await StreamTweetsEntityCounts(params.streamName)
+    console.timeEnd("StreamTweetsEntityCounts in $streamName/overview")
     return entityCountData
 };
 
