@@ -62,10 +62,11 @@ function flattenTwitterData(data: Array<any>) {
 
 // export async function loader({ request }: LoaderArgs) {
 export const loader: LoaderFunction = async ({ request }: LoaderArgs) => {
+    console.time("getAllStreams in streams.tsx")
     let allStreams = await getAllStreams();
+    console.timeEnd("getAllStreams in streams.tsx")
     let user = null;
     let userLists = { followedLists: [] as ListV2[], ownedLists: [] as ListV2[] }
-
 
     const url = new URL(request.url);
     const redirectURI: string = process.env.REDIRECT_URI as string;
@@ -76,16 +77,18 @@ export const loader: LoaderFunction = async ({ request }: LoaderArgs) => {
     let uid = getUserIdFromSession(session);
     console.log(`UID = ${uid}`);
 
-
     if (process.env.test) {
         const { api, uid, session } = await getClient(request);
         const meData = await api.v2.me({ "user.fields": USER_FIELDS });
         user = meData.data;
     }
     else if (uid) {
+        console.time("getting client")
         const { api, uid, session } = await getClient(request);
-        const meData = await api.v2.me({ "user.fields": USER_FIELDS });
-        user = meData.data;
+        console.timeEnd("getting client")
+        console.time("getting me in streams.tsx")
+        user = (await api.v2.me()).data// fields not needed here { "user.fields": USER_FIELDS });
+        console.timeEnd("getting me in streams.tsx")
     }
     else if (stateId && code) {
         const storedStateId = session.get('stateIdTwitter') as string;
@@ -139,12 +142,11 @@ export const loader: LoaderFunction = async ({ request }: LoaderArgs) => {
             });
             log.info(`Setting session uid (${user.id}) for ${context}...`);
             session.set('uid', user.id.toString());
-            userLists = await getUserTwitterLists(api, user);
-            let owned = await addUserOwnedLists(user, userLists.ownedLists)
-            let followed = await addUserFollowedLists(user, userLists.followedLists)
+            // userLists = await getUserTwitterLists(api, user);
+            // let owned = await addUserOwnedLists(user, userLists.ownedLists)
+            // let followed = await addUserFollowedLists(user, userLists.followedLists)
         }
     }
-    const { api } = await getClient(request);
     const headers = { 'Set-Cookie': await commitSession(session) };
     return json<LoaderData>(
         {
