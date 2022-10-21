@@ -3,72 +3,8 @@ import { Form } from "@remix-run/react";
 import { useState } from "react";
 import Downshift from "downshift";
 
-import { Tooltip } from "@mui/material";
-import SearchIcon from '@mui/icons-material/Search';
-import DeleteIcon from '@mui/icons-material/Delete';
-import { ButtonGroup } from '@mui/material';
-import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
-import { Button } from '@mui/material';
-
-import { styled, alpha } from '@mui/material/styles';
-
-import Toolbar from '@mui/material/Toolbar';
-import InputBase from '@mui/material/InputBase';
+import { CiSearch } from 'react-icons/ci';
 import { relative } from "node:path/win32";
-
-const Search = styled('div')(({ theme }) => ({
-    borderRadius: '10px',
-    flexGrow: 1,
-    position: "relative",
-    gap: '4px',
-    alignItems: 'center',
-    display: 'flex',
-    padding: '4px',
-    backgroundColor: alpha(theme.palette.common.white, 0.65),
-    '&:hover': {
-        backgroundColor: alpha(theme.palette.common.white, 0.95),
-    },
-    '&:focus': {
-        backgroundColor: alpha(theme.palette.common.white, 0.95),
-    },
-    width: '100%',
-    maxWidth: '100%',
-}));
-
-const ImportSwitch = styled('div')(({ theme }) => ({
-    height: '100%',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-
-    '& .MuiButtonGroup-root': {
-        height: '100%',
-    },
-
-
-    '& .MuiButtonBase-root': {
-        border: '1px solid #e5e5e5',
-        backgroundColor: '#f7f7f7',
-        borderRadius: '6px',
-        padding: '4px',
-        height: "100%",
-    }
-
-}));
-
-const StyledInputBase = styled(InputBase)(({ theme }) => ({
-    color: 'inherit',
-    '& .MuiInputBase-input': {
-        color: 'black',
-        padding: theme.spacing(1, 1, 1, 0),
-        // vertical padding + font size from searchIcon
-        paddingLeft: "0.5rem",
-        transition: theme.transitions.create('width'),
-        width: '100%',
-        maxWidth: "100%",
-    },
-}));
-
 
 function StreamConfig(props: any) {
     // Responsible for Stream Management
@@ -84,24 +20,19 @@ function StreamConfig(props: any) {
                 action={`/streams/${streamName}`}
                 className="sticky top-9 w-full mt-1 mx-auto flex items-center z-40"
             >
-                <Search className="relative grow-1 rounded-lg flex justify-between border border-gray-200 backdrop-blur-lg">
-                    <ImportSwitch>
-                        <ButtonGroup sx={{ border: '1 px solid #e5e5e5' }}>
-                            <Tooltip title="Import from List (Coming Soon)">
-                                <Button className="border border-gray-200">
-                                    <ReceiptLongIcon sx={search ? { color: "#A5A4A4" } : { color: "#000000" }} />
-                                </Button>
-                            </Tooltip>
-                            <Tooltip title="Import from Search">
-                                <Button sx={search ? { backgroundColor: "#f1f1f1 !important" } : { backgroundColor: "white !important" }}>
-                                    <SearchIcon sx={search ? { color: "#000000" } : { color: "#A5A4A4" }} />
-                                </Button>
-                            </Tooltip>
-                        </ButtonGroup>
-                    </ImportSwitch>
+                <div
+                    className="relative py-1 pl-2 grow hover:bg-white/95 bg-white/60 active:bg-white/95 grow-1 rounded-lg flex gap-0 align-center items-center border border-gray-200 backdrop-blur-lg">
+
+                    <div
+                        className=" p-2 flex align-middle justify-center items-center"
+                        style={search ? { backgroundColor: "#f1f1f1 !important" } : { backgroundColor: "white !important" }}>
+                        <CiSearch style={search ? { color: "#000000" } : { color: "#A5A4A4" }} />
+                    </div>
+
 
                     <input
                         autoFocus
+                        className="pl-2"
                         name="seedUserHandle"
                         type="text"
                         placeholder='Add handle ...'
@@ -115,9 +46,9 @@ function StreamConfig(props: any) {
                     >
                         <span className="text-xs rounded-full bg-blue-400 px-2 py-1 mr-1 text-white">SUBMIT</span>
                     </button>
-                </Search>
+                </div >
 
-            </Form>
+            </Form >
 
             {/* Add from User Lists 
             <div>

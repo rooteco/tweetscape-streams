@@ -2,7 +2,9 @@ import type { LoaderArgs } from "@remix-run/node"
 import { useLoaderData, useMatches } from "@remix-run/react";
 import { Link, useParams } from "@remix-run/react";
 import { StreamTweetsEntityCounts } from '~/models/streams.server'
-import Chip from '@mui/material/Chip';
+
+import Chip from '~/components/Chip';
+
 import ContextAnnotationChip from '~/components/ContextAnnotationChip';
 import invariant from "tiny-invariant";
 

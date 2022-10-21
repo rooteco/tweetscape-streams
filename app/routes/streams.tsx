@@ -34,7 +34,6 @@ import StreamAccordion from '~/components/StreamAccordion';
 import CreateAndLogin from "~/components/CreateAndLogin";
 import ExportAndDelete from "~/components/ExportAndDelete";
 
-import { MdKeyboardArrowRight } from "react-icons/md";
 
 
 import type { Stream } from "../components/StreamAccordion";
