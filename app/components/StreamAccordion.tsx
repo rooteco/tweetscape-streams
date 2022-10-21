@@ -59,24 +59,26 @@ const AccordionSummary = ({ streamName, isOpen, setOpenStream }) => {
   };
 
   return (
-    <div
-      className={
-        cn(
-          "bg-white flex gap-1 rounded align-middle items-center py-1 pl-2 text-sm text-gray-400 cursor-pointer",
-          { "sticky top-0 z-10": isOpen }
-        )
-      }
-      onClick={handleClick}
-    >
-      <MdKeyboardArrowRight
-        size={22}
-        className={cn(
-          "transform transition-transform duration-300 ease-in-out",
-          { "rotate-90": isOpen },
-        )}
-      />
-      {streamName}
-    </div >
+    <Link to={isOpen ? "/streams" : `${streamName}/overview`}>
+      <div
+        className={
+          cn(
+            "bg-white flex gap-1 rounded align-middle items-center py-1 pl-2 text-sm text-gray-400 cursor-pointer",
+            { "sticky top-0 z-10": isOpen }
+          )
+        }
+        onClick={handleClick}
+      >
+        <MdKeyboardArrowRight
+          size={22}
+          className={cn(
+            "transform transition-transform duration-300 ease-in-out",
+            { "rotate-90": isOpen },
+          )}
+        />
+        {streamName}
+      </div >
+    </Link>
   )
 
 }

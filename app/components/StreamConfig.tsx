@@ -100,16 +100,6 @@ function StreamConfig(props: any) {
                         </ButtonGroup>
                     </ImportSwitch>
 
-
-                    {/* <StyledInputBase
-                        autoFocus
-                        name="seedUserHandle"
-                        type="text"
-                        placeholder='Add handle ...'
-                        inputProps={{ 'aria-label': 'search' }}
-                        onChange={(e) => setHandle(e.target.value)}
-                    >
-                    </StyledInputBase> */}
                     <input
                         autoFocus
                         name="seedUserHandle"
