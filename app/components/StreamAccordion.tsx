@@ -63,11 +63,14 @@ const AccordionSummary = ({ streamName, isOpen, setOpenStream }) => {
       <div
         className={
           cn(
-            "bg-white flex gap-1 rounded align-middle items-center py-1 pl-2 text-sm text-gray-400 cursor-pointer",
-            { "sticky top-0 z-10": isOpen }
+            "bg-white flex gap-1 rounded align-middle items-center py-1 pl-2  font-medium text-sm text-gray-400 cursor-pointer",
+            { "sticky top-0 z-10": isOpen },
+           
+            
           )
         }
         onClick={handleClick}
+        style={isOpen ? { color: '#1D1D1D' } : { color: '#949DA7' }}
       >
         <MdKeyboardArrowRight
           size={22}
@@ -155,7 +158,7 @@ function StreamAccordion({ streams, lists }: { streams: Stream[] }) {
     <div className="grow relative w-full" ref={accordionRef}>
       <div
         className={
-          cn("accordion-container w-full radial-bg bg-gray-100 border border-gray-200 p-1 rounded z-0",
+          cn("accordion-container w-full bg-radial bg-gray-100 border border-gray-200 p-1 rounded z-0",
             { "overflow-y-scroll overflow-x-hidden": openStream },
 
           )}
