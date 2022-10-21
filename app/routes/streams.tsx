@@ -172,14 +172,14 @@ export default function StreamsPage() {
     const streamsRoot = useParams().streamName === undefined;
 
     return (
-        <div className="flex flex-row-reverse">
+        <div className="h-screen flex flex-row-reverse">
 
             {/* Outlet for Stream Details and Feed (/$streamName) */}
-            <div className="radial-bg grow px-4 py-2 lg:max-w-2xl 2xl:max-w-full h-screen z-10">
+            <div className="bg-gradient-to-r from-gray-50 via-white to-white grow px-4 py-2 lg:max-w-2xl 2xl:max-w-full  z-10">
                 <Outlet />
             </div>
 
-            <div className="h-screen max-h-screen flex flex-col border-r space-y-16 w-96 max-w-96 pr-6 pb-6 pl-12">
+            <div className="flex flex-col border-r space-y-16 w-96 max-w-96 pr-4 pb-6 pl-6">
                 <div className="relative flex flex-row space-x-2 w-full ml-2 mt-4">
                     {/* Either 'Create A Stream and Login/Logout' or 'Export Stream or Delete Stream' */}
                     {streamsRoot ? <CreateAndLogin user={user} /> : <ExportAndDelete user={user} />}
