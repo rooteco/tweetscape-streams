@@ -1,8 +1,8 @@
 import { Form } from '@remix-run/react'
 import type { userNode } from './StreamAccordion'
 
-import AddIcon from '@mui/icons-material/Add';
-import RemoveIcon from '@mui/icons-material/Remove';
+
+import {IoAddOutline, IoRemoveOutline} from 'react-icons/io5';
 
 function CompactProfile({ user, isSeed, streamName }: { user: userNode, isSeed: boolean, streamName: string }) {
     // Renders a Seed/Recommended user profile, with a button to add/remove from the stream
@@ -34,7 +34,7 @@ function CompactProfile({ user, isSeed, streamName }: { user: userNode, isSeed: 
                     value={isSeed ? "removeSeedUser" : "addSeedUser"}
                     className="hover:bg-slate-200 bg-slate-100 rounded-full h-8 w-8 flex items-center justify-center"
                 >
-                    {isSeed ? <RemoveIcon fontSize='small' /> : <AddIcon fontSize='small' />}
+                    {isSeed ? <IoRemoveOutline fontSize='small' /> : <IoAddOutline fontSize='small' />}
                 </button>
             </Form>
 

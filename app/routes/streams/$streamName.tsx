@@ -5,9 +5,14 @@ import { Form, useActionData, useCatch, useLoaderData, Outlet, useTransition } f
 import { Link, useParams } from "@remix-run/react";
 import invariant from "tiny-invariant";
 import { ApiResponseError } from "twitter-api-v2";
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import { log } from '~/log.server';
+
+
+import {BiNetworkChart} from 'react-icons/bi';
+import {MdUpdate} from 'react-icons/md';
+
+
+
 
 import {
     deleteStreamByName,
@@ -23,10 +28,6 @@ import {
 import { getUserByUsernameDB, createUserDb } from "~/models/user.server";
 import { createList, getClient, USER_FIELDS, handleTwitterApiError, getUserOwnedTwitterLists } from '~/twitter.server';
 
-import { Tooltip } from "@mui/material";
-
-import HubIcon from '@mui/icons-material/Hub';
-import UpdateIcon from '@mui/icons-material/Update';
 
 import Tweet from '~/components/Tweet';
 import ContextAnnotationChip from '~/components/ContextAnnotationChip';
@@ -280,10 +281,7 @@ export default function Feed() {
                                     value="updateStreamTweets"
                                     name="intent"
                                 >
-                                    <Tooltip title="Update Stream Tweets">
-                                        <UpdateIcon fontSize="small" />
-                                    </Tooltip>
-
+                                    <MdUpdate />
                                 </button>
                             </Form>
                             <Form
@@ -295,9 +293,7 @@ export default function Feed() {
                                     value="updateStreamFollowsNetwork"
                                     name="intent"
                                 >
-                                    <Tooltip title="Update Stream Follower">
-                                        <HubIcon fontSize="small" />
-                                    </Tooltip>
+                                        <BiNetworkChart/>
                                 </button>
                             </Form>
                         </div>

@@ -3,15 +3,14 @@ import { Integer } from 'neo4j-driver';
 import { Link, useParams } from "@remix-run/react";
 import cn from 'classnames';
 
-import Chip from '@mui/material/Chip';
+
+import Chip from './Chip';
 
 
 import { MdKeyboardArrowRight } from "react-icons/md";
 
 import CompactProfile from './CompactProfile';
 import StreamConfig from './StreamConfig';
-
-
 
 export type streamNode = {
   identity: Array<Integer>,
@@ -65,8 +64,7 @@ const AccordionSummary = ({ streamName, isOpen, setOpenStream }) => {
           cn(
             "bg-white flex gap-1 rounded align-middle items-center py-1 pl-2  font-medium text-sm text-gray-400 cursor-pointer",
             { "sticky top-0 z-10": isOpen },
-           
-            
+          
           )
         }
         onClick={handleClick}
@@ -119,7 +117,7 @@ const AccordionDetails = ({ height, streamName }) => {
   )
 }
 
-const Accordion = ({ height, streamName, openStream, setOpenStream }) => {
+const Accordion = ({ height, streamName, openStream, setOpenStream, lists }) => {
 
   const isOpen = openStream === streamName;
 
@@ -171,6 +169,7 @@ function StreamAccordion({ streams, lists }: { streams: Stream[] }) {
             streamName={stream.stream.properties.name}
             openStream={openStream}
             setOpenStream={setOpenStream}
+            lists = {lists}
           />
         ))}
       </div>
@@ -178,70 +177,6 @@ function StreamAccordion({ streams, lists }: { streams: Stream[] }) {
   )
 }
 
-
-function OldAccordion() {
-  return (
-    <div>
-      {streams.map((stream: Stream) => {
-
-        const expanded = stream.stream.properties.name === streamName;
-
-        return (
-          <Accordion
-            elevation={0}
-            key={stream.stream.elementId}
-            expanded={expanded}
-          >
-            <Link to={expanded ? "/streams" : `${stream.stream.properties.name}/overview`}>
-              <AccordionSummary
-                expandIcon={<ArrowForwardIosSharpIcon sx={expanded ? { fontSize: '0.85rem', color: '#1D1D1D' } : { fontSize: '0.85rem', color: '#B9BEC4' }} />}
-              >
-                <p
-                  className={'font-medium'}
-                  style={expanded ? { color: '#1D1D1D' } : { color: '#949DA7' }}
-                >
-                  {stream.stream.properties.name}
-                </p>
-                <Chip icon={<div>🌱</div>} size="small" label={`${stream.seedUsers?.length}`} sx={{ color: "#91949a", backgroundColor: "#f1f1f1" }} />
-              </AccordionSummary>
-            </Link>
-
-            <AccordionDetails>
-              <StreamConfig userLists={lists} streamName={streamName} />
-
-              <div className='mx-2 my-2'>
-                <div className='flex flex-col space-y-1 items-center m-4'>
-                  <h1 className='font-medium text-gray-600'>{stream.seedUsers?.length} Seed Users </h1>
-                  <p className='text-sm text-center px-4 text-gray-400'>Seed Accounts grow the Recommended Accounts below</p>
-                </div>
-
-                <div className='flex flex-col space-y-2'>
-                  {stream.seedUsers && stream.seedUsers.map((user: userNode) => (
-                    <CompactProfile user={user} key={user.elementId} streamName={streamName} isSeed />
-                  ))}
-                </div>
-
-                <div className='flex flex-col space-y-1 items-center mb-4 mt-12'>
-                  <h1 className='font-medium text-gray-600'> {stream.recommendedUsers ? stream.recommendedUsers.length : 0} Recommended Accounts </h1>
-                  <p className='text-sm text-center px-4 text-gray-400'>Account Recommendation is using the concept of a ‘meta-follower’ between Seed Accounts to make these recommendations</p>
-                </div>
-
-                <div className='flex flex-col space-y-2'>
-                  {stream.recommendedUsers && stream.recommendedUsers.map((user: userNode) => (
-                    <CompactProfile user={user} key={user.elementId} streamName={streamName} isSeed={false} />
-                  ))}
-                </div>
-              </div>
-
-
-
-            </AccordionDetails>
-          </Accordion>
-        )
-      })}
-    </div >
-  )
-}
 
 export default StreamAccordion
 
