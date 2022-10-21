@@ -71,18 +71,35 @@ body {
     background-color: transparent !important;
 }
 
-.radial-bg {
-    background: radial-gradient(90% 60% at 20% -15%, rgba(96, 143, 237, 0.20) 5%, rgba(255, 255, 255, 0) 100%)
-        , radial-gradient(220% 60% at 30% 100%, rgba(174, 224, 240, 0.45) 0%, rgba(244, 250, 252, 0) 56.96%)
-        , #F7F7F8;
-    background-blend-mode: multiply, multiply, normal;
-}
+
 
 .accordion-container {
     border-radius: 6px;
     background-color: #F7F7F8;
     box-shadow: 0px 2px 16px 0px rgba(0, 0, 0, 0.05);
-    border: 1px solid rgba(210, 210, 210, 0.25);
+    border: 1px solid rgba(210, 210, 210, 0.1);
+
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.radial-bg {
+    background: radial-gradient(90% 60% at 20% -15%, rgba(96, 143, 237, 0.15) 5%, rgba(255, 255, 255, 0) 100%)
+        , radial-gradient(220% 60% at 30% 100%, rgba(174, 224, 240, 0.35) 0%, rgba(244, 250, 252, 0) 56.96%)
+        , #F7F7F8;
+    background-blend-mode: multiply;
+}
+
+
+.accordion-item {
+    
+}
+
+input {
+    border: none;
+    outline: none;
+    background-color: transparent;
 }
 
 .bg-fade {

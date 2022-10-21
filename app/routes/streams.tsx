@@ -1,12 +1,17 @@
 import { redirect, json } from "@remix-run/node";
 import type { LoaderArgs } from "@remix-run/node";
 
+import { useEffect, useState, useRef } from "react";
 import { useParams } from "@remix-run/react";
 import type { Session } from '@remix-run/node';
 import { Form, useActionData, Link, NavLink, Outlet, useLoaderData } from "@remix-run/react";
 import type { LoaderFunction } from '@remix-run/node';
 import { TwitterApi } from 'twitter-api-v2';
 // import { TwitterApiRateLimitPlugin } from '@twitter-api-v2/plugin-rate-limit';
+
+import cn from 'classnames';
+import StreamConfig from "~/components/StreamConfig";
+import CompactProfile from "~/components/CompactProfile";
 
 import { prisma } from "~/db.server";
 import { log } from '~/log.server';
@@ -24,14 +29,16 @@ import {
     addUserFollowedLists
 } from "~/models/streams.server";
 
-import Add from "@mui/icons-material/Add";
+
 import StreamAccordion from '~/components/StreamAccordion';
 import CreateAndLogin from "~/components/CreateAndLogin";
 import ExportAndDelete from "~/components/ExportAndDelete";
 
+import { MdKeyboardArrowRight } from "react-icons/md";
+
+
 import type { Stream } from "../components/StreamAccordion";
-import { couldStartTrivia } from "typescript";
-import { useEffect } from "react";
+
 
 type LoaderData = {
     // this is a handy way to say: "posts is whatever type getStreams resolves to"
@@ -160,38 +167,33 @@ export default function StreamsPage() {
     const { streams, user, lists } = useLoaderData<LoaderData>();
     const params = useParams();
 
-    const streamsRoot = params.streamName === undefined;
-    if (!streamsRoot) {
-        const currentStream = params.streamName && params.streamName;
-    }
-
     const errors = useActionData();
 
+    const streamsRoot = useParams().streamName === undefined;
+
     return (
-        <div className="relative w-full flex flex-row-reverse bg-white">
+        <div className="flex flex-row-reverse">
 
             {/* Outlet for Stream Details and Feed (/$streamName) */}
-            <div className="relative bg-fade flex-1 px-4 py-2 lg:max-w-2xl 2xl:max-w-full h-screen z-10">
+            <div className="radial-bg grow px-4 py-2 lg:max-w-2xl 2xl:max-w-full h-screen z-10">
                 <Outlet />
             </div>
 
-            <div className="relative h-screen max-h-screen flex flex-col border-r space-y-16 w-96 pr-6 pb-6 pl-12">
-                <div className="flex flex-row space-x-2 w-full ml-2 mt-4">
+            <div className="h-screen max-h-screen flex flex-col border-r space-y-16 w-96 max-w-96 pr-6 pb-6 pl-12">
+                <div className="relative flex flex-row space-x-2 w-full ml-2 mt-4">
                     {/* Either 'Create A Stream and Login/Logout' or 'Export Stream or Delete Stream' */}
                     {streamsRoot ? <CreateAndLogin user={user} /> : <ExportAndDelete user={user} />}
 
-                    <div className="absolute justify-center align-middle -left-36 top-12 flex flex-col space-y-16 z-0">
-                        <p className="text-xl font-semibold justify-center align-middle text-gray-100" style={{ fontSize: 96 }}>Stream</p>
-                        <p className="text-xl font-bold justify-center align-middle  text-gray-100" style={{ fontSize: 96 }}>Seeding</p>
+                    <div className="absolute right-6 top-12 flex flex-col items-end space-y-6 z-0">
+                        <p className="text-lg font-bold justify-center align-middle text-gray-100/50" style={{ fontSize: 64 }}>Stream</p>
+                        <p className="text-lg font-bold justify-center align-middle  text-gray-100/50" style={{ fontSize: 64 }}>Seeding</p>
                     </div>
                 </div>
 
                 {/* List of Streams */}
-                <div className="flex flex-col space-y-0.5 flex-1 max-h-min z-10 overflow-y-auto">
+                <div className="flex flex-col space-y-0.5 flex-1 z-10">
                     <p className="ml-2 text-slate-400 font-medium text-xs"> {user ? `@${user.username}'s` : "Public"} Streams </p>
-                    <div className="accordion-container radial-bg bg-gray-100 border border-gray-200 p-1 grow rounded z-0">
-                        <StreamAccordion streams={streams} lists={lists} />
-                    </div>
+                    <StreamAccordion streams={streams} lists = {lists}/>
                 </div>
             </div>
         </div>
