@@ -55,34 +55,12 @@ export type Stream = {
   recommendedUsers: Array<userNode>;
 };
 
-const useStyles = makeStyles((theme) => ({
-  root: {
-    width: "100%",
-    background: "transparent",
-    flexGrow: 0,
-  },
-  rootExpanded: {
-    background: "transparent",
-    flexGrow: 1,
-  }
-}));
-
-const StyledAccordion = styled(Accordion)(({ theme }) => ({
-  color: 'inherit',
-  '& .MuiAccordion-root': {
-      flexGrow: 0,
-  },
-  '& .MuiAccordion-expanded': {
-      flexGrow: 1,
-  },
-}));
-
-
 
 
 function StreamAccordion({ streams, lists }: { streams: Stream[] }) {
   // TODO: onOpen redirect to $streamName
   // TODO: perf should be much better when folding/unfolding streams
+  
   const { streamName } = useParams();
   const classes = useStyles();
 
