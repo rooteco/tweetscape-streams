@@ -52,7 +52,7 @@ export async function loader({ request, params }: LoaderArgs) {
     console.timeEnd("getting loggedInUser in $streamName.tsx")
     // 2
     let tweets;
-    if (!stream.properties.twitterListId) { // this is for legacy streams
+    if (!stream.properties.twitterListId || stream.properties.twitterListId.length < 1) { // this is for legacy streams
         if (loggedInUser.username != creator.properties.username) {
             throw json(
                 { message: "Sorry, you didn't create this stream and it is out of date... please check back later" }
