@@ -76,76 +76,84 @@ export const loader: LoaderFunction = async ({ request }: LoaderArgs) => {
     let session = await getSession(request.headers.get('Cookie'));
     let uid = getUserIdFromSession(session);
     console.log(`UID = ${uid}`);
-
-    if (process.env.test) {
-        const { api, uid, session } = await getClient(request);
-        const meData = await api.v2.me({ "user.fields": USER_FIELDS });
-        user = meData.data;
-    }
-    else if (uid) {
-        console.time("getting client")
-        const { api, uid, session } = await getClient(request);
-        console.timeEnd("getting client")
-        console.time("getting me in streams.tsx")
-        user = (await api.v2.me()).data// fields not needed here { "user.fields": USER_FIELDS });
-        console.timeEnd("getting me in streams.tsx")
-    }
-    else if (stateId && code) {
-        const storedStateId = session.get('stateIdTwitter') as string;
-        log.debug(`Checking if state (${stateId}) matches (${storedStateId})...`);
-        if (storedStateId === stateId) {
-            log.info('Logging in with Twitter OAuth2...');
-            const client = new TwitterApi({
-                clientId: process.env.OAUTH_CLIENT_ID as string,
-                clientSecret: process.env.OAUTH_CLIENT_SECRET,
-            });
-            const {
-                client: api,
-                scope,
-                accessToken,
-                refreshToken,
-                expiresIn,
-            } = await client.loginWithOAuth2({
-                code,
-                codeVerifier: session.get('codeVerifier') as string,
-                redirectUri: redirectURI
-                // redirectUri: getBaseURL(request),
-            });
-
-            //TODO: INSTANTIATE THIS API WITH THE RATE LIMIT PLUGIN SO IT STORES THIS IN REDIS AND RATE LIMITS ARE ACCURATE...
-
-            log.info('Fetching logged in user from Twitter API...');
-            const { data } = await api.v2.me({ "user.fields": USER_FIELDS });
-            const context = `${data.name} (@${data.username})`;
-            log.info(`Upserting user for ${context}...`);
-            user = flattenTwitterData([data])[0];
-            await prisma.users.upsert({
-                where: { id: user.id },
-                create: user,
-                update: user,
-            })
-            log.info(`Upserting token for ${context}...`);
-            const token = {
-                user_id: user.id,
-                token_type: 'bearer',
-                expires_in: expiresIn,
-                access_token: accessToken,
-                scope: scope.join(' '),
-                refresh_token: refreshToken as string,
-                created_at: new Date(),
-                updated_at: new Date(),
-            };
-            await prisma.tokens.upsert({
-                create: token,
-                update: token,
-                where: { user_id: token.user_id },
-            });
-            log.info(`Setting session uid (${user.id}) for ${context}...`);
-            session.set('uid', user.id.toString());
-            // userLists = await getUserTwitterLists(api, user);
-            // let owned = await addUserOwnedLists(user, userLists.ownedLists)
-            // let followed = await addUserFollowedLists(user, userLists.followedLists)
+    try {
+        if (process.env.test) {
+            const { api, uid, session } = await getClient(request);
+            const meData = await api.v2.me({ "user.fields": USER_FIELDS });
+            user = meData.data;
         }
+        else if (uid) {
+            console.time("getting client")
+            const { api, uid, session } = await getClient(request);
+            console.timeEnd("getting client")
+            console.time("getting me in streams.tsx")
+            user = (await api.v2.me()).data// fields not needed here { "user.fields": USER_FIELDS });
+            console.timeEnd("getting me in streams.tsx")
+        }
+        else if (stateId && code) {
+            const storedStateId = session.get('stateIdTwitter') as string;
+            log.debug(`Checking if state (${stateId}) matches (${storedStateId})...`);
+            if (storedStateId === stateId) {
+                log.info('Logging in with Twitter OAuth2...');
+                const client = new TwitterApi({
+                    clientId: process.env.OAUTH_CLIENT_ID as string,
+                    clientSecret: process.env.OAUTH_CLIENT_SECRET,
+                });
+                const {
+                    client: api,
+                    scope,
+                    accessToken,
+                    refreshToken,
+                    expiresIn,
+                } = await client.loginWithOAuth2({
+                    code,
+                    codeVerifier: session.get('codeVerifier') as string,
+                    redirectUri: redirectURI
+                    // redirectUri: getBaseURL(request),
+                });
+
+                //TODO: INSTANTIATE THIS API WITH THE RATE LIMIT PLUGIN SO IT STORES THIS IN REDIS AND RATE LIMITS ARE ACCURATE...
+
+                log.info('Fetching logged in user from Twitter API...');
+                const { data } = await api.v2.me({ "user.fields": USER_FIELDS });
+                const context = `${data.name} (@${data.username})`;
+                log.info(`Upserting user for ${context}...`);
+                user = flattenTwitterData([data])[0];
+                await prisma.users.upsert({
+                    where: { id: user.id },
+                    create: user,
+                    update: user,
+                })
+                log.info(`Upserting token for ${context}...`);
+                const token = {
+                    user_id: user.id,
+                    token_type: 'bearer',
+                    expires_in: expiresIn,
+                    access_token: accessToken,
+                    scope: scope.join(' '),
+                    refresh_token: refreshToken as string,
+                    created_at: new Date(),
+                    updated_at: new Date(),
+                };
+                await prisma.tokens.upsert({
+                    create: token,
+                    update: token,
+                    where: { user_id: token.user_id },
+                });
+                log.info(`Setting session uid (${user.id}) for ${context}...`);
+                session.set('uid', user.id.toString());
+                // userLists = await getUserTwitterLists(api, user);
+                // let owned = await addUserOwnedLists(user, userLists.ownedLists)
+                // let followed = await addUserFollowedLists(user, userLists.followedLists)
+            }
+        }
+    } catch (e) {
+        console.log("you are unauthorized while getting client... please log back in...")
+        console.log(e)
+        const res = await fetch(url.origin + "/logout", {
+            method: "POST"
+        })
+        return redirect("/streams")
     }
     const headers = { 'Set-Cookie': await commitSession(session) };
     return json<LoaderData>(
@@ -203,6 +211,5 @@ export default function StreamsPage() {
 
 export function ErrorBoundary({ error }: { error: Error }) {
     console.error(error);
-
     return <div>An unexpected error occurred: {error.message}</div>;
 }
