@@ -11,6 +11,7 @@ import { log } from '~/log.server';
 import {BiNetworkChart} from 'react-icons/bi';
 import {MdUpdate} from 'react-icons/md';
 
+import {MdExpandMore, MdExpandLess} from 'react-icons/md';
 
 
 
@@ -304,13 +305,13 @@ export default function Feed() {
                         {overview ?
                             <Link className="w-full h-hull" to={`/streams/${streamName}`}>
                                 <div className="my-1 mx-1  text-center cursor-pointer rounded-full bg-slate-50 hover:bg-slate-200">
-                                    <ExpandLessIcon sx={{ fontSize: "1rem" }} />
+                                    <MdExpandLess style={{ fontSize: "1rem" }} />
                                 </div>
                             </Link>
                             :
                             <Link className="w-full h-hull" to={`/streams/${streamName}/overview`}>
                                 <div className="my-1 mx-1  text-center cursor-pointer rounded-full bg-slate-50 hover:bg-slate-200">
-                                    <ExpandMoreIcon sx={{ fontSize: "1rem" }} />
+                                    <MdExpandMore style={{ fontSize: "1rem" }} />
                                 </div>
                             </Link>
 

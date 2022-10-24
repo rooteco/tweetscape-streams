@@ -116,7 +116,7 @@ export default function NewNotePage() {
             }
             {!user && (
                 <div>
-                    <Paper variant="outlined" sx={{ width: "fit-content", maxWidth: "30vw", borderRadius: 4 }}>
+                    <div style={{ width: "fit-content", maxWidth: "30vw", borderRadius: 4 }}>
                         <div className="flex flex-col p-4 space-y-2">
                             <p>Choose a stream from the sidebar to explore, or login with twitter to create your own</p>
                             <div className="flex">
@@ -129,7 +129,7 @@ export default function NewNotePage() {
                                 </Link>
                             </div>
                         </div>
-                    </Paper>
+                    </div>
 
                 </div>
             )}
