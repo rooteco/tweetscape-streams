@@ -111,7 +111,9 @@ const AccordionDetails = ({ height, stream }) => {
         </div>
 
         <div className='flex flex-col space-y-2'>
-
+          {stream.recommendedUsers && stream.recommendedUsers.map((user: userNode) => (
+            <CompactProfile user={user} key={user.elementId} streamName={stream.stream.properties.name} isSeed={false} />
+          ))}
         </div>
       </div>
 
