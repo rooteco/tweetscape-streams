@@ -1,11 +1,11 @@
 
-import { TwitterApiv2, TwitterV2IncludesHelper, UserSearchV1Paginator } from 'twitter-api-v2';
+import { TwitterApi, TwitterV2IncludesHelper, UserSearchV1Paginator } from 'twitter-api-v2';
 import type { TwitterApiRateLimitPlugin } from '@twitter-api-v2/plugin-rate-limit';
 import { log } from '~/log.server';
 import { driver } from "~/neo4j.server";
 import type { Record, Node } from 'neo4j-driver'
 import { getListUsers, USER_FIELDS } from '~/twitter.server';
-import { createUserDb } from "~/models/user.server";
+import { createUserDb, indexUserNewTweets } from "~/models/user.server";
 import type {
     ListV2,
     TweetV2,
@@ -916,7 +916,11 @@ async function updateStreamFollowingLastUpdatedAt(stream: Node, now: string) {
     return streams;
 }
 
-export async function updateStreamTweets(api: TwitterApi, stream: Node, seedUsers: Node[], now: string = (new Date()).toISOString()) {
+export async function updateStreamTweets(api: TwitterApi, seedUsers: Node[]) {
+    const tweetResponses = await Promise.all(seedUsers.map((user) => {
+        return indexUserNewTweets(api, user.user)
+    }))
+}
     // Add the tweets from stream's date Range to the DB to build a feed
     // let now = new Date()
     // const endTime = new Date()
