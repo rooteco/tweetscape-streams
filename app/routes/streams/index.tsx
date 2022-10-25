@@ -90,7 +90,7 @@ export default function NewNotePage() {
         <div className="flex h-full w-full justify-center align-middle items-center">
             {
                 user && (
-                    <div className = "bg-white" style={{ width: "fit-content", borderRadius: 4, backgroundColor: "white !important" }}>
+                    <div className="bg-white" style={{ width: "fit-content", borderRadius: 4, backgroundColor: "white !important" }}>
                         <div className="flex flex-col p-4 space-y-2">
                             <h1 className="text-lg font-medium pb-6">Create a New Stream</h1>
                             <Form method="post" className='flex flex-col space-x-1 space-y-6 max-w-sm'>
