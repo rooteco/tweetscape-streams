@@ -48,6 +48,7 @@ export async function loader({ request, params }: LoaderArgs) {
     }
     const { api, uid, session } = await getClient(request);
     // 2
+    let tweets;
     if (!stream.properties.twitterListId) { // this is for legacy streams
         let loggedInUser = (await api.v2.me()).data;
         if (loggedInUser.username != creator.properties.username) {
@@ -104,7 +105,7 @@ export async function loader({ request, params }: LoaderArgs) {
         //         await addSeedUserToStream(api, stream, user.user)
         //     })
         // }
-        let tweets = await getStreamTweetsFromList(api, stream, stream.properties.name, stream.properties.startTime);
+        tweets = await getStreamTweetsFromList(api, stream, stream.properties.name, stream.properties.startTime);
         return json({
             "stream": stream,
             "tweets": tweets,
