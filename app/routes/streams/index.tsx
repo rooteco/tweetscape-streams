@@ -10,7 +10,6 @@ import { createStream, getStreamByName } from "~/models/streams.server";
 import { getUserByUsernameDB, createUserDb } from "~/models/user.server";
 import { flattenTwitterUserPublicMetrics } from "~/models/user.server";
 import type { UserV2 } from 'twitter-api-v2';
-import { Paper } from "@mui/material";
 import { createList, getUserOwnedTwitterLists } from '~/twitter.server'
 
 
@@ -93,7 +92,7 @@ export default function NewNotePage() {
         <div className="flex h-full w-full justify-center align-middle items-center">
             {
                 user && (
-                    <Paper variant="outlined" sx={{ width: "fit-content", borderRadius: 4, backgroundColor: "white !important" }}>
+                    <div className="bg-white" style={{ width: "fit-content", borderRadius: 4, backgroundColor: "white !important" }}>
                         <div className="flex flex-col p-4 space-y-2">
                             <h1 className="text-lg font-medium pb-6">Create a New Stream</h1>
                             <Form method="post" className='flex flex-col space-x-1 space-y-6 max-w-sm'>
@@ -114,12 +113,12 @@ export default function NewNotePage() {
                                 </button>
                             </Form>
                         </div>
-                    </Paper>
+                    </div>
                 )
             }
             {!user && (
                 <div>
-                    <Paper variant="outlined" sx={{ width: "fit-content", maxWidth: "30vw", borderRadius: 4 }}>
+                    <div style={{ width: "fit-content", maxWidth: "30vw", borderRadius: 4 }}>
                         <div className="flex flex-col p-4 space-y-2">
                             <p>Choose a stream from the sidebar to explore, or login with twitter to create your own</p>
                             <div className="flex">
@@ -132,7 +131,7 @@ export default function NewNotePage() {
                                 </Link>
                             </div>
                         </div>
-                    </Paper>
+                    </div>
 
                 </div>
             )}

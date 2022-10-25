@@ -20,7 +20,7 @@ import type {
 import type { Decimal } from '@prisma/client/runtime';
 import { TwitterApiRateLimitPlugin } from '@twitter-api-v2/plugin-rate-limit';
 import invariant from 'tiny-invariant';
-import type { Session } from '@remix-run/node';
+import { redirect, Session } from '@remix-run/node';
 import { prisma } from "~/db.server";
 import { flattenTwitterUserPublicMetrics } from '~/models/streams.server'
 import { getUserByUsernameDB } from '~/models/user.server'
@@ -179,6 +179,8 @@ export function handleTwitterApiError(e: unknown): never {
         log.error(msg1);
         log.error(msg2);
         throw new Error(`${msg1} ${msg2}`);
+    } else if (e instanceof ApiResponseError && e.data && e.data.error_description == "Value passed for the token was invalid.") {
+        throw e
     }
     throw e;
 }
@@ -214,20 +216,30 @@ export async function getTwitterClientForUser(
             clientId: process.env.OAUTH_CLIENT_ID as string,
             clientSecret: process.env.OAUTH_CLIENT_SECRET,
         });
-        const { accessToken, refreshToken, expiresIn, scope } =
-            await client.refreshOAuth2Token(token.refresh_token);
-        log.info(`Storing refreshed token for user (${uid})...`);
-        await prisma.tokens.update({
-            data: {
-                access_token: accessToken,
-                refresh_token: refreshToken,
-                expires_in: expiresIn,
-                scope: scope.join(' '),
-                updated_at: new Date(),
-            },
-            where: { user_id: String(uid) },
-        });
-        api = new TwitterApi(accessToken)//, { plugins: [limits] });
+        try {
+            const { accessToken, refreshToken, expiresIn, scope } =
+                await client.refreshOAuth2Token(token.refresh_token);
+            log.info(`Storing refreshed token for user (${uid})...`);
+            await prisma.tokens.update({
+                data: {
+                    access_token: accessToken,
+                    refresh_token: refreshToken,
+                    expires_in: expiresIn,
+                    scope: scope.join(' '),
+                    updated_at: new Date(),
+                },
+                where: { user_id: String(uid) },
+            });
+            api = new TwitterApi(accessToken)
+        } catch (e) {
+            handleTwitterApiError(e)
+            // if (e instanceof ApiResponseError && e.data && e.data.error_description == "Value passed for the token was invalid.") {
+            //     console.log("LOGGING TF OUT FOR YOU")
+            //     return redirect("/logout")
+            // }
+
+        }
+        //, { plugins: [limits] });
     }
     return { api };
 }

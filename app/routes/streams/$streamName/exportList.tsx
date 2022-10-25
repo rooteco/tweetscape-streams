@@ -3,10 +3,9 @@ import { redirect, json } from '@remix-run/node';
 import { Form, useMatches, useTransition, useParams, useActionData } from "@remix-run/react";
 import { useEffect } from 'react';
 
-import Dialog from '@mui/material/Dialog';
-import DialogTitle from '@mui/material/DialogTitle';
+
 import { createList, getClient } from '~/twitter.server';
-import { ConstructionOutlined } from "@mui/icons-material";
+
 
 export async function loader({ request, params }: LoaderArgs) {
     return {}
@@ -36,8 +35,8 @@ export default function ExportListMod() {
     console.log("here we are gagain.a.dsf")
     return (
         <div>
-            <Dialog open={true}>
-                <DialogTitle>Create twitter list from your stream!</DialogTitle>
+            <div>
+                <h1>Create twitter list from your stream!</h1>
                 <Form
                     method="post"
                     action={`/streams/${streamName}/exportList`}
@@ -58,7 +57,7 @@ export default function ExportListMod() {
                     </ol>
                     <button type="submit" className='ml-2 inline-block rounded border-2 border-black bg-black px-2 py-1 text-white'>Create List!</button>
                 </Form>
-            </Dialog>
+            </div>
         </div>
     );
 }
