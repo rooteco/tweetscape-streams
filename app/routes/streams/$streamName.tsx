@@ -8,10 +8,10 @@ import { ApiResponseError } from "twitter-api-v2";
 import { log } from '~/log.server';
 
 
-import {BiNetworkChart} from 'react-icons/bi';
-import {MdUpdate} from 'react-icons/md';
+import { BiNetworkChart } from 'react-icons/bi';
+import { MdUpdate } from 'react-icons/md';
 
-import {MdExpandMore, MdExpandLess} from 'react-icons/md';
+import { MdExpandMore, MdExpandLess } from 'react-icons/md';
 
 
 
@@ -294,7 +294,7 @@ export default function Feed() {
                                     value="updateStreamFollowsNetwork"
                                     name="intent"
                                 >
-                                        <BiNetworkChart/>
+                                    <BiNetworkChart />
                                 </button>
                             </Form>
                         </div>
