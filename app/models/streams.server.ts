@@ -98,14 +98,16 @@ export async function getStreams() {
     return streams;
 }
 
-export async function getAllStreams() {
+export async function getAllStreams(username: string) {
     const session = driver.session()
     const res = await session.executeRead((tx: any) => {
         return tx.run(`
-            MATCH (s:Stream)
+            MATCH (s:Stream)<-[:CREATED]-(creator:User)
+            WHERE creator.username <> $username
             OPTIONAL MATCH (s)-[r:CONTAINS]->(u:User)
             RETURN s, collect(u) as seedUsers
-            `
+            `,
+            { username }
         )
     })
     const streams = res.records.map((row: Record) => {
@@ -117,7 +119,8 @@ export async function getAllStreams() {
 
     const recRes = await session.executeRead((tx: any) => {
         return tx.run(`
-            MATCH (s:Stream)
+            MATCH (s:Stream)<-[:CREATED]-(creator:User)
+            WHERE creator.username <> $username
             unwind s as singleS
             MATCH (singleStream:Stream {name: singleS.name})-[:CONTAINS]->(seedUsers:User)-[:FOLLOWS]->(allFollowed:User)
             WITH collect(allFollowed) as allFollowedUsers, collect(seedUsers) as seedUsers, singleStream as singleStream 
@@ -125,7 +128,82 @@ export async function getAllStreams() {
             WHERE (allF in allFollowedUsers and seedUser in seedUsers)
             WITH collect(endNode(r)) as endingEnders, singleStream
             RETURN  singleStream.name as streamName, apoc.coll.duplicatesWithCount(endingEnders) as recU
-            `
+            `,
+            { username }
+        )
+    })
+    const recUsersMap = new Map()
+    recRes.records.map((row: Record) => {
+        let streamName = row.get("streamName")
+        let ru = row.get("recU")
+        recUsersMap.set(streamName, ru)
+    })
+    streams.forEach((row: any) => {
+        let streamName = row.stream.properties.name
+        let seedUsers = row.seedUsers;
+        let seedUserUsernames = seedUsers.map((row: any) => row.properties.username)
+
+        let recommendedUsers = recUsersMap.get(streamName)
+        if (!recommendedUsers) {
+            recommendedUsers = []
+        }
+
+        let numSeedUsersFollowedBy = seedUsers.length + 1;
+        let recommendedUsersTested: any[] = [];
+
+        if (recommendedUsers.length > 0) {
+            while (recommendedUsersTested.length < 5 && numSeedUsersFollowedBy > 1) {
+                recommendedUsersTested = [];
+                numSeedUsersFollowedBy--;
+                recommendedUsers.map((row: any) => {
+                    if (row.count.toInt() >= numSeedUsersFollowedBy && seedUserUsernames.indexOf(row.item.properties.username) == -1) {
+                        recommendedUsersTested.push(row.item)
+                    }
+                })
+            }
+
+        }
+
+        recommendedUsersTested.sort((a, b) => a.properties['public_metrics.followers_count'] - b.properties['public_metrics.followers_count'])
+
+
+        row.recommendedUsers = recommendedUsersTested
+    })
+
+    await session.close()
+    return streams;
+}
+
+export async function getUserStreams(username: string) {
+    const session = driver.session()
+    const res = await session.executeRead((tx: any) => {
+        return tx.run(`
+            MATCH (s:Stream)<-[:CREATED]-(creator:User {username: $username})
+            OPTIONAL MATCH (s)-[r:CONTAINS]->(u:User)
+            RETURN s, collect(u) as seedUsers
+            `,
+            { username }
+        )
+    })
+    const streams = res.records.map((row: Record) => {
+        return {
+            "stream": row.get("s"),
+            "seedUsers": row.get("seedUsers")
+        }
+    })
+
+    const recRes = await session.executeRead((tx: any) => {
+        return tx.run(`
+            MATCH (s:Stream)<-[:CREATED]-(creator:User {username: $username})
+            unwind s as singleS
+            MATCH (singleStream:Stream {name: singleS.name})-[:CONTAINS]->(seedUsers:User)-[:FOLLOWS]->(allFollowed:User)
+            WITH collect(allFollowed) as allFollowedUsers, collect(seedUsers) as seedUsers, singleStream as singleStream 
+            MATCH (seedUser)-[r:FOLLOWS]->(allF)
+            WHERE (allF in allFollowedUsers and seedUser in seedUsers)
+            WITH collect(endNode(r)) as endingEnders, singleStream
+            RETURN  singleStream.name as streamName, apoc.coll.duplicatesWithCount(endingEnders) as recU
+            `,
+            { username }
         )
     })
     const recUsersMap = new Map()
@@ -570,14 +648,6 @@ export async function getAllUserLists(username: string) {
     })
     await session.close()
     return lists;
-}
-
-export async function addTwitterListToStream(api: TwitterApi, stream: Node, listId: string) {
-    const users = await getListUsers(api, listId)
-    for (const user of users) {
-        const userDb = await createUserDb(user)
-        addSeedUserToStream(api, stream, userDb)
-    }
 }
 
 export function flattenMediaPublicMetrics(data: Array<any>) {
