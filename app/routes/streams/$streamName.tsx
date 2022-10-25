@@ -374,12 +374,12 @@ export function ErrorBoundary({ error }: { error: Error }) {
 
 export function CatchBoundary() {
     const caught = useCatch();
-
     if (caught.status === 404) {
         return <div>Note not found, {caught.data}</div>;
+    } else if (caught.status === 400) {
+        return <div>here the fuck i am baby</div>
     } else if (caught.status === 603) {
         return <div>{caught.data.message}</div>
     }
-
     throw new Error(`Unexpected caught response with status: ${caught.status}`);
 }
