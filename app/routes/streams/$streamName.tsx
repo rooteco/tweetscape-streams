@@ -5,9 +5,15 @@ import { Form, useActionData, useCatch, useLoaderData, Outlet, useTransition } f
 import { Link, useParams } from "@remix-run/react";
 import invariant from "tiny-invariant";
 import { ApiResponseError } from "twitter-api-v2";
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import { log } from '~/log.server';
+
+
+import { BiNetworkChart } from 'react-icons/bi';
+import { MdUpdate } from 'react-icons/md';
+
+import { MdExpandMore, MdExpandLess } from 'react-icons/md';
+
+
 
 import {
     deleteStreamByName,
@@ -23,10 +29,6 @@ import {
 import { getUserByUsernameDB, createUserDb } from "~/models/user.server";
 import { createList, getClient, USER_FIELDS, handleTwitterApiError, getUserOwnedTwitterLists } from '~/twitter.server';
 
-import { Tooltip } from "@mui/material";
-
-import HubIcon from '@mui/icons-material/Hub';
-import UpdateIcon from '@mui/icons-material/Update';
 
 import Tweet from '~/components/Tweet';
 import ContextAnnotationChip from '~/components/ContextAnnotationChip';
@@ -290,10 +292,7 @@ export default function Feed() {
                                     value="updateStreamTweets"
                                     name="intent"
                                 >
-                                    <Tooltip title="Update Stream Tweets">
-                                        <UpdateIcon fontSize="small" />
-                                    </Tooltip>
-
+                                    <MdUpdate />
                                 </button>
                             </Form>
                             <Form
@@ -305,9 +304,7 @@ export default function Feed() {
                                     value="updateStreamFollowsNetwork"
                                     name="intent"
                                 >
-                                    <Tooltip title="Update Stream Follower">
-                                        <HubIcon fontSize="small" />
-                                    </Tooltip>
+                                    <BiNetworkChart />
                                 </button>
                             </Form>
                         </div>
@@ -318,13 +315,13 @@ export default function Feed() {
                         {overview ?
                             <Link className="w-full h-hull" to={`/streams/${streamName}`}>
                                 <div className="my-1 mx-1  text-center cursor-pointer rounded-full bg-slate-50 hover:bg-slate-200">
-                                    <ExpandLessIcon sx={{ fontSize: "1rem" }} />
+                                    <MdExpandLess style={{ fontSize: "1rem" }} />
                                 </div>
                             </Link>
                             :
                             <Link className="w-full h-hull" to={`/streams/${streamName}/overview`}>
                                 <div className="my-1 mx-1  text-center cursor-pointer rounded-full bg-slate-50 hover:bg-slate-200">
-                                    <ExpandMoreIcon sx={{ fontSize: "1rem" }} />
+                                    <MdExpandMore style={{ fontSize: "1rem" }} />
                                 </div>
                             </Link>
 
