@@ -22,7 +22,6 @@ export default function Overview() {
     const entityDistribution = loaderData.entityDistribution
     const matches = useMatches(); // gives access to all the routes, https://remix.run/docs/en/v1/api/remix#usematches
     const tweets = matches.filter((route) => route.id == 'routes/streams/$streamName')[0].data.tweets
-
     const now = new Date()
     const todayMinus7Days = new Date();
     todayMinus7Days.setDate(todayMinus7Days.getDate() - 7);
@@ -45,7 +44,6 @@ export default function Overview() {
     tweetAuthorCount.forEach((value, key) => {
         tweetAuthorCountRows.push(`${key}=${value}`)
     })
-
     const receivedReferenceCount = new Map()
     tweets.map((row) => {
         const tweetAuthorId = row.author.properties.id
@@ -108,13 +106,20 @@ export default function Overview() {
                     <div className="flex flex-wrap gap-1 px-1">
                         {
                             tweetAuthorCountRows.map((row) => (
-                                <Chip
-                                    key={row.name}
-                                    label={row.split('=')[0]}
-                                    size="small"
-                                    sx={{ backgroundColor: '#FFFFFF', border: '1px solid #DDDAF8', color: '#374151', fontSize: '0.75rem' }}
-                                    avatar={<div style={{ backgroundColor: "#E7E5FC", borderRadius: "50%", fontSize: '0.5rem' }} className="w-6 h-6 flex items-align text-center justify-center text-xs">{row.split('=')[1]}</div>}
-                                />))
+                                <div>
+                                    <div className='bg-green-200 hover:bg-green-500 rounded-full flex items-center p-2'>
+                                        {row}
+                                    </div>
+                                    <Chip
+                                        key={row.name}
+                                        label={row.split('=')[0]}
+                                        message={row}
+                                        size="small"
+                                        sx={{ backgroundColor: '#FFFFFF', border: '1px solid #DDDAF8', color: '#374151', fontSize: '0.75rem' }}
+                                        avatar={<div style={{ backgroundColor: "#E7E5FC", borderRadius: "50%", fontSize: '0.5rem' }} className="w-6 h-6 flex items-align text-center justify-center text-xs">{row.split('=')[1]}</div>}
+                                    />
+                                </div>
+                            ))
                         }
                     </div>
 
