@@ -82,6 +82,7 @@ export async function loader({ request, params }: LoaderArgs) {
         } catch (e) {
             log.error(`error getting listMembers for '${list.data}': ${JSON.stringify(e, null, 2)}`);
         }
+        // TODO: GO BACK THROUGH THIS LOGIC. HOW DO I WANT TO HANDLE A LIST HAVING BEEN DELETED... 
         if (
             listMembers?.errors.length > 0 &&
             listMembers.errors[0].type == 'https://api.twitter.com/2/problems/resource-not-found'
