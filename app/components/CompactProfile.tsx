@@ -12,11 +12,18 @@ function CompactProfile({ user, isSeed, streamName }: { user: userNode, isSeed: 
 
     let isAdding = fetcher.submission?.formData.get("intent") == "addSeedUser";
 
+    let bg = "bg-white"
+
     if (isDeleting) {
         return (<div>I'M DELETING {`${fetcher.submission?.formData.get("seedUserHandle")}`}</div>)
     }
+    if (isAdding) {
+        // return (<div>Adding {`${fetcher.submission?.formData.get("seedUserHandle")}`}...</div>)
+        bg = "bg-purple-400"
+    }
+
     return (
-        <div className='relative border border-gray-100 shadow-lg flex items-center space-x-2 rounded-lg bg-white p-2'>
+        <div className={'relative border border-gray-100 shadow-lg flex items-center space-x-2 rounded-lg p-2 ' + bg}>
             <Link
                 to={`/streams/users/${user.properties.username}`}
                 target="_blank"
