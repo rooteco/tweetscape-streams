@@ -193,18 +193,18 @@ export function getUserIdFromSession(session: Session) {
 
 export async function getTwitterClientForUser(
     uid: string
-): Promise<{ api: TwitterApi | null }> { //}, limits: TwitterApiRateLimitPlugin }> {
+): Promise<{ api: TwitterApi | null, limits: TwitterApiRateLimitPlugin | null }> {
     log.info(`Fetching token for user (${uid})...`);
     const token = await prisma.tokens.findUnique({ where: { user_id: uid } });
     if (!token) {
-        return { api: null }
+        return { api: null, limits: null }
     }
     invariant(token, `expected token for user (${uid})`);
     const expiration = token.updated_at.valueOf() + token.expires_in * 1000;
-    // const limits = new TwitterApiRateLimitPlugin(
-    //     new TwitterApiRateLimitDBStore(uid)
-    // );
-    let api = new TwitterApi(token.access_token)//, { plugins: [limits] });
+    const limits = new TwitterApiRateLimitPlugin(
+        new TwitterApiRateLimitDBStore(uid)
+    );
+    let api = new TwitterApi(token.access_token, { plugins: [limits] });
 
     if (expiration < new Date().valueOf()) {
         log.info(
@@ -230,7 +230,7 @@ export async function getTwitterClientForUser(
                 },
                 where: { user_id: String(uid) },
             });
-            api = new TwitterApi(accessToken)
+            api = new TwitterApi(accessToken, { plugins: [limits] })
         } catch (e) {
             handleTwitterApiError(e)
             // if (e instanceof ApiResponseError && e.data && e.data.error_description == "Value passed for the token was invalid.") {
@@ -241,7 +241,7 @@ export async function getTwitterClientForUser(
         }
         //, { plugins: [limits] });
     }
-    return { api };
+    return { api, limits };
 }
 
 export async function getClient(request: Request) {

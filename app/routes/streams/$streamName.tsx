@@ -6,15 +6,9 @@ import { Link, useParams } from "@remix-run/react";
 import invariant from "tiny-invariant";
 import { ApiResponseError } from "twitter-api-v2";
 import { log } from '~/log.server';
-
-
 import { BiNetworkChart } from 'react-icons/bi';
 import { MdUpdate } from 'react-icons/md';
-
 import { MdExpandMore, MdExpandLess } from 'react-icons/md';
-
-
-
 import {
     deleteStreamByName,
     addSeedUserToStream,
@@ -24,8 +18,10 @@ import {
     getStreamTweetsNeo4j,
     writeStreamListTweetsToNeo4j,
     createStream,
+    updateStreamTweets,
 } from "~/models/streams.server";
 
+import { indexUser } from "~/models/user.server";
 
 import { getUserByUsernameDB, createUserDb } from "~/models/user.server";
 import { createList, getClient, USER_FIELDS, handleTwitterApiError, getUserOwnedTwitterLists } from '~/twitter.server';
@@ -41,11 +37,6 @@ import { ConstructionOutlined } from "@mui/icons-material";
 
 
 export async function loader({ request, params }: LoaderArgs) {
-    // TODO: refactor to get only tweets and annotations
-    // TODO: move lists and recommended users logic to /streams
-    console.time("ADDING TO QUEUE")
-    // await notifierQueue.add("test", { emailAddress: "mokhtar@remixtape.dev" });
-    console.timeEnd("ADDING TO QUEUE")
     invariant(params.streamName, "streamName not found");
     console.time("getStreamByName")
     let { stream, creator, seedUsers } = await getStreamByName(params.streamName)
@@ -56,6 +47,7 @@ export async function loader({ request, params }: LoaderArgs) {
     console.time("getting client in $streamName")
     const { api, uid, session } = await getClient(request);
 
+    // TODO: use for the queue if I go back to that method...
     const activeTokens = api.getActiveTokens()
     const bearerToken = activeTokens.bearerToken;
 
@@ -63,7 +55,7 @@ export async function loader({ request, params }: LoaderArgs) {
     const loggedInUser = (await api.v2.me()).data
     console.timeEnd("getting loggedInUser in $streamName.tsx")
     // 2
-    let tweets;
+
     if (!stream.properties.twitterListId || stream.properties.twitterListId.length < 1) { // this is for legacy streams
         if (loggedInUser.username != creator.properties.username) {
             throw json(
@@ -90,6 +82,7 @@ export async function loader({ request, params }: LoaderArgs) {
         } catch (e) {
             log.error(`error getting listMembers for '${list.data}': ${JSON.stringify(e, null, 2)}`);
         }
+        // TODO: GO BACK THROUGH THIS LOGIC. HOW DO I WANT TO HANDLE A LIST HAVING BEEN DELETED... 
         if (
             listMembers?.errors.length > 0 &&
             listMembers.errors[0].type == 'https://api.twitter.com/2/problems/resource-not-found'
@@ -123,47 +116,16 @@ export async function loader({ request, params }: LoaderArgs) {
         // }
     }
 
+    await updateStreamTweets(api, seedUsers)
+    let tweets = await getStreamTweetsNeo4j(stream)
 
-
-    console.time("getStreamTweetsFromList in $streamName.tsx")
-    await writeStreamListTweetsToNeo4j(api, stream, 1, 50);
-    console.log("We passed this part biiiiitch")
-    tweets = await getStreamTweetsNeo4j(stream)
-
-    console.timeEnd("getStreamTweetsFromList in $streamName.tsx")
-
-    await processTweetsQueue.add("processTweets",
+    return json(
         {
-            "bearerToken": bearerToken,
-            streamName: stream.properties.name,
-            sinceId: tweets.slice(-1)[0].tweet.id
+            "stream": stream,
+            "tweets": tweets,
+            seedUsers: seedUsers
         }
     )
-
-    return json({
-        "stream": stream,
-        "tweets": tweets,
-        seedUsers: seedUsers,
-    });
-
-    // TWEET FILTERING IDKKKK MAN
-    // tweets = tweets.filter((tweetData: any) => {
-    //     for (let rel of tweetData.refTweetRels) {
-    //         if (rel.properties.type == "retweeted") {
-    //             return false
-    //         } else if (rel.properties.type == "replied_to" && tweetData.tweet.properties.text.length < 150) {
-    //             return false
-    //         }
-    //         else {
-    //             return true
-    //         }
-    //     }
-    // })
-    return json({
-        "stream": stream,
-        "tweets": tweets,
-        seedUsers: seedUsers,
-    });
 }
 
 type ActionData =
@@ -198,6 +160,7 @@ export const action: ActionFunction = async ({
         throw new Response("Not Found", { status: 404 });
     }
     if (intent === "addSeedUser") {
+        console.log("GETING TO ADD SEED USER")
         let errors: ActionData = {
             errors: seedUserHandle ? null : "seedUserHandle is required"
         }
@@ -217,6 +180,7 @@ export const action: ActionFunction = async ({
                 return json<ActionData>(errors) || null;
             }
         }
+
         seedUserHandle = seedUserHandle.toLowerCase().replace(/^@/, '')
         let addedUser;
         let user = await getUserByUsernameDB(seedUserHandle);
@@ -234,8 +198,12 @@ export const action: ActionFunction = async ({
             }
         }
         console.time("addSeedUserToStream")
-        addedUser = await addSeedUserToStream(api, stream, user)
+        addedUser = await addSeedUserToStream(api, stream, user) // this adds a list member and an edge, it doesn't do follows or tweets fetching...
         console.timeEnd("addSeedUserToStream")
+
+        await indexUser(api, limits, user)
+
+
         console.log(`Added user ${user.properties.username} to stream ${stream.properties.name}`)
         return redirect(`/streams/${params.streamName}/overview`)
     } else if (intent === "removeSeedUser") {
