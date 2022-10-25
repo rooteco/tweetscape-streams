@@ -1,4 +1,4 @@
-import { Form, Link } from '@remix-run/react'
+import { Form, Link, useFetcher } from '@remix-run/react'
 import type { userNode } from './StreamAccordion'
 
 
@@ -6,6 +6,15 @@ import { IoAddOutline, IoRemoveOutline } from 'react-icons/io5';
 
 function CompactProfile({ user, isSeed, streamName }: { user: userNode, isSeed: boolean, streamName: string }) {
     // Renders a Seed/Recommended user profile, with a button to add/remove from the stream
+    let fetcher = useFetcher()
+
+    let isDeleting = fetcher.submission?.formData.get("intent") == "removeSeedUser";
+
+    let isAdding = fetcher.submission?.formData.get("intent") == "addSeedUser";
+
+    if (isDeleting) {
+        return (<div>I'M DELETING {`${fetcher.submission?.formData.get("seedUserHandle")}`}</div>)
+    }
     return (
         <div className='relative border border-gray-100 shadow-lg flex items-center space-x-2 rounded-lg bg-white p-2'>
             <Link
@@ -29,7 +38,7 @@ function CompactProfile({ user, isSeed, streamName }: { user: userNode, isSeed: 
                 <p className='text-xs'>{user.properties['public_metrics.followers_count']} Followers </p>
             </div>
 
-            <Form
+            <fetcher.Form
                 method='post'
                 action={`/streams/${streamName}`}
                 className="absolute right-4"
@@ -47,7 +56,7 @@ function CompactProfile({ user, isSeed, streamName }: { user: userNode, isSeed: 
                 >
                     {isSeed ? <IoRemoveOutline fontSize='small' /> : <IoAddOutline fontSize='small' />}
                 </button>
-            </Form>
+            </fetcher.Form>
 
         </div>
 
