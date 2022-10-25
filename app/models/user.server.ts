@@ -110,12 +110,29 @@ async function pullTweets(
 
 export async function indexUserNewTweets(api: TwitterApi, user: any) {
   console.log(`indexing tweets for ${user.properties.username}`)
-  console.log(user.properties.latestTweetId)
-  const tweetRes = await pullTweets(
-    api,
-    user,
-    user.properties.latestTweetId
-  )
+
+  let tweetRes;
+  let newLatestTweetId = user.properties.latestTweetId; // set to initial values
+  let newEarliestTweetId = user.properties.earliestTweetId;
+
+  if (!user.properties.earliestTweetId || !user.properties.latestTweetId) {
+    tweetRes = await pullTweets(
+      api,
+      user
+    )
+    newLatestTweetId = tweetRes.tweets[0].id
+    newEarliestTweetId = tweetRes.tweets.slice(-1)[0].id
+  } else {
+    tweetRes = await pullTweets(
+      api,
+      user,
+      user.properties.latestTweetId
+    )
+    if (tweetRes.tweets.length > 0) {
+      newLatestTweetId = tweetRes.tweets[0].id
+    }
+  }
+
   if (tweetRes.tweets.length > 0) {
     let includes = new TwitterV2IncludesHelper(tweetRes)
     await Promise.all([
@@ -123,7 +140,7 @@ export async function indexUserNewTweets(api: TwitterApi, user: any) {
       bulkWrites(includes.media, addTweetMedia),
       bulkWrites(flattenTweetPublicMetrics(includes.tweets), addTweetsFrom),
       bulkWrites(flattenTweetPublicMetrics(tweetRes.tweets), addTweetsFrom),
-      updateUserIndexedTweetIds(user, tweetRes.tweets.slice(-1)[0].id, tweetRes.tweets[0].id)
+      updateUserIndexedTweetIds(user, newEarliestTweetId, newLatestTweetId)
     ])
   } else (
     log.debug(`no new tweets to index for user '${user.properties.username}'`)
@@ -176,31 +193,7 @@ export async function indexUser(api: TwitterApi, limits: any, user: any) {
       }
     }
   }
-
-  if (!user.properties.earliestTweetId || !user.properties.latestTweetId) {
-    console.log("INDEXING TWEETS FOR USER")
-    console.log(user.properties)
-    // this means we don't have a reliable tweet indexed range
-    // reliable means we know we have every single tweet between these id's
-    // start a reliable range with the most recent 100 tweets
-    // allow users to manually index more tweets for each user as they wish
-    // we pull more tweets for users when they look at certain stream views poss...
-    const tweetRes = await pullTweets(
-      api,
-      user,
-    )
-    let includes = new TwitterV2IncludesHelper(tweetRes)
-    await Promise.all([
-      bulkWrites(flattenTwitterUserPublicMetrics(includes.users), addUsers),
-      bulkWrites(includes.media, addTweetMedia),
-      bulkWrites(flattenTweetPublicMetrics(includes.tweets), addTweetsFrom),
-      bulkWrites(flattenTweetPublicMetrics(tweetRes.tweets), addTweetsFrom),
-      updateUserIndexedTweetIds(user, tweetRes.tweets.slice(-1)[0].id, tweetRes.tweets[0].id)
-    ])
-    console.log("TWEET RES")
-    console.log(tweetRes.tweets.slice(0, 2))
-    console.log(tweetRes)
-  }
+  await indexUserNewTweets(api, user) // will index the latest 100 tweets to get started for this user.. 
 }
 
 export async function updateUserIndexedTweetIds(user: Node, earliestTweetId: string, latestTweetId: string) {
