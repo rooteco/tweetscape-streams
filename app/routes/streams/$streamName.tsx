@@ -21,7 +21,8 @@ import {
     getUserFromTwitter,
     getStreamByName,
     removeSeedUserFromStream,
-    getStreamTweetsFromList,
+    getStreamTweetsNeo4j,
+    writeStreamListTweetsToNeo4j,
     createStream,
 } from "~/models/streams.server";
 
@@ -34,11 +35,17 @@ import Tweet from '~/components/Tweet';
 import ContextAnnotationChip from '~/components/ContextAnnotationChip';
 import { useParams, useLocation } from "@remix-run/react";
 
+import notifierQueue from "~/queues/notifier.server";
+import processTweetsQueue from "~/queues/processTweets.server";
+import { ConstructionOutlined } from "@mui/icons-material";
+
 
 export async function loader({ request, params }: LoaderArgs) {
     // TODO: refactor to get only tweets and annotations
     // TODO: move lists and recommended users logic to /streams
-
+    console.time("ADDING TO QUEUE")
+    // await notifierQueue.add("test", { emailAddress: "mokhtar@remixtape.dev" });
+    console.timeEnd("ADDING TO QUEUE")
     invariant(params.streamName, "streamName not found");
     console.time("getStreamByName")
     let { stream, creator, seedUsers } = await getStreamByName(params.streamName)
@@ -48,7 +55,10 @@ export async function loader({ request, params }: LoaderArgs) {
     }
     console.time("getting client in $streamName")
     const { api, uid, session } = await getClient(request);
-    console.timeEnd("getting client in $streamName")
+
+    const activeTokens = api.getActiveTokens()
+    const bearerToken = activeTokens.bearerToken;
+
     console.time("getting loggedInUser in $streamName.tsx")
     const loggedInUser = (await api.v2.me()).data
     console.timeEnd("getting loggedInUser in $streamName.tsx")
@@ -112,9 +122,24 @@ export async function loader({ request, params }: LoaderArgs) {
         //     })
         // }
     }
+
+
+
     console.time("getStreamTweetsFromList in $streamName.tsx")
-    tweets = await getStreamTweetsFromList(api, stream, stream.properties.name, stream.properties.startTime);
+    await writeStreamListTweetsToNeo4j(api, stream, 1, 50);
+    console.log("We passed this part biiiiitch")
+    tweets = await getStreamTweetsNeo4j(stream)
+
     console.timeEnd("getStreamTweetsFromList in $streamName.tsx")
+
+    await processTweetsQueue.add("processTweets",
+        {
+            "bearerToken": bearerToken,
+            streamName: stream.properties.name,
+            sinceId: tweets.slice(-1)[0].tweet.id
+        }
+    )
+
     return json({
         "stream": stream,
         "tweets": tweets,

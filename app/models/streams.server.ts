@@ -1012,37 +1012,7 @@ async function writeTweetData(res: TweetV2ListTweetsPaginator) {
     ])
 }
 
-export async function getStreamTweetsFromList(api: TwitterApi, stream: Node, name: string, startTime: string) {
-    let listTweetsRes
-    try {
-        listTweetsRes = await api.v2.listTweets(
-            stream.properties.twitterListId,
-            {
-                'expansions': 'author_id,in_reply_to_user_id,referenced_tweets.id,referenced_tweets.id.author_id,entities.mentions.username,attachments.poll_ids,attachments.media_keys,geo.place_id',
-                'tweet.fields': 'attachments,author_id,context_annotations,conversation_id,created_at,entities,geo,id,in_reply_to_user_id,lang,public_metrics,text,possibly_sensitive,referenced_tweets,reply_settings,source,withheld',
-                'user.fields': USER_FIELDS,
-                'media.fields': 'alt_text,duration_ms,height,media_key,preview_image_url,type,url,width,public_metrics',
-                'poll.fields': 'duration_minutes,end_datetime,id,options,voting_status',
-                'place.fields': 'contained_within,country,country_code,full_name,geo,id,name,place_type',
-                'max_results': 100,
-            }
-        )
-
-        let numPages = 5
-        let results: TweetV2ListTweetsPaginator[] = []
-        results.push(listTweetsRes)
-        for (let step = 0; step < numPages; step++) {
-            let last: TweetV2ListTweetsPaginator = results.slice(-1)[0]
-            console.log(`pulling tweets for page ${step}`)
-            let next = await last.next()
-            await writeTweetData(next)
-            results.push(next)
-        }
-    } catch (e) {
-        log.error(`error getting list tweets for '${name}': ${JSON.stringify(e, null, 2)}`);
-        throw e
-    }
-    //THIS EXCLUDES RETWEETS RIGHT NOW
+export async function getStreamTweetsNeo4j(stream: Node) {
     const session = driver.session()
     // Create a node within a write transaction
 
@@ -1065,7 +1035,7 @@ export async function getStreamTweetsFromList(api: TwitterApi, stream: Node, nam
                 collect(DISTINCT mr) as mediaRels
             ORDER by t.created_at DESC
         `,
-            { name: name, startTime: startTime })
+            { name: stream.properties.name })
     })
 
 
@@ -1090,6 +1060,38 @@ export async function getStreamTweetsFromList(api: TwitterApi, stream: Node, nam
     return tweets;
 }
 
+export async function writeStreamListTweetsToNeo4j(api: TwitterApi, stream: Node, numPages: number = 10, maxResults: number = 100, sinceId: string | null = null) {
+    let listTweetsRes
+    let reqBody = {
+        'expansions': 'author_id,in_reply_to_user_id,referenced_tweets.id,referenced_tweets.id.author_id,entities.mentions.username,attachments.poll_ids,attachments.media_keys,geo.place_id',
+        'tweet.fields': 'attachments,author_id,context_annotations,conversation_id,created_at,entities,geo,id,in_reply_to_user_id,lang,public_metrics,text,possibly_sensitive,referenced_tweets,reply_settings,source,withheld',
+        'user.fields': USER_FIELDS,
+        'media.fields': 'alt_text,duration_ms,height,media_key,preview_image_url,type,url,width,public_metrics',
+        'poll.fields': 'duration_minutes,end_datetime,id,options,voting_status',
+        'place.fields': 'contained_within,country,country_code,full_name,geo,id,name,place_type',
+        'max_results': maxResults,
+    }
+    try {
+        listTweetsRes = await api.v2.listTweets(
+            stream.properties.twitterListId,
+            reqBody
+        )
+
+        let results: TweetV2ListTweetsPaginator[] = []
+        results.push(listTweetsRes)
+        for (let step = 0; step < numPages; step++) {
+            let last: TweetV2ListTweetsPaginator = results.slice(-1)[0]
+            console.log(`pulling tweets for page ${step}`)
+            let next = await last.next()
+            await writeTweetData(next)
+            results.push(next)
+        }
+    } catch (e) {
+        log.error(`error getting list tweets for '${stream.properties.name}': ${JSON.stringify(e, null, 2)}`);
+        throw e
+    }
+}
+
 export async function StreamTweetsEntityCounts(streamName: string) {
     const session = driver.session()
     let params = { streamName: streamName }
@@ -1109,6 +1111,7 @@ export async function StreamTweetsEntityCounts(streamName: string) {
             "numTotalTweets": res.records[0].get("numTotalTweets")
         }
     }
+    data.entityDistribution.sort((a, b) => (b.count - a.count))
     await session.close()
     return data;
 }
