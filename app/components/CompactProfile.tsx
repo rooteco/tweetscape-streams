@@ -2,7 +2,7 @@ import { Form } from '@remix-run/react'
 import type { userNode } from './StreamAccordion'
 
 
-import {IoAddOutline, IoRemoveOutline} from 'react-icons/io5';
+import { IoAddOutline, IoRemoveOutline } from 'react-icons/io5';
 
 function CompactProfile({ user, isSeed, streamName }: { user: userNode, isSeed: boolean, streamName: string }) {
     // Renders a Seed/Recommended user profile, with a button to add/remove from the stream
@@ -14,7 +14,9 @@ function CompactProfile({ user, isSeed, streamName }: { user: userNode, isSeed: 
                 className="rounded-full w-8 h-8" />
 
             <div className='flex flex-col shrink'>
-                <p className='text-sm font-medium'>{user.properties.name}</p>
+                <a className="text-sm font-medium " href={`https://twitter.com/${user.properties.username}`}>
+                    <p className='text-sm font-medium hover:text-gray-500'>{user.properties.name}</p>
+                </a>
                 <p className='text-xs'>{user.properties['public_metrics.followers_count']} Followers </p>
             </div>
 
