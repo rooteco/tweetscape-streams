@@ -1,4 +1,4 @@
-import { Form } from '@remix-run/react'
+import { Form, Link } from '@remix-run/react'
 import type { userNode } from './StreamAccordion'
 
 
@@ -8,13 +8,22 @@ function CompactProfile({ user, isSeed, streamName }: { user: userNode, isSeed: 
     // Renders a Seed/Recommended user profile, with a button to add/remove from the stream
     return (
         <div className='relative border border-gray-100 shadow-lg flex items-center space-x-2 rounded-lg bg-white p-2'>
-            <img
-                src={user.properties.profile_image_url}
-                alt="profile image"
-                className="rounded-full w-8 h-8" />
+            <Link
+                to={`/streams/users/${user.properties.username}`}
+                target="_blank"
+            >
+                <img
+                    src={user.properties.profile_image_url}
+                    alt="profile image"
+                    className="rounded-full w-8 h-8" />
+            </Link>
 
             <div className='flex flex-col shrink'>
-                <a className="text-sm font-medium " href={`https://twitter.com/${user.properties.username}`}>
+                <a
+                    className="text-sm font-medium "
+                    href={`https://twitter.com/${user.properties.username}`}
+                    target="_blank"
+                >
                     <p className='text-sm font-medium hover:text-gray-500'>{user.properties.name}</p>
                 </a>
                 <p className='text-xs'>{user.properties['public_metrics.followers_count']} Followers </p>
