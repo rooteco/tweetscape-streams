@@ -64,7 +64,7 @@ const AccordionSummary = ({ streamName, isOpen, setOpenStream }) => {
           cn(
             "bg-white flex gap-1 rounded align-middle items-center py-1 pl-2  font-medium text-sm text-gray-400 cursor-pointer",
             { "sticky top-0 z-10": isOpen },
-          
+
           )
         }
         onClick={handleClick}
@@ -84,14 +84,14 @@ const AccordionSummary = ({ streamName, isOpen, setOpenStream }) => {
 
 }
 
-const AccordionDetails = ({ height, streamName }) => {
+const AccordionDetails = ({ height, stream }) => {
   return (
     <div
       className="relative min-w-full"
       style={{ minHeight: height - 50 }}
     >
 
-      <StreamConfig />
+      <StreamConfig streamName={stream.stream.properties.name} />
 
       <div className='mx-2 my-2'>
         <div className='flex flex-col space-y-1 items-center m-4'>
@@ -100,7 +100,9 @@ const AccordionDetails = ({ height, streamName }) => {
         </div>
 
         <div className='flex flex-col space-y-2'>
-
+          {stream.seedUsers && stream.seedUsers.map((user: userNode) => (
+            <CompactProfile user={user} key={user.elementId} streamName={stream.stream.properties.name} isSeed />
+          ))}
         </div>
 
         <div className='flex flex-col space-y-1 items-center mb-4 mt-12'>
@@ -117,16 +119,16 @@ const AccordionDetails = ({ height, streamName }) => {
   )
 }
 
-const Accordion = ({ height, streamName, openStream, setOpenStream, lists }) => {
+const Accordion = ({ height, stream, openStream, setOpenStream, lists }) => {
 
-  const isOpen = openStream === streamName;
+  const isOpen = openStream === stream.stream.properties.name;
 
   return (
     <div className=''>
-      <AccordionSummary streamName={streamName} isOpen={isOpen} setOpenStream={setOpenStream} />
+      <AccordionSummary streamName={stream.stream.properties.name} isOpen={isOpen} setOpenStream={setOpenStream} />
 
       {isOpen && (
-        <AccordionDetails height={height} streamName={streamName} />
+        <AccordionDetails height={height} stream={stream} />
       )}
     </div>
 
@@ -139,7 +141,10 @@ function StreamAccordion({ streams, lists }: { streams: Stream[] }) {
   // TODO: perf should be much better when folding/unfolding streams
 
   const { streamName } = useParams();
-  const [openStream, setOpenStream] = useState("");
+
+  const openStreamName = streamName;
+
+  // const [openStream, setOpenStream] = useState("");
 
   const accordionRef = useRef() as React.MutableRefObject<HTMLInputElement>;
   const [height, setHeight] = useState(Number);
@@ -148,8 +153,7 @@ function StreamAccordion({ streams, lists }: { streams: Stream[] }) {
   useEffect(() => {
     console.log(`Accordion ref: ${accordionRef.current.clientHeight}`);
     setHeight(accordionRef.current.clientHeight);
-
-  }, [openStream])
+  }, [openStreamName])
 
 
   return (
@@ -157,19 +161,19 @@ function StreamAccordion({ streams, lists }: { streams: Stream[] }) {
       <div
         className={
           cn("accordion-container w-full bg-radial bg-gray-100 border border-gray-200 p-1 rounded z-0",
-            { "overflow-y-scroll overflow-x-hidden": openStream },
+            { "overflow-y-scroll overflow-x-hidden": openStreamName },
 
           )}
-        style={openStream ? { height: height } : {}}
+        style={openStreamName ? { height: height } : {}}
       >
         {streams.map((stream, index) => (
           <Accordion
             key={index}
             height={height}
-            streamName={stream.stream.properties.name}
-            openStream={openStream}
-            setOpenStream={setOpenStream}
-            lists = {lists}
+            stream={stream}
+            openStream={openStreamName}
+            // setOpenStream={setOpenStream}
+            lists={lists}
           />
         ))}
       </div>
