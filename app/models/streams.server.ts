@@ -702,106 +702,6 @@ export async function addSeedUserToStream(
 };
 
 
-export async function addSeedUserToStreamOld(
-    api: TwitterApi,
-    limits: any,
-    stream: Node,
-    user: any, // has already been added to db before calling this func
-    now: string = (new Date()).toISOString()
-) {
-    try {
-        log.debug(`adding user '${user.properties.username}' to stream '${stream.properties.name}`)
-        // Add new seedUsers relation to Stream
-        const reses = await Promise.all([
-            getTweetsFromAuthorIdForStream(
-                api,
-                user,
-                stream,
-                now
-            ),
-            getSavedFollows(user.properties.username)
-        ])
-
-        const tweetRes = reses[0]
-        const savedFollowsOfUser = reses[1]
-
-        if (tweetRes.tweets.length > 0) {
-            let data = await Promise.all([
-                bulkWrites(tweetRes.users, addUsers),
-                bulkWrites(tweetRes.media, addTweetMedia),
-                bulkWrites(tweetRes.refTweets, addTweetsFrom),
-                bulkWrites(tweetRes.tweets, addTweetsFrom)
-            ])
-
-            let tweetTimeMax = new Date(Math.max.apply(null, tweetRes.tweets.map((t) => new Date(t.created_at))))
-            let tweetTimeMin = new Date(Math.min.apply(null, tweetRes.tweets.map((t) => new Date(t.created_at))))
-
-            let newMax = user.properties.tweetscapeIndexedTweetsEndTime;
-            let newMin = user.properties.tweetscapeIndexedTweetsStartTime;
-            if (!user.properties.tweetscapeIndexedTweetsEndTime) {
-                newMax = tweetTimeMax.toISOString()
-            } else if (user.properties.tweetscapeIndexedTweetsEndTime < tweetTimeMax.toISOString()) {
-                newMax = tweetTimeMax.toISOString()
-            }
-            if (!user.properties.tweetscapeIndexedTweetsEndTime) {
-                newMin = tweetTimeMin.toISOString()
-            }
-            else if (user.properties.tweetscapeIndexedTweetsStartTime > tweetTimeMin.toISOString()) {
-                newMin = tweetTimeMin.toISOString()
-            }
-
-            updateUserTweetscapeTweetIndexTimes(user, newMin, newMax)
-        }
-
-        if (savedFollowsOfUser.length == user.properties["public_metrics.following_count"]) {
-            log.debug(`Looks like we have already saved the ${savedFollowsOfUser.length} users followed by '${user.properties.username}'`)
-        } else {
-            log.debug(`We have ${savedFollowsOfUser.length} users followed by '${user.properties.username}', but twitter shows ${user.properties["public_metrics.following_count"]}`)
-
-            const getFollowedLimit = await limits.v2.getRateLimit(
-                'users/:id/following'
-            );
-
-            if ((getFollowedLimit?.remaining ?? 1) > 0) {
-                log.debug(`Fetching api.v2.following for ${user.properties.username}...`);
-                // Get accounts followed by seed user
-                const following = await api.v2.following(
-                    user.properties.id,
-                    {
-                        'tweet.fields': 'attachments,author_id,context_annotations,conversation_id,created_at,entities,geo,id,in_reply_to_user_id,lang,public_metrics,text,possibly_sensitive,referenced_tweets,reply_settings,source,withheld',
-                        'user.fields': USER_FIELDS,
-                        'max_results': 1000,
-                        "asPaginator": true
-                    }
-                );
-
-                while (!following.done) { await following.fetchNext(); }
-                console.log(`fetched ${following.data.data.length} accounts followed by '${user.properties.username}'`);
-                let newUsers = flattenTwitterUserPublicMetrics(following.data.data);
-                console.log("-----adfsad------")
-                console.log(newUsers.slice(0, 2))
-                let saved = await bulkWritesMulti(
-                    addUsersFollowedBy,
-                    newUsers,
-                    { username: user.properties.username }
-                )
-            } else {
-                log.warn(
-                    `Rate limit hit for getting user (${user.properties.username}) follwings, skipping until ${new Date(
-                        (getFollowedLimit?.reset ?? 0) * 1000
-                    ).toLocaleString()}...`
-                );
-            }
-        }
-
-
-        return await streamContainsUser(user.properties.username, stream.properties.name)
-    } catch (e) {
-        log.error(`Error fetching tweets: ${JSON.stringify(e, null, 2)}`);
-        throw e;
-    }
-};
-
 export async function updateStreamFollowsNetwork(api: TwitterApi, limits: TwitterApiRateLimitPlugin, stream: Node, seedUsers: Node[]) {
 
     let now = new Date()
@@ -880,23 +780,6 @@ export async function updateStreamTweets(api: TwitterApi, seedUsers: Node[]) {
     }))
 }
 
-async function updateUserTweetscapeTweetIndexTimes(user: Node, startTime: string, endTime: string) {
-    const session = driver.session()
-    // Create a node within a write transaction
-    const res = await session.executeWrite((tx: any) => {
-        return tx.run(`
-        MERGE (u:User {username: $username})
-        SET u.tweetscapeIndexedTweetsStartTime = $startTime
-        SET u.tweetscapeIndexedTweetsEndTime = $endTime
-        RETURN u`,
-            { username: user.properties.username, startTime, endTime })
-    })
-    const streams = res.records.map((row: Record) => {
-        return row.get('u')
-    })
-    await session.close()
-    return streams;
-}
 
 async function writeTweetData(res: TweetV2ListTweetsPaginator) {
     let media = []
