@@ -1,5 +1,5 @@
 /* eslint-disable react/jsx-key */
-import { Form } from "@remix-run/react";
+import { Form, useFetcher } from "@remix-run/react";
 import { useState } from "react";
 import Downshift from "downshift";
 
@@ -13,9 +13,15 @@ function StreamConfig(props: any) {
     const [search, setSearch] = useState(true);
     const [handle, setHandle] = useState("");
 
+    let fetcher = useFetcher()
+    let isAdding = fetcher.submission?.formData.get("intent") == "addSeedUser";
+    if (isAdding) {
+        return (<div>ADDING {`${fetcher.submission?.formData.get("seedUserHandle")}`} to stream...</div>)
+    }
+
     return (
         <>
-            <Form
+            <fetcher.Form
                 method='post'
                 action={`/streams/${streamName}`}
                 className="sticky top-9 w-full mt-1 mx-auto flex items-center z-40"
@@ -48,7 +54,7 @@ function StreamConfig(props: any) {
                     </button>
                 </div >
 
-            </Form >
+            </fetcher.Form >
 
             {/* Add from User Lists 
             <div>
