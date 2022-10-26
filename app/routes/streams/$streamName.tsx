@@ -19,9 +19,11 @@ import {
     writeStreamListTweetsToNeo4j,
     createStream,
     updateStreamTweets,
-    indexMoreTweets
+    indexMoreTweets,
+    StreamTweetsEntityCounts
 } from "~/models/streams.server";
 
+import Overview from "~/components/Overview";
 import { indexUser } from "~/models/user.server";
 
 import { getUserByUsernameDB, createUserDb } from "~/models/user.server";
@@ -38,7 +40,7 @@ import { useEffect, useRef, useState } from "react";
 import { int } from "neo4j-driver";
 import { url } from "inspector";
 
-const TWEET_LOAD_LIMIT = 5
+const TWEET_LOAD_LIMIT = 25
 
 export async function loader({ request, params }: LoaderArgs) {
     invariant(params.streamName, "streamName not found");
@@ -131,11 +133,13 @@ export async function loader({ request, params }: LoaderArgs) {
     console.log("IN LOADER WITH FILTERS")
     console.log(url.searchParams.getAll("topicFilter"))
     let tweets = await getStreamTweetsNeo4j(stream, 0, TWEET_LOAD_LIMIT, url.searchParams.getAll("topicFilter"))
+    const entityDistribution = await StreamTweetsEntityCounts(params.streamName)
     return json(
         {
             "stream": stream,
             "tweets": tweets,
-            seedUsers: seedUsers
+            seedUsers: seedUsers,
+            entityDistribution: entityDistribution
         }
     )
 }
@@ -276,10 +280,11 @@ export default function Feed() {
     const topicFilterSearchParams = new Set(searchParams.getAll("topicFilter"));
     const topicFilters = useRef(new Set([]) as Set<string>)
 
-    const overview = useLocation().pathname.split("/").pop() === "overview"
+    const [overview, setOverview] = useState(true)
     let transition = useTransition();
     let busy = transition.submission;
     const loaderData = useLoaderData();
+    const entityDistribution = loaderData.entityDistribution
     const [tweets, setTweets] = useState(loaderData.tweets);
     const stream = loaderData.stream;
     const page = useRef(0)
@@ -393,22 +398,35 @@ export default function Feed() {
                             </Form>
                         </div>
                     </div>
+                    <div>
 
-                    <div className="relative w-full mx-auto flex flex-col items-center">
-                        <Outlet />
-                        {overview ?
-                            <Link className="w-full h-hull" to={`/streams/${streamName}?${searchParams.toString()}`}>
-                                <div className="my-1 mx-1  text-center cursor-pointer rounded-full bg-slate-50 hover:bg-slate-200">
-                                    <MdExpandLess style={{ fontSize: "1rem" }} />
+                        {
+                            overview ?
+                                <div className="relative w-full mx-auto flex flex-col items-center">
+                                    <Overview
+                                        entityDistribution={entityDistribution.entityDistribution}
+                                        tweets={tweets}  >
+                                    </Overview>
+                                    <button
+                                        type='submit'
+                                        value="addSeedUser"
+                                        name="intent"
+                                        onClick={() => setOverview(false)}
+                                        className="w-full h-hull my-1 mx-1  text-center cursor-pointer rounded-full bg-slate-50 hover:bg-slate-200"
+                                    >
+                                        <MdExpandLess style={{ fontSize: "1rem" }} />
+                                    </button>
                                 </div>
-                            </Link>
-                            :
-                            <Link className="w-full h-hull" to={`/streams/${streamName}/overview?${searchParams.toString()}`}>
-                                <div className="my-1 mx-1  text-center cursor-pointer rounded-full bg-slate-50 hover:bg-slate-200">
+                                :
+                                <button
+                                    type='submit'
+                                    value="addSeedUser"
+                                    name="intent"
+                                    onClick={() => setOverview(true)}
+                                    className="w-full h-hull my-1 mx-1  text-center cursor-pointer rounded-full bg-slate-50 hover:bg-slate-200"
+                                >
                                     <MdExpandMore style={{ fontSize: "1rem" }} />
-                                </div>
-                            </Link>
-
+                                </button>
                         }
                     </div>
 
@@ -477,7 +495,7 @@ export default function Feed() {
                 </div>
             </div>
 
-        </div>
+        </div >
     );
 }
 
