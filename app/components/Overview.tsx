@@ -39,14 +39,7 @@ export default function Overview({ entityDistribution, tweets }) {
         <>
             <div className='w-full px-4'>
                 <div className="w-full mx-auto overflow-scroll p-2 sm:max-h-[40vh] xl:max-h-[30vh]">
-
-                    <div className="flex gap-2">
-                        <p>Tweets Today <b>Do i want this?</b></p>
-                        <p>Tweets in the Last Week <b>get this a different way</b></p>
-
-                    </div>
-
-                    <p className="text-md font-medium my-4">Tweet Distribution</p>
+                    <p className="text-md font-medium my-4">Tweet Distribution (of currently loaded tweets)</p>
                     <div className="flex flex-wrap gap-1 px-1">
                         {
                             tweetAuthorCountRows.map((row) => (
