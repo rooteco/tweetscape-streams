@@ -439,24 +439,7 @@ export default function Feed() {
                             {
                                 tweets.map((tweet: any, index: number) => (
                                     <div key={`showTweets-${tweet.tweet.properties.id}-${index}`}>
-                                        <p>{index + 1}</p>
-                                        <Tweet key={tweet.tweet.id} tweet={tweet} />
-                                        <div className="flex flex-wrap">
-                                            {
-                                                tweet.entities &&
-                                                tweet.entities.map((entity: Record, index: number) => (
-                                                    <div>
-                                                        <ContextAnnotationChip
-                                                            keyValue={entity.properties.name}
-                                                            value={null} caEntities={searchParams.getAll("topicFilter")}
-                                                            hideTopics={[]}
-                                                            key={`entityAnnotationsUnderTweet-${entity.properties.name}-${index}`}
-                                                            streamName={streamName}
-                                                        />
-                                                    </div>
-                                                ))
-                                            }
-                                        </div>
+                                        <Tweet key={tweet.tweet.id} tweet={tweet} searchParams={searchParams} streamName={streamName} />
                                     </div>
                                 ))
                             }
