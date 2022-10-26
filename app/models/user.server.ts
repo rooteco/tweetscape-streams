@@ -108,8 +108,39 @@ async function pullTweets(
   return tweetRes;
 }
 
+export async function indexUserOlderTweets(api: TwitterApi, user: any) {
+  console.log(`indexing older tweets for ${user.properties.username}`)
+
+  let newLatestTweetId = user.properties.latestTweetId
+  let newEarliestTweetId = user.properties.earliestTweetId;
+
+  let tweetRes = await pullTweets(
+    api,
+    user,
+    null,
+    user.properties.earliestTweetId, // get 100 more tweets, going back in time
+  )
+  console.log(`found ${tweetRes.tweets.length} tweets for ${user.properties.username}`)
+  if (tweetRes.tweets.length > 0) {
+    newEarliestTweetId = tweetRes.tweets.slice(-1)[0].id
+  }
+
+  if (tweetRes.tweets.length > 0) {
+    let includes = new TwitterV2IncludesHelper(tweetRes)
+    await Promise.all([
+      bulkWrites(flattenTwitterUserPublicMetrics(includes.users), addUsers),
+      bulkWrites(includes.media, addTweetMedia),
+      bulkWrites(flattenTweetPublicMetrics(includes.tweets), addTweetsFrom),
+      bulkWrites(flattenTweetPublicMetrics(tweetRes.tweets), addTweetsFrom),
+      updateUserIndexedTweetIds(user, newEarliestTweetId, newLatestTweetId)
+    ])
+  } else (
+    log.debug(`no new tweets to index for user '${user.properties.username}'`)
+  )
+}
+
 export async function indexUserNewTweets(api: TwitterApi, user: any) {
-  console.log(`indexing tweets for ${user.properties.username}`)
+  console.log(`indexing New tweets for ${user.properties.username}`)
 
   let tweetRes;
   let newLatestTweetId = user.properties.latestTweetId; // set to initial values

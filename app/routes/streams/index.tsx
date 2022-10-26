@@ -68,7 +68,7 @@ export async function action({ request }: ActionArgs) {
         let errors: ActionData = stream.errors;
         return json<ActionData>(errors);
     }
-    return redirect(`/streams/${stream.properties.name}/overview`);
+    return redirect(`/streams/${stream.properties.name}`);
 }
 
 export default function NewNotePage() {

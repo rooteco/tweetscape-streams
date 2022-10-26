@@ -1,7 +1,7 @@
 import { Form, useTransition } from "@remix-run/react";
 
 
-function ContextAnnotationChip({ keyValue, value, caEntities, hideTopics }) {
+function ContextAnnotationChip({ keyValue, value, caEntities, hideTopics, streamName }) {
     if (!caEntities) {
         caEntities = []
     }
@@ -30,10 +30,10 @@ function ContextAnnotationChip({ keyValue, value, caEntities, hideTopics }) {
                 className={`
                     ${bg}
                     px-4 py-2 rounded-full text-gray-500  font-semibold text-sm flex align-center w-max cursor-pointer active:bg-gray-300 transition duration-300 ease`}>
-                <button className="" type="submit" name="caEntityCount" value={keyValue}>
+                <button className="" type="submit" name="topicFilter" value={keyValue}>
                     {`${keyValue} ${value ? ', ' + value : ''}`}
                 </button>
-                <button
+                {/* <button
                     type="submit"
                     name="hideTopic"
                     value={keyValue}
@@ -45,7 +45,7 @@ function ContextAnnotationChip({ keyValue, value, caEntities, hideTopics }) {
                             d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z">
                         </path>
                     </svg>
-                </button>
+                </button> */}
             </span>
         </Form>
     )
