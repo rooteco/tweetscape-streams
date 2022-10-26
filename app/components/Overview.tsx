@@ -1,21 +1,6 @@
-import type { LoaderArgs } from "@remix-run/node"
-import { useLoaderData, useMatches, useSearchParams } from "@remix-run/react";
-import { Link, useParams } from "@remix-run/react";
-import { StreamTweetsEntityCounts } from '~/models/streams.server'
-import Chip from '~/components/Chip';
-
+import { useSearchParams, useParams, Link } from "@remix-run/react";
 import ContextAnnotationChip from '~/components/ContextAnnotationChip';
-import invariant from "tiny-invariant";
 
-// export { action } from '~/routes/streams/$streamName';
-
-// export async function loader({ request, params }: LoaderArgs) {
-//     invariant(params.streamName, "streamName not found");
-//     console.time("StreamTweetsEntityCounts in $streamName/overview")
-//     const entityCountData = await StreamTweetsEntityCounts(params.streamName)
-//     console.timeEnd("StreamTweetsEntityCounts in $streamName/overview")
-//     return entityCountData
-// };
 
 export default function Overview({ entityDistribution, tweets }) {
     // Responsible for rendering the overview page for a stream
@@ -81,7 +66,6 @@ export default function Overview({ entityDistribution, tweets }) {
                             ))
                         }
                     </div>
-                    <p className="text-md font-medium my-4">Selected Twitter Topics (used as filter)</p>
                     <div className="flex flex-wrap mb-4">
                         <p className="text-md font-medium my-4">Selected Twitter Topics (used as filter)</p>
                         {
