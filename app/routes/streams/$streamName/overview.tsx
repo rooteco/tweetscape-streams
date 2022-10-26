@@ -67,32 +67,6 @@ export default function Overview() {
     })
     referencedAccountCounts.sort((a, b) => b.value - a.value)
 
-
-    // ENTITY COUNTS
-    const entityCounts = new Map()
-    tweets.map((row) => {
-        for (let entity of row.entities) {
-            const curCount = entityCounts.get(entity.properties.name)
-            if (curCount) {
-                entityCounts.set(entity.properties.name, curCount + 1)
-            } else {
-                entityCounts.set(entity.properties.name, 1)
-            }
-        }
-    })
-
-    let entityCountsArray = []; // create array to map author distribution values in the component below
-    entityCounts.forEach((value, key) => {
-        entityCountsArray.push({ key: key, value: value })
-    })
-    entityCountsArray.sort((a, b) => b.value - a.value)
-
-    // let errors = {};
-    // if (actionData) {
-    //     errors = actionData.errors;
-    //     // recommendedUsers = actionData.recommendedUsers;
-    // }
-
     return (
         <>
             <div className='w-full px-4'>
@@ -146,25 +120,6 @@ export default function Overview() {
                                     )
                                 }
                             })
-                        }
-                    </div>
-
-                    <p className="text-md font-medium my-4">Top Referenced Entities of Stream</p>
-                    <div className="flex flex-wrap gap-1 px-1">
-                        {
-                            entityCountsArray.slice(0, 6).map((row) => (
-                                <div>
-                                    <div className='bg-green-200 hover:bg-green-500 rounded-full flex items-center p-2'>
-                                        {row.key} --- {row.value}
-                                    </div>
-                                    <Chip
-                                        key={row.key}
-                                        label={row.key}
-                                        size="small"
-                                        sx={{ backgroundColor: '#FFFFFF', border: '1px solid #DDDAF8', color: '#374151', fontSize: '0.75rem' }}
-                                    />
-                                </div>
-                            ))
                         }
                     </div>
                     <p className="text-md font-medium my-4">Top Twitter Topics from indexed tweets for this stream</p>
