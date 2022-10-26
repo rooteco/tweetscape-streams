@@ -1,7 +1,7 @@
 import type { ActionArgs, LoaderArgs } from "@remix-run/node";
 import type { ActionFunction } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
-import { Form, useActionData, useCatch, useLoaderData, Outlet, useTransition } from "@remix-run/react";
+import { Form, useActionData, useCatch, useLoaderData, Outlet, useTransition, useFetcher } from "@remix-run/react";
 import { Link, useParams } from "@remix-run/react";
 import invariant from "tiny-invariant";
 import { ApiResponseError } from "twitter-api-v2";
@@ -33,8 +33,10 @@ import { useParams, useLocation } from "@remix-run/react";
 
 import notifierQueue from "~/queues/notifier.server";
 import processTweetsQueue from "~/queues/processTweets.server";
-import { ConstructionOutlined } from "@mui/icons-material";
+import { useEffect, useRef, useState } from "react";
+import { int } from "neo4j-driver";
 
+const TWEET_LOAD_LIMIT = 25
 
 export async function loader({ request, params }: LoaderArgs) {
     invariant(params.streamName, "streamName not found");
@@ -117,8 +119,7 @@ export async function loader({ request, params }: LoaderArgs) {
     }
 
     await updateStreamTweets(api, seedUsers)
-    let tweets = await getStreamTweetsNeo4j(stream)
-
+    let tweets = await getStreamTweetsNeo4j(stream, 0, TWEET_LOAD_LIMIT)
     return json(
         {
             "stream": stream,
@@ -145,6 +146,17 @@ export const action: ActionFunction = async ({
 
     // structure from https://egghead.io/lessons/remix-add-delete-functionality-to-posts-page-in-remix, which was from https://github.com/remix-run/remix/discussions/3138
     invariant(params.streamName, "streamName not found");
+
+    const url = new URL(request.url);
+    const nextpage = url.searchParams.get('page');
+    if (nextpage) {
+        console.log("fetching data for next page")
+        console.log(nextpage)
+        let { stream, creator, seedUsers } = await getStreamByName(params.streamName)
+        let tweets = await getStreamTweetsNeo4j(stream, TWEET_LOAD_LIMIT * int(nextpage), TWEET_LOAD_LIMIT)
+        return { "tweets": tweets }
+    }
+
     const formData = await request.formData();
     const intent = formData.get("intent");
     let seedUserHandle: string = formData.get("seedUserHandle");
@@ -217,12 +229,37 @@ export const action: ActionFunction = async ({
 
 export default function Feed() {
     // Responsible for rendering a feed & annotations
-    const { streamName } = useParams();
+    let { streamName } = useParams();
     const overview = useLocation().pathname.split("/").pop() === "overview"
     let transition = useTransition();
     let busy = transition.submission;
+    const loaderData = useLoaderData();
+    const [tweets, setTweets] = useState(loaderData.tweets);
+    const stream = loaderData.stream;
+    const page = useRef(0)
+    const fetcher = useFetcher()
+    // const startRef = useRef(0);
+    // const page = useRef(0);
+    useEffect(() => {
+        if (fetcher.data) {
+            page.current += 1
+            console.log(`adding ${fetcher.data.tweets.length} more tweets to tweets in memory`)
+            console.log(`at page ${page.current} of tweets`)
+            setTweets((prevTweets) => [...prevTweets, ...fetcher.data.tweets])
+        }
+    }, [fetcher.data])
 
-    const { tweets, stream } = useLoaderData();
+    // useEffect(() => {
+    //     page.current += 1
+    //     console.log(`page was bumped to ${page.current}`)
+    //     fetcher.load(`/streams/${streamName}?page=${page.current}`)
+    // }, [page, fetcher])
+
+    // useEffect(() => {
+    //     if (fetcher.data) {
+    //         setTweets((prevTweets) => [...prevTweets, ...fetcher.data.tweets])
+    //     }
+    // }, [fetcher.data])
 
     const emptyTopic = {
         labels: ['Entity'],
@@ -269,6 +306,7 @@ export default function Feed() {
                 <div className="sticky top-0 mx-auto backdrop-blur-lg bg-slate-50 bg-opacity-60 p-1 rounded-xl">
                     <div className="flex flex-row justify-between p-3 bg-slate-50 rounded-lg">
                         <p className="text-xl font-medium">{stream.properties.name}</p>
+                        <p>showing {tweets.length} tweets!</p>
                         {/* DEV: Update Stream Tweets / Stream Follower Network */}
                         <div className="flex flex-row space-x-2">
                             <Form
@@ -329,21 +367,42 @@ export default function Feed() {
                 <div className="grow lg:w-3/4 lg:mx-2 2xl:mx-auto">
                     {busy ?
                         <div>LOADING</div> :
-                        tweets.map((tweet: any, index: number) => (
-                            <div key={`showTweets-${tweet.tweet.properties.id}-${index}`}>
-                                <Tweet key={tweet.tweet.id} tweet={tweet} />
-                                <div className="flex flex-wrap">
-                                    {
-                                        tweet.entities &&
-                                        tweet.entities.map((entity: Record, index: number) => (
-                                            <div>
-                                                <ContextAnnotationChip keyValue={entity.properties.name} value={null} caEntities={[]} hideTopics={[]} key={`entityAnnotationsUnderTweet-${entity.properties.name}-${index}`} />
-                                            </div>
-                                        ))
-                                    }
-                                </div>
-                            </div>
-                        ))}
+                        <div>
+                            {
+                                tweets.map((tweet: any, index: number) => (
+                                    <div key={`showTweets-${tweet.tweet.properties.id}-${index}`}>
+                                        <p>{index + 1}</p>
+                                        <Tweet key={tweet.tweet.id} tweet={tweet} />
+                                        <div className="flex flex-wrap">
+                                            {
+                                                tweet.entities &&
+                                                tweet.entities.map((entity: Record, index: number) => (
+                                                    <div>
+                                                        <ContextAnnotationChip keyValue={entity.properties.name} value={null} caEntities={[]} hideTopics={[]} key={`entityAnnotationsUnderTweet-${entity.properties.name}-${index}`} />
+                                                    </div>
+                                                ))
+                                            }
+                                        </div>
+                                    </div>
+                                ))
+                            }
+
+                            <fetcher.Form
+                                method="post"
+                                action={`/streams/${streamName}?page=${page.current + 1}`}
+                                className="w-full h-hull"
+                            >
+                                <button
+                                    type='submit'
+                                    name="intent"
+                                    className="my-1 mx-1  text-center cursor-pointer rounded-full bg-slate-50 hover:bg-slate-200"
+                                >
+                                    Load More Tweets
+                                </button>
+                            </fetcher.Form>
+
+                        </div>
+                    }
                 </div>
             </div>
 
