@@ -72,6 +72,8 @@ function flattenTwitterData(data: Array<any>) {
 // export async function loader({ request }: LoaderArgs) {
 export const loader: LoaderFunction = async ({ request }: LoaderArgs) => {
     let user = null;
+    let userStreams = [];
+    let allStreams = [];
     let userLists = { followedLists: [] as ListV2[], ownedLists: [] as ListV2[] }
 
     const url = new URL(request.url);
@@ -156,17 +158,16 @@ export const loader: LoaderFunction = async ({ request }: LoaderArgs) => {
     } catch (e) {
         console.log("you are unauthorized while getting client... please log back in...")
         console.log(e)
-        const res = await fetch(url.origin + "/logout", {
-            method: "POST"
-        })
-        return redirect("/streams")
+        console.log("REDIRECTING TO LOGOUT...")
+        return redirect("/logout")
     }
 
-    console.time("getAllStreams in streams.tsx")
-    let userStreams = await getUserStreams(user.username);
-    console.timeEnd("getAllStreams in streams.tsx")
-
-    let allStreams = await getAllStreams(user.username);
+    if (user) {
+        console.time("getAllStreams in streams.tsx")
+        userStreams = await getUserStreams(user.username);
+        console.timeEnd("getAllStreams in streams.tsx")
+        allStreams = await getAllStreams(user.username);
+    }
 
     const headers = { 'Set-Cookie': await commitSession(session) };
     return json<LoaderData>(
