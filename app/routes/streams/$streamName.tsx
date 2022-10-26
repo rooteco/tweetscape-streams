@@ -46,6 +46,9 @@ export async function loader({ request, params }: LoaderArgs) {
     invariant(params.streamName, "streamName not found");
     console.time("getStreamByName")
     const url = new URL(request.url);
+    if (url.searchParams.get("clearAllTopics")) {
+        return redirect(`/streams/${params.streamName}`)
+    }
     let { stream, creator, seedUsers } = await getStreamByName(params.streamName)
     console.timeEnd("getStreamByName")
     if (!stream) {

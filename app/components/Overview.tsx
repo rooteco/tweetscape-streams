@@ -82,6 +82,19 @@ export default function Overview({ entityDistribution, tweets }) {
                         }
                     </div>
                     <p className="text-md font-medium my-4">Selected Twitter Topics (used as filter)</p>
+                    <div className="flex flex-wrap mb-4">
+                        <p className="text-md font-medium my-4">Selected Twitter Topics (used as filter)</p>
+                        {
+                            entityDistribution.filter((entity) => (searchParams.getAll("topicFilter").indexOf(entity.item.properties.name) > -1)).length > 0 ?
+                                <Link
+                                    className='bg-purple-200 hover:bg-purple-400 text-xs justify-center items-center px-2 m-2 rounded-full'
+                                    to={`/streams/${streamName}?clearAllTopics=True`}
+                                >
+                                    Clear All Selected Topics
+                                </Link> :
+                                null
+                        }
+                    </div>
                     <div className="flex flex-wrap max-w-sm">
                         {entityDistribution.filter((entity) => (searchParams.getAll("topicFilter").indexOf(entity.item.properties.name) > -1))
                             .map((entity, index) => (
