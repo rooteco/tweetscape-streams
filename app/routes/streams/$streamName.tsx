@@ -1,7 +1,7 @@
 import type { ActionArgs, LoaderArgs } from "@remix-run/node";
 import type { ActionFunction } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
-import { Form, useActionData, useCatch, useLoaderData, Outlet, useTransition } from "@remix-run/react";
+import { Form, useActionData, useCatch, useLoaderData, Outlet, useTransition, useFetcher, useSearchParams } from "@remix-run/react";
 import { Link, useParams } from "@remix-run/react";
 import invariant from "tiny-invariant";
 import { ApiResponseError } from "twitter-api-v2";
@@ -19,8 +19,11 @@ import {
     writeStreamListTweetsToNeo4j,
     createStream,
     updateStreamTweets,
+    indexMoreTweets,
+    StreamTweetsEntityCounts
 } from "~/models/streams.server";
 
+import Overview from "~/components/Overview";
 import { indexUser } from "~/models/user.server";
 
 import { getUserByUsernameDB, createUserDb } from "~/models/user.server";
@@ -33,12 +36,19 @@ import { useParams, useLocation } from "@remix-run/react";
 
 import notifierQueue from "~/queues/notifier.server";
 import processTweetsQueue from "~/queues/processTweets.server";
-import { ConstructionOutlined } from "@mui/icons-material";
+import { useEffect, useRef, useState } from "react";
+import { int } from "neo4j-driver";
+import { url } from "inspector";
 
+const TWEET_LOAD_LIMIT = 25
 
 export async function loader({ request, params }: LoaderArgs) {
     invariant(params.streamName, "streamName not found");
     console.time("getStreamByName")
+    const url = new URL(request.url);
+    if (url.searchParams.get("clearAllTopics")) {
+        return redirect(`/streams/${params.streamName}`)
+    }
     let { stream, creator, seedUsers } = await getStreamByName(params.streamName)
     console.timeEnd("getStreamByName")
     if (!stream) {
@@ -116,14 +126,23 @@ export async function loader({ request, params }: LoaderArgs) {
         // }
     }
 
+    if (url.searchParams.get("indexMoreTweets")) {
+        await indexMoreTweets(api, seedUsers)
+        url.searchParams.delete("indexMoreTweets")
+        return redirect(url.toString())
+    }
     await updateStreamTweets(api, seedUsers)
-    let tweets = await getStreamTweetsNeo4j(stream)
 
+    console.log("IN LOADER WITH FILTERS")
+    console.log(url.searchParams.getAll("topicFilter"))
+    let tweets = await getStreamTweetsNeo4j(stream, 0, TWEET_LOAD_LIMIT, url.searchParams.getAll("topicFilter"))
+    const entityDistribution = await StreamTweetsEntityCounts(params.streamName)
     return json(
         {
             "stream": stream,
             "tweets": tweets,
-            seedUsers: seedUsers
+            seedUsers: seedUsers,
+            entityDistribution: entityDistribution
         }
     )
 }
@@ -145,7 +164,42 @@ export const action: ActionFunction = async ({
 
     // structure from https://egghead.io/lessons/remix-add-delete-functionality-to-posts-page-in-remix, which was from https://github.com/remix-run/remix/discussions/3138
     invariant(params.streamName, "streamName not found");
+
+    // Load More Data (page should never be part of user facing url, it is fetched with the fetcher as a non-navigation)
+    const url = new URL(request.url);
+    const nextpage = url.searchParams.get('page');
+    if (nextpage) {
+        console.log("fetching data for next page")
+        console.log(nextpage)
+        let { stream, creator, seedUsers } = await getStreamByName(params.streamName)
+        let tweets = await getStreamTweetsNeo4j(stream, TWEET_LOAD_LIMIT * int(nextpage), TWEET_LOAD_LIMIT, url.searchParams.getAll("topicFilter"))
+        return { "tweets": tweets }
+    }
     const formData = await request.formData();
+
+    // Check for and setup Topic Filters 
+    const newTopicFilter = formData.get("topicFilter")
+    const currentTopicFilterParams = url.searchParams.getAll("topicFilter")
+
+    console.log("IN ACTION")
+    console.log(newTopicFilter)
+    console.log(currentTopicFilterParams)
+    if (newTopicFilter && currentTopicFilterParams.indexOf(newTopicFilter) == -1) {
+        console.log(`adding ${newTopicFilter} to list of current topic filters`)
+        url.searchParams.append("topicFilter", newTopicFilter)
+        console.log(`redirecting to url ${url.toString()}`)
+        return redirect(url.toString())
+    } else if (newTopicFilter && currentTopicFilterParams.indexOf(newTopicFilter) != -1) {
+        console.log(`removing entity ${newTopicFilter} from list of current entities`)
+        // thanks to this person: https://github.com/whatwg/url/issues/335#issuecomment-1142139561
+        const allValues = url.searchParams.getAll("topicFilter")
+        allValues.splice(allValues.indexOf(newTopicFilter), 1)
+        url.searchParams.delete("topicFilter")
+        allValues.forEach((val) => url.searchParams.append("topicFilter", val))
+        return redirect(url.toString())
+    }
+
+    // Handle Seed User Operations
     const intent = formData.get("intent");
     let seedUserHandle: string = formData.get("seedUserHandle");
     if (intent === "delete") {
@@ -202,7 +256,7 @@ export const action: ActionFunction = async ({
         console.timeEnd("addSeedUserToStream")
         await indexUser(api, limits, user)
         console.log(`Added user ${user.properties.username} to stream ${stream.properties.name}`)
-        return redirect(`/streams/${params.streamName}/overview`)
+        return redirect(`/streams/${params.streamName}`)
     } else if (intent === "removeSeedUser") {
         let user = await getUserByUsernameDB(seedUserHandle);
         const { api, uid, session } = await getClient(request);
@@ -215,24 +269,62 @@ export const action: ActionFunction = async ({
     }
 }
 
+const eqSet = (xs: Set<string>, ys: Set<string>) =>
+    xs.size === ys.size &&
+    [...xs].every((x) => ys.has(x));
+
 export default function Feed() {
     // Responsible for rendering a feed & annotations
-    const { streamName } = useParams();
-    const overview = useLocation().pathname.split("/").pop() === "overview"
+    let { streamName } = useParams();
+    const [searchParams] = useSearchParams();
+    console.log("HERE ARE EARCH PARAMS")
+    console.log(searchParams)
+    console.log(searchParams.toString())
+    const topicFilterSearchParams = new Set(searchParams.getAll("topicFilter"));
+    const topicFilters = useRef(new Set([]) as Set<string>)
+
+    const [overview, setOverview] = useState(true)
     let transition = useTransition();
     let busy = transition.submission;
+    const loaderData = useLoaderData();
+    const entityDistribution = loaderData.entityDistribution
+    const [tweets, setTweets] = useState(loaderData.tweets);
+    const stream = loaderData.stream;
+    const page = useRef(0)
+    const fetcher = useFetcher()
 
-    const { tweets, stream } = useLoaderData();
-
-    const emptyTopic = {
-        labels: ['Entity'],
-        properties: { name: 'No Labels', },
-    }
-    tweets.forEach((row, index: number) => {
-        if (row.entities.length == 0) {
-            row.entities.push(emptyTopic)
+    useEffect(() => {
+        console.log("in topicFiltersSearchparams useEffect")
+        if (!eqSet(topicFilterSearchParams, topicFilters.current)) {
+            console.log("SEEING A CHANGE, resetting tweets...")
+            topicFilters.current = topicFilterSearchParams
+            setTweets(loaderData.tweets)
         }
-    })
+    }, [topicFilterSearchParams])
+
+    useEffect(() => {
+        if (fetcher.data) {
+            if (fetcher.data.tweets.length == 0) {
+                // TODO: actuall go do this
+                alert("There are no more tweets indexed in our db for this stream! Please click 'Index More Tweets' to index more tweets!")
+            }
+            page.current += 1
+            console.log(`adding ${fetcher.data.tweets.length} more tweets to tweets in memory`)
+            console.log(`at page ${page.current} of tweets`)
+            setTweets((prevTweets) => [...prevTweets, ...fetcher.data.tweets])
+        }
+    }, [fetcher.data])
+
+    // TODO: Decide if I would rather Have a "No Labels" warning...
+    // const emptyTopic = {
+    //     labels: ['Entity'],
+    //     properties: { name: 'No Labels', },
+    // }
+    // tweets.forEach((row, index: number) => {
+    //     if (row.entities.length == 0) {
+    //         row.entities.push(emptyTopic)
+    //     }
+    // })
 
     let annotations = new Set();
     for (const t of tweets) {
@@ -269,6 +361,28 @@ export default function Feed() {
                 <div className="sticky top-0 mx-auto backdrop-blur-lg bg-slate-50 bg-opacity-60 p-1 rounded-xl">
                     <div className="flex flex-row justify-between p-3 bg-slate-50 rounded-lg">
                         <p className="text-xl font-medium">{stream.properties.name}</p>
+                        <div className="flex flex-wrap mb-4">
+                            <p>{tweets.length} tweets loaded for view!</p>
+                            <fetcher.Form
+                                method="post"
+                                action={`/streams/${streamName}?page=${page.current + 1}&${searchParams.toString()}`}
+                                className="w-full h-hull"
+                            >
+                                <button
+                                    type='submit'
+                                    name="intent"
+                                    className="my-1 mx-1  text-center cursor-pointer rounded-full hover:bg-slate-200 bg-purple-200"
+                                >
+                                    Load More Tweets
+                                </button>
+                            </fetcher.Form>
+                            <Link
+                                to={`/streams/${streamName}?${searchParams.toString()}&indexMoreTweets=true`}
+                                className="my-1 mx-1  text-center cursor-pointer rounded-full hover:bg-slate-200 bg-red-200"
+                            >
+                                Index More Tweets
+                            </Link>
+                        </div>
                         {/* DEV: Update Stream Tweets / Stream Follower Network */}
                         <div className="flex flex-row space-x-2">
                             <Form
@@ -297,22 +411,35 @@ export default function Feed() {
                             </Form>
                         </div>
                     </div>
+                    <div>
 
-                    <div className="relative w-full mx-auto flex flex-col items-center">
-                        <Outlet />
-                        {overview ?
-                            <Link className="w-full h-hull" to={`/streams/${streamName}`}>
-                                <div className="my-1 mx-1  text-center cursor-pointer rounded-full bg-slate-50 hover:bg-slate-200">
-                                    <MdExpandLess style={{ fontSize: "1rem" }} />
+                        {
+                            overview ?
+                                <div className="relative w-full mx-auto flex flex-col items-center">
+                                    <Overview
+                                        entityDistribution={entityDistribution.entityDistribution}
+                                        tweets={tweets}  >
+                                    </Overview>
+                                    <button
+                                        type='submit'
+                                        value="addSeedUser"
+                                        name="intent"
+                                        onClick={() => setOverview(false)}
+                                        className="w-full h-hull my-1 mx-1  text-center cursor-pointer rounded-full bg-slate-50 hover:bg-slate-200"
+                                    >
+                                        <MdExpandLess style={{ fontSize: "1rem" }} />
+                                    </button>
                                 </div>
-                            </Link>
-                            :
-                            <Link className="w-full h-hull" to={`/streams/${streamName}/overview`}>
-                                <div className="my-1 mx-1  text-center cursor-pointer rounded-full bg-slate-50 hover:bg-slate-200">
+                                :
+                                <button
+                                    type='submit'
+                                    value="addSeedUser"
+                                    name="intent"
+                                    onClick={() => setOverview(true)}
+                                    className="w-full h-hull my-1 mx-1  text-center cursor-pointer rounded-full bg-slate-50 hover:bg-slate-200"
+                                >
                                     <MdExpandMore style={{ fontSize: "1rem" }} />
-                                </div>
-                            </Link>
-
+                                </button>
                         }
                     </div>
 
@@ -329,25 +456,42 @@ export default function Feed() {
                 <div className="grow lg:w-3/4 lg:mx-2 2xl:mx-auto">
                     {busy ?
                         <div>LOADING</div> :
-                        tweets.map((tweet: any, index: number) => (
-                            <div key={`showTweets-${tweet.tweet.properties.id}-${index}`}>
-                                <Tweet key={tweet.tweet.id} tweet={tweet} />
-                                <div className="flex flex-wrap">
-                                    {
-                                        tweet.entities &&
-                                        tweet.entities.map((entity: Record, index: number) => (
-                                            <div>
-                                                <ContextAnnotationChip keyValue={entity.properties.name} value={null} caEntities={[]} hideTopics={[]} key={`entityAnnotationsUnderTweet-${entity.properties.name}-${index}`} />
-                                            </div>
-                                        ))
-                                    }
-                                </div>
-                            </div>
-                        ))}
+                        <div>
+                            {
+                                tweets.map((tweet: any, index: number) => (
+                                    <div key={`showTweets-${tweet.tweet.properties.id}-${index}`}>
+                                        <Tweet key={tweet.tweet.id} tweet={tweet} searchParams={searchParams} streamName={streamName} />
+                                    </div>
+                                ))
+                            }
+
+                            <fetcher.Form
+                                method="post"
+                                action={`/streams/${streamName}?page=${page.current + 1}&${searchParams.toString()}`}
+                                className="w-full h-hull"
+                            >
+                                <button
+                                    type='submit'
+                                    name="intent"
+                                    className="my-1 mx-1  text-center cursor-pointer rounded-full hover:bg-slate-200 bg-purple-200"
+                                >
+                                    Load More Tweets
+                                </button>
+                            </fetcher.Form>
+
+                            <Link
+                                to={`/streams/${streamName}?${searchParams.toString()}&indexMoreTweets=true`}
+                                className="my-1 mx-1  text-center cursor-pointer rounded-full hover:bg-slate-200 bg-red-200"
+                            >
+                                Index More Tweets
+                            </Link>
+
+                        </div>
+                    }
                 </div>
             </div>
 
-        </div>
+        </div >
     );
 }
 

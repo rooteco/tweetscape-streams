@@ -5,7 +5,7 @@ import { log } from '~/log.server';
 import { driver } from "~/neo4j.server";
 import { Record, Node, int } from 'neo4j-driver'
 import { getListUsers, USER_FIELDS } from '~/twitter.server';
-import { createUserDb, indexUserNewTweets } from "~/models/user.server";
+import { createUserDb, indexUserNewTweets, indexUserOlderTweets } from "~/models/user.server";
 import type {
     ListV2,
     TweetV2,
@@ -816,6 +816,11 @@ async function updateStreamFollowingLastUpdatedAt(stream: Node, now: string) {
     return streams;
 }
 
+export async function indexMoreTweets(api: TwitterApi, seedUsers: Node[]) {
+    return await Promise.all(seedUsers.map((user) => {
+        return indexUserOlderTweets(api, user.user)
+    }))
+}
 export async function updateStreamTweets(api: TwitterApi, seedUsers: Node[]) {
     return await Promise.all(seedUsers.map((user) => {
         return indexUserNewTweets(api, user.user)
@@ -842,32 +847,56 @@ async function writeTweetData(res: TweetV2ListTweetsPaginator) {
     ])
 }
 
-export async function getStreamTweetsNeo4j(stream: Node, skip: number = 0, limit: number = 50) {
+export async function getStreamTweetsNeo4j(stream: Node, skip: number = 0, limit: number = 50, tags: string[] = []) {
+    const noTagsQuery = `
+        MATCH (s:Stream {name: $name} )-[:CONTAINS]->(u:User)-[:POSTED]->(t:Tweet)
+        OPTIONAL MATCH (t)-[r:REFERENCED]->(ref_t:Tweet)<-[:POSTED]-(ref_a:User)
+        OPTIONAL MATCH (t)-[tr:INCLUDED]->(entity:Entity)-[:CATEGORY]-(d:Domain {name:"Unified Twitter Taxonomy"})
+        OPTIONAL MATCH (t)-[mr:ATTACHED]->(media:Media)
+        OPTIONAL MATCH (t)-[ar:ANNOTATED]-(a)
+        RETURN DISTINCT u,t,
+            collect(DISTINCT a) as a, 
+            collect(DISTINCT r) as refTweetRels, 
+            collect(DISTINCT ref_t) as refTweets,
+            collect(ref_a) as refTweetAuthors, 
+            collect(DISTINCT entity) as entities,
+            collect(DISTINCT d) as domains,
+            collect(DISTINCT media) as media, 
+            collect(DISTINCT mr) as mediaRels
+        ORDER by t.created_at DESC
+        SKIP $skip
+        LIMIT $limit
+    `
+    const withTagsQuery = `
+        MATCH (s:Stream {name: $name} )-[:CONTAINS]->(u:User)-[:POSTED]->(t:Tweet)
+        MATCH (t)-[tr:INCLUDED]->(entity:Entity)-[:CATEGORY]-(d:Domain {name:"Unified Twitter Taxonomy"})
+        WHERE entity.name IN $tags
+        OPTIONAL MATCH (t)-[r:REFERENCED]->(ref_t:Tweet)<-[:POSTED]-(ref_a:User)
+        OPTIONAL MATCH (t)-[mr:ATTACHED]->(media:Media)
+        OPTIONAL MATCH (t)-[ar:ANNOTATED]-(a)
+        RETURN DISTINCT u,t,
+            collect(DISTINCT a) as a, 
+            collect(DISTINCT r) as refTweetRels, 
+            collect(DISTINCT ref_t) as refTweets,
+            collect(ref_a) as refTweetAuthors, 
+            collect(DISTINCT entity) as entities,
+            collect(DISTINCT d) as domains,
+            collect(DISTINCT media) as media, 
+            collect(DISTINCT mr) as mediaRels
+        ORDER by t.created_at DESC
+        SKIP $skip
+        LIMIT $limit
+    `
     const session = driver.session()
     // Create a node within a write transaction
 
     // NOTE: BE V CAREFUL ABOUT WHICH OF THE COLLECT() RETURNS ARE DISTINCT (REF_TWEET_AUTHORS IS AN EXAMPLE OF ONE THAT SHOULD NOT BE)
+    const query = (tags.length > 0 ? withTagsQuery : noTagsQuery)
     const res = await session.executeRead((tx: any) => {
-        return tx.run(`
-            MATCH (s:Stream {name: $name} )-[:CONTAINS]->(u:User)-[:POSTED]->(t:Tweet)
-            OPTIONAL MATCH (t)-[r:REFERENCED]->(ref_t:Tweet)<-[:POSTED]-(ref_a:User)
-            OPTIONAL MATCH (t)-[tr:INCLUDED]->(entity:Entity)-[:CATEGORY]-(d:Domain {name:"Unified Twitter Taxonomy"})
-            OPTIONAL MATCH (t)-[mr:ATTACHED]->(media:Media)
-            OPTIONAL MATCH (t)-[ar:ANNOTATED]-(a)
-            RETURN u,t,
-                collect(DISTINCT a) as a, 
-                collect(DISTINCT r) as refTweetRels, 
-                collect(DISTINCT ref_t) as refTweets,
-                collect(ref_a) as refTweetAuthors, 
-                collect(DISTINCT entity) as entities,
-                collect(DISTINCT d) as domains,
-                collect(DISTINCT media) as media, 
-                collect(DISTINCT mr) as mediaRels
-            ORDER by t.created_at DESC
-            SKIP $skip
-            LIMIT $limit
-        `,
-            { name: stream.properties.name, skip: int(skip), limit: int(limit) })
+        return tx.run(
+            query,
+            { name: stream.properties.name, skip: int(skip), limit: int(limit), tags: tags }
+        )
     })
 
 
