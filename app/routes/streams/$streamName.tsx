@@ -256,7 +256,7 @@ export const action: ActionFunction = async ({
         console.timeEnd("addSeedUserToStream")
         await indexUser(api, limits, user)
         console.log(`Added user ${user.properties.username} to stream ${stream.properties.name}`)
-        return redirect(`/streams/${params.streamName}/overview`)
+        return redirect(`/streams/${params.streamName}`)
     } else if (intent === "removeSeedUser") {
         let user = await getUserByUsernameDB(seedUserHandle);
         const { api, uid, session } = await getClient(request);
