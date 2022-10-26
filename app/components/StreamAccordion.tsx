@@ -62,7 +62,7 @@ const AccordionSummary = ({ streamName, isOpen, setOpenStream }) => {
   }
 
   return (
-    <Link to={isOpen ? "/streams" : `${streamName}/overview`}>
+    <Link to={isOpen ? "/streams" : `${streamName}`}>
       <div
         className={
           cn(
