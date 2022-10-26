@@ -3,7 +3,7 @@ import { TwitterApi, TwitterV2IncludesHelper, UserSearchV1Paginator } from 'twit
 import type { TwitterApiRateLimitPlugin } from '@twitter-api-v2/plugin-rate-limit';
 import { log } from '~/log.server';
 import { driver } from "~/neo4j.server";
-import type { Record, Node } from 'neo4j-driver'
+import { Record, Node, int } from 'neo4j-driver'
 import { getListUsers, USER_FIELDS } from '~/twitter.server';
 import { createUserDb, indexUserNewTweets } from "~/models/user.server";
 import type {
@@ -335,33 +335,6 @@ export async function removeSeedUserFromStream(streamName: string, username: str
     await session.close()
     return node;
 
-}
-
-async function getTweetsFromAuthorId(
-    api: TwitterApi,
-    id: string,
-    startTime: string,
-) {
-    console.log(`pulling tweets for ${id}`)
-    const tweets = await api.v2.userTimeline(
-        id,
-        {
-            'expansions': 'author_id,in_reply_to_user_id,referenced_tweets.id,referenced_tweets.id.author_id,entities.mentions.username,attachments.poll_ids,attachments.media_keys,geo.place_id',
-            'tweet.fields': 'attachments,author_id,context_annotations,conversation_id,created_at,entities,geo,id,in_reply_to_user_id,lang,public_metrics,text,possibly_sensitive,referenced_tweets,reply_settings,source,withheld',
-            'user.fields': USER_FIELDS,
-            'media.fields': 'alt_text,duration_ms,height,media_key,preview_image_url,type,url,width,public_metrics',
-            'poll.fields': 'duration_minutes,end_datetime,id,options,voting_status',
-            'place.fields': 'contained_within,country,country_code,full_name,geo,id,name,place_type',
-            'max_results': 100,
-            'start_time': startTime
-        }
-    );
-    while (!tweets.done) {
-        console.log(tweets.data.data.length);
-        await tweets.fetchNext();
-    }
-    console.log(`done pulling tweets for ${id}`)
-    return tweets;
 }
 
 async function pullTweets(api: TwitterApi, user: Node, startTime: string, now: string) {
@@ -771,7 +744,6 @@ export async function addSeedUserToStream(
     }
 };
 
-
 export async function updateStreamFollowsNetwork(api: TwitterApi, limits: TwitterApiRateLimitPlugin, stream: Node, seedUsers: Node[]) {
 
     let now = new Date()
@@ -979,7 +951,6 @@ export async function StreamTweetsEntityCounts(streamName: string) {
     return data;
 }
 
-
 export async function getStreamTweets(name: string, startTime: string) {
     //THIS EXCLUDES RETWEETS RIGHT NOW
     const session = driver.session()
@@ -1120,50 +1091,4 @@ export async function getStreamRecommendedUsersByInteractions(name: string) {
     }
     await session.close()
     return recommendedUsers;
-}
-
-
-async function getTweetsFromUsernames(usernames: string[]) {
-    const queries: string[] = [];
-    usernames.forEach((username) => {
-        const query = queries[queries.length - 1];
-        if (query && `${query} OR from:${username}`.length < 512)
-            queries[queries.length - 1] = `${query} OR from:${username}`;
-        else queries.push(`from:${username}`);
-    });
-    const users: Record<string, UserV2> = {};
-    const tweets: TweetV2[] = [];
-    await Promise.all(
-        queries.map(async (query) => {
-            const res = await api.v2.search(query, {
-                'max_results': 100,
-                'tweet.fields': TWEET_FIELDS,
-                'expansions': TWEET_EXPANSIONS,
-                'user.fields': USER_FIELDS,
-            });
-            res.tweets.forEach((tweet) => tweets.push(tweet));
-            const includes = new TwitterV2IncludesHelper(res);
-            includes.users.forEach((user) => {
-                users[user.id] = user;
-            });
-        })
-    );
-    return tweets.map((tweet) => ({
-        ...tweet,
-        html: html(tweet.text),
-        author: users[tweet.author_id as string],
-    }));
-}
-
-export function html(text: string): string {
-    return autoLink(text, {
-        usernameIncludeSymbol: true,
-        linkAttributeBlock(entity, attrs) {
-            /* eslint-disable no-param-reassign */
-            attrs.target = '_blank';
-            attrs.rel = 'noopener noreferrer';
-            attrs.class = 'hover:underline text-blue-500';
-            /* eslint-enable no-param-reassign */
-        },
-    });
 }
