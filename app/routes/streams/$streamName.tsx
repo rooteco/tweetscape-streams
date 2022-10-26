@@ -315,27 +315,16 @@ export default function Feed() {
         }
     }, [fetcher.data])
 
-    // useEffect(() => {
-    //     page.current += 1
-    //     console.log(`page was bumped to ${page.current}`)
-    //     fetcher.load(`/streams/${streamName}?page=${page.current}`)
-    // }, [page, fetcher])
-
-    // useEffect(() => {
-    //     if (fetcher.data) {
-    //         setTweets((prevTweets) => [...prevTweets, ...fetcher.data.tweets])
+    // TODO: Decide if I would rather Have a "No Labels" warning...
+    // const emptyTopic = {
+    //     labels: ['Entity'],
+    //     properties: { name: 'No Labels', },
+    // }
+    // tweets.forEach((row, index: number) => {
+    //     if (row.entities.length == 0) {
+    //         row.entities.push(emptyTopic)
     //     }
-    // }, [fetcher.data])
-
-    const emptyTopic = {
-        labels: ['Entity'],
-        properties: { name: 'No Labels', },
-    }
-    tweets.forEach((row, index: number) => {
-        if (row.entities.length == 0) {
-            row.entities.push(emptyTopic)
-        }
-    })
+    // })
 
     let annotations = new Set();
     for (const t of tweets) {
