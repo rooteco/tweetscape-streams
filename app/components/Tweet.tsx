@@ -1,4 +1,5 @@
 import { TimeAgo } from '~/components/timeago';
+import ContextAnnotationChip from '~/components/ContextAnnotationChip';
 import twitter from 'twitter-text';
 
 function html(text: string): string {
@@ -11,7 +12,7 @@ function html(text: string): string {
         },
     });
 }
-function Tweet({ tweet }) {
+function Tweet({ tweet, searchParams, streamName }) {
     const quoteTweet = {
         tweet: null,
         author: null,
@@ -50,6 +51,22 @@ function Tweet({ tweet }) {
 
         return (
             <div className="border border-gray-400 py-4 px-3 rounded-lg bg-white my-2">
+                <div className="flex flex-wrap mb-4">
+                    {
+                        tweet.entities &&
+                        tweet.entities.map((entity: Record, index: number) => (
+                            <div>
+                                <ContextAnnotationChip
+                                    keyValue={entity.properties.name}
+                                    value={null} caEntities={searchParams.getAll("topicFilter")}
+                                    hideTopics={[]}
+                                    key={`entityAnnotationsUnderTweet-${entity.properties.name}-${index}`}
+                                    streamName={streamName}
+                                />
+                            </div>
+                        ))
+                    }
+                </div>
                 {
                     repliedToTweet.tweet ?
                         <div>
@@ -139,7 +156,8 @@ function Tweet({ tweet }) {
             </div>
         )
     } catch (e) {
-        console.log("did it fuck up i bet NOT")
+        console.log("did it fuck up, i betT")
+        console.log(e)
         return <div>FUCK UP, it's probably because `refTweet.properties.author_id` is null</div>
     }
 }
