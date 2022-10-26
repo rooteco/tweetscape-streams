@@ -842,7 +842,7 @@ async function writeTweetData(res: TweetV2ListTweetsPaginator) {
     ])
 }
 
-export async function getStreamTweetsNeo4j(stream: Node) {
+export async function getStreamTweetsNeo4j(stream: Node, skip: number = 0, limit: number = 50) {
     const session = driver.session()
     // Create a node within a write transaction
 
@@ -864,8 +864,10 @@ export async function getStreamTweetsNeo4j(stream: Node) {
                 collect(DISTINCT media) as media, 
                 collect(DISTINCT mr) as mediaRels
             ORDER by t.created_at DESC
+            SKIP $skip
+            LIMIT $limit
         `,
-            { name: stream.properties.name })
+            { name: stream.properties.name, skip: int(skip), limit: int(limit) })
     })
 
 
