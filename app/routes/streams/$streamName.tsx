@@ -251,6 +251,18 @@ export default function Feed() {
         // recommendedUsers = actionData.recommendedUsers;
     }
 
+    if (transition.state == "loading") {
+        return (
+            <div className="flex px-4 py-2  z-10">
+                <div className='relative max-h-screen overflow-y-auto pb-12 border-2'>
+                    <div className="grow lg:w-3/4 lg:mx-2 2xl:mx-auto">
+                        loading newest tweets for your stream...
+                    </div>
+                </div>
+            </div>
+        )
+    }
+
     return (
         <div className="flex px-4 py-2  z-10">
             <div className='relative max-h-screen overflow-y-auto pb-12 border-2'>
