@@ -5,7 +5,7 @@ import { log } from '~/log.server';
 import { driver } from "~/neo4j.server";
 import { Record, Node, int } from 'neo4j-driver'
 import { getListUsers, USER_FIELDS } from '~/twitter.server';
-import { createUserDb, indexUserNewTweets } from "~/models/user.server";
+import { createUserDb, indexUserNewTweets, indexUserOlderTweets } from "~/models/user.server";
 import type {
     ListV2,
     TweetV2,
@@ -816,6 +816,11 @@ async function updateStreamFollowingLastUpdatedAt(stream: Node, now: string) {
     return streams;
 }
 
+export async function indexMoreTweets(api: TwitterApi, seedUsers: Node[]) {
+    return await Promise.all(seedUsers.map((user) => {
+        return indexUserOlderTweets(api, user.user)
+    }))
+}
 export async function updateStreamTweets(api: TwitterApi, seedUsers: Node[]) {
     return await Promise.all(seedUsers.map((user) => {
         return indexUserNewTweets(api, user.user)
