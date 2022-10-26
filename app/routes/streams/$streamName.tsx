@@ -1,7 +1,7 @@
 import type { ActionArgs, LoaderArgs } from "@remix-run/node";
 import type { ActionFunction } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
-import { Form, useActionData, useCatch, useLoaderData, Outlet, useTransition, useFetcher } from "@remix-run/react";
+import { Form, useActionData, useCatch, useLoaderData, Outlet, useTransition, useFetcher, useSearchParams } from "@remix-run/react";
 import { Link, useParams } from "@remix-run/react";
 import invariant from "tiny-invariant";
 import { ApiResponseError } from "twitter-api-v2";
@@ -35,12 +35,14 @@ import notifierQueue from "~/queues/notifier.server";
 import processTweetsQueue from "~/queues/processTweets.server";
 import { useEffect, useRef, useState } from "react";
 import { int } from "neo4j-driver";
+import { url } from "inspector";
 
-const TWEET_LOAD_LIMIT = 25
+const TWEET_LOAD_LIMIT = 5
 
 export async function loader({ request, params }: LoaderArgs) {
     invariant(params.streamName, "streamName not found");
     console.time("getStreamByName")
+    const url = new URL(request.url);
     let { stream, creator, seedUsers } = await getStreamByName(params.streamName)
     console.timeEnd("getStreamByName")
     if (!stream) {
@@ -119,7 +121,9 @@ export async function loader({ request, params }: LoaderArgs) {
     }
 
     await updateStreamTweets(api, seedUsers)
-    let tweets = await getStreamTweetsNeo4j(stream, 0, TWEET_LOAD_LIMIT)
+    console.log("IN LOADER WITH FILTERS")
+    console.log(url.searchParams.getAll("topicFilter"))
+    let tweets = await getStreamTweetsNeo4j(stream, 0, TWEET_LOAD_LIMIT, url.searchParams.getAll("topicFilter"))
     return json(
         {
             "stream": stream,
@@ -147,17 +151,41 @@ export const action: ActionFunction = async ({
     // structure from https://egghead.io/lessons/remix-add-delete-functionality-to-posts-page-in-remix, which was from https://github.com/remix-run/remix/discussions/3138
     invariant(params.streamName, "streamName not found");
 
+    // Load More Data (page should never be part of user facing url, it is fetched with the fetcher as a non-navigation)
     const url = new URL(request.url);
     const nextpage = url.searchParams.get('page');
     if (nextpage) {
         console.log("fetching data for next page")
         console.log(nextpage)
         let { stream, creator, seedUsers } = await getStreamByName(params.streamName)
-        let tweets = await getStreamTweetsNeo4j(stream, TWEET_LOAD_LIMIT * int(nextpage), TWEET_LOAD_LIMIT)
+        let tweets = await getStreamTweetsNeo4j(stream, TWEET_LOAD_LIMIT * int(nextpage), TWEET_LOAD_LIMIT, url.searchParams.getAll("topicFilter"))
         return { "tweets": tweets }
     }
-
     const formData = await request.formData();
+
+    // Check for and setup Topic Filters 
+    const newTopicFilter = formData.get("topicFilter")
+    const currentTopicFilterParams = url.searchParams.getAll("topicFilter")
+
+    console.log("IN ACTION")
+    console.log(newTopicFilter)
+    console.log(currentTopicFilterParams)
+    if (newTopicFilter && currentTopicFilterParams.indexOf(newTopicFilter) == -1) {
+        console.log(`adding ${newTopicFilter} to list of current topic filters`)
+        url.searchParams.append("topicFilter", newTopicFilter)
+        console.log(`redirecting to url ${url.toString()}`)
+        return redirect(url.toString())
+    } else if (newTopicFilter && currentTopicFilterParams.indexOf(newTopicFilter) != -1) {
+        console.log(`removing entity ${newTopicFilter} from list of current entities`)
+        // thanks to this person: https://github.com/whatwg/url/issues/335#issuecomment-1142139561
+        const allValues = url.searchParams.getAll("topicFilter")
+        allValues.splice(allValues.indexOf(newTopicFilter), 1)
+        url.searchParams.delete("topicFilter")
+        allValues.forEach((val) => url.searchParams.append("topicFilter", val))
+        return redirect(url.toString())
+    }
+
+    // Handle Seed User Operations
     const intent = formData.get("intent");
     let seedUserHandle: string = formData.get("seedUserHandle");
     if (intent === "delete") {
@@ -227,9 +255,20 @@ export const action: ActionFunction = async ({
     }
 }
 
+const eqSet = (xs: Set<string>, ys: Set<string>) =>
+    xs.size === ys.size &&
+    [...xs].every((x) => ys.has(x));
+
 export default function Feed() {
     // Responsible for rendering a feed & annotations
     let { streamName } = useParams();
+    const [searchParams] = useSearchParams();
+    console.log("HERE ARE EARCH PARAMS")
+    console.log(searchParams)
+    console.log(searchParams.toString())
+    const topicFilterSearchParams = new Set(searchParams.getAll("topicFilter"));
+    const topicFilters = useRef(new Set([]) as Set<string>)
+
     const overview = useLocation().pathname.split("/").pop() === "overview"
     let transition = useTransition();
     let busy = transition.submission;
@@ -240,8 +279,29 @@ export default function Feed() {
     const fetcher = useFetcher()
     // const startRef = useRef(0);
     // const page = useRef(0);
+    // useEffect(() => {
+    //     // resetting tweets to orignal pull when topicFiltersChanges...
+    //     console.log("did topic filters change...?")
+    //     console.log(topicFilters.current)
+    //     topicFilters.current = topicFilterSearchParams
+    //     console.log(topicFilters.current)
+    // }, [topicFilterSearchParams])
+
+    useEffect(() => {
+        console.log("in topicFiltersSearchparams useEffect")
+        if (!eqSet(topicFilterSearchParams, topicFilters.current)) {
+            console.log("SEEING A CHANGE, resetting tweets...")
+            topicFilters.current = topicFilterSearchParams
+            setTweets(loaderData.tweets)
+        }
+    }, [topicFilterSearchParams])
+
     useEffect(() => {
         if (fetcher.data) {
+            if (fetcher.data.tweets.length == 0) {
+                // TODO: actuall go do this
+                alert("We have no more tweets indexed! Would you like to index older tweets for this stream?")
+            }
             page.current += 1
             console.log(`adding ${fetcher.data.tweets.length} more tweets to tweets in memory`)
             console.log(`at page ${page.current} of tweets`)
@@ -306,7 +366,7 @@ export default function Feed() {
                 <div className="sticky top-0 mx-auto backdrop-blur-lg bg-slate-50 bg-opacity-60 p-1 rounded-xl">
                     <div className="flex flex-row justify-between p-3 bg-slate-50 rounded-lg">
                         <p className="text-xl font-medium">{stream.properties.name}</p>
-                        <p>showing {tweets.length} tweets!</p>
+                        <p>{tweets.length} tweets loaded for view!</p>
                         {/* DEV: Update Stream Tweets / Stream Follower Network */}
                         <div className="flex flex-row space-x-2">
                             <Form
@@ -339,13 +399,13 @@ export default function Feed() {
                     <div className="relative w-full mx-auto flex flex-col items-center">
                         <Outlet />
                         {overview ?
-                            <Link className="w-full h-hull" to={`/streams/${streamName}`}>
+                            <Link className="w-full h-hull" to={`/streams/${streamName}?${searchParams.toString()}`}>
                                 <div className="my-1 mx-1  text-center cursor-pointer rounded-full bg-slate-50 hover:bg-slate-200">
                                     <MdExpandLess style={{ fontSize: "1rem" }} />
                                 </div>
                             </Link>
                             :
-                            <Link className="w-full h-hull" to={`/streams/${streamName}/overview`}>
+                            <Link className="w-full h-hull" to={`/streams/${streamName}/overview?${searchParams.toString()}`}>
                                 <div className="my-1 mx-1  text-center cursor-pointer rounded-full bg-slate-50 hover:bg-slate-200">
                                     <MdExpandMore style={{ fontSize: "1rem" }} />
                                 </div>
@@ -378,7 +438,13 @@ export default function Feed() {
                                                 tweet.entities &&
                                                 tweet.entities.map((entity: Record, index: number) => (
                                                     <div>
-                                                        <ContextAnnotationChip keyValue={entity.properties.name} value={null} caEntities={[]} hideTopics={[]} key={`entityAnnotationsUnderTweet-${entity.properties.name}-${index}`} />
+                                                        <ContextAnnotationChip
+                                                            keyValue={entity.properties.name}
+                                                            value={null} caEntities={searchParams.getAll("topicFilter")}
+                                                            hideTopics={[]}
+                                                            key={`entityAnnotationsUnderTweet-${entity.properties.name}-${index}`}
+                                                            streamName={streamName}
+                                                        />
                                                     </div>
                                                 ))
                                             }
@@ -389,13 +455,13 @@ export default function Feed() {
 
                             <fetcher.Form
                                 method="post"
-                                action={`/streams/${streamName}?page=${page.current + 1}`}
+                                action={`/streams/${streamName}?page=${page.current + 1}&${searchParams.toString()}`}
                                 className="w-full h-hull"
                             >
                                 <button
                                     type='submit'
                                     name="intent"
-                                    className="my-1 mx-1  text-center cursor-pointer rounded-full bg-slate-50 hover:bg-slate-200"
+                                    className="my-1 mx-1  text-center cursor-pointer rounded-full hover:bg-slate-200 bg-purple-200"
                                 >
                                     Load More Tweets
                                 </button>
