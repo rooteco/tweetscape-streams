@@ -19,6 +19,7 @@ import {
     writeStreamListTweetsToNeo4j,
     createStream,
     updateStreamTweets,
+    indexMoreTweets
 } from "~/models/streams.server";
 
 import { indexUser } from "~/models/user.server";
@@ -120,7 +121,13 @@ export async function loader({ request, params }: LoaderArgs) {
         // }
     }
 
+    if (url.searchParams.get("indexMoreTweets")) {
+        await indexMoreTweets(api, seedUsers)
+        url.searchParams.delete("indexMoreTweets")
+        return redirect(url.toString())
+    }
     await updateStreamTweets(api, seedUsers)
+
     console.log("IN LOADER WITH FILTERS")
     console.log(url.searchParams.getAll("topicFilter"))
     let tweets = await getStreamTweetsNeo4j(stream, 0, TWEET_LOAD_LIMIT, url.searchParams.getAll("topicFilter"))
@@ -277,15 +284,6 @@ export default function Feed() {
     const stream = loaderData.stream;
     const page = useRef(0)
     const fetcher = useFetcher()
-    // const startRef = useRef(0);
-    // const page = useRef(0);
-    // useEffect(() => {
-    //     // resetting tweets to orignal pull when topicFiltersChanges...
-    //     console.log("did topic filters change...?")
-    //     console.log(topicFilters.current)
-    //     topicFilters.current = topicFilterSearchParams
-    //     console.log(topicFilters.current)
-    // }, [topicFilterSearchParams])
 
     useEffect(() => {
         console.log("in topicFiltersSearchparams useEffect")
@@ -300,7 +298,7 @@ export default function Feed() {
         if (fetcher.data) {
             if (fetcher.data.tweets.length == 0) {
                 // TODO: actuall go do this
-                alert("We have no more tweets indexed! Would you like to index older tweets for this stream?")
+                alert("There are no more tweets indexed in our db for this stream! Please click 'Index More Tweets' to index more tweets!")
             }
             page.current += 1
             console.log(`adding ${fetcher.data.tweets.length} more tweets to tweets in memory`)
@@ -466,6 +464,13 @@ export default function Feed() {
                                     Load More Tweets
                                 </button>
                             </fetcher.Form>
+
+                            <Link
+                                to={`/streams/${streamName}?${searchParams.toString()}&indexMoreTweets=true`}
+                                className="my-1 mx-1  text-center cursor-pointer rounded-full hover:bg-slate-200 bg-red-200"
+                            >
+                                Index More Tweets
+                            </Link>
 
                         </div>
                     }
