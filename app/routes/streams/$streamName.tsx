@@ -200,10 +200,7 @@ export const action: ActionFunction = async ({
         console.time("addSeedUserToStream")
         addedUser = await addSeedUserToStream(api, stream, user) // this adds a list member and an edge, it doesn't do follows or tweets fetching...
         console.timeEnd("addSeedUserToStream")
-
         await indexUser(api, limits, user)
-
-
         console.log(`Added user ${user.properties.username} to stream ${stream.properties.name}`)
         return redirect(`/streams/${params.streamName}/overview`)
     } else if (intent === "removeSeedUser") {
@@ -216,20 +213,6 @@ export const action: ActionFunction = async ({
         )
         return deletedRel;
     }
-    // else if (intent === "addSeedUsersFromList") {
-    //     const { api, uid, session } = await getClient(request);
-    //     let listId = formData.get("listId") as string;
-    //     addTwitterListToStream(api, stream, listId);
-    //     return null;
-    // } else if (intent === "updateStreamTweets") {
-    //     const { api, limits } = await getClient(request);
-    //     updateStreamTweets(api, stream, seedUsers.map((item: any) => (item.user)))
-    //     return null;
-    // } else if (intent === "updateStreamFollowsNetwork") {
-    //     const { api, limits } = await getClient(request);
-    //     updateStreamFollowsNetwork(api, limits, stream, seedUsers)
-    //     return null;
-    // }
 }
 
 export default function Feed() {
@@ -266,6 +249,18 @@ export default function Feed() {
     if (actionData) {
         errors = actionData.errors;
         // recommendedUsers = actionData.recommendedUsers;
+    }
+
+    if (transition.state == "loading") {
+        return (
+            <div className="flex px-4 py-2  z-10">
+                <div className='relative max-h-screen overflow-y-auto pb-12 border-2'>
+                    <div className="grow lg:w-3/4 lg:mx-2 2xl:mx-auto">
+                        loading newest tweets for your stream...
+                    </div>
+                </div>
+            </div>
+        )
     }
 
     return (

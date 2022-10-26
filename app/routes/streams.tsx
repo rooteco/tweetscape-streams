@@ -24,9 +24,11 @@ import type { ListV2 } from 'twitter-api-v2';
 import {
     getStreams,
     migrateStreams,
+    getUserStreams,
     getAllStreams,
     addUserOwnedLists,
-    addUserFollowedLists
+    addUserFollowedLists,
+    getAllStreams
 } from "~/models/streams.server";
 
 
@@ -42,7 +44,8 @@ import type { Stream } from "../components/StreamAccordion";
 type LoaderData = {
     // this is a handy way to say: "posts is whatever type getStreams resolves to"
     // streams: Awaited<ReturnType<typeof getStreams>>;
-    streams: Array<Stream>
+    userStreams: Array<Stream>,
+    allStreams: Array<Stream>,
     user: any
     lists: any
 }
@@ -68,10 +71,9 @@ function flattenTwitterData(data: Array<any>) {
 
 // export async function loader({ request }: LoaderArgs) {
 export const loader: LoaderFunction = async ({ request }: LoaderArgs) => {
-    console.time("getAllStreams in streams.tsx")
-    let allStreams = await getAllStreams();
-    console.timeEnd("getAllStreams in streams.tsx")
     let user = null;
+    let userStreams = [];
+    let allStreams = [];
     let userLists = { followedLists: [] as ListV2[], ownedLists: [] as ListV2[] }
 
     const url = new URL(request.url);
@@ -156,15 +158,22 @@ export const loader: LoaderFunction = async ({ request }: LoaderArgs) => {
     } catch (e) {
         console.log("you are unauthorized while getting client... please log back in...")
         console.log(e)
-        const res = await fetch(url.origin + "/logout", {
-            method: "POST"
-        })
-        return redirect("/streams")
+        console.log("REDIRECTING TO LOGOUT...")
+        return redirect("/logout")
     }
+
+    if (user) {
+        console.time("getAllStreams in streams.tsx")
+        userStreams = await getUserStreams(user.username);
+        console.timeEnd("getAllStreams in streams.tsx")
+        allStreams = await getAllStreams(user.username);
+    }
+
     const headers = { 'Set-Cookie': await commitSession(session) };
     return json<LoaderData>(
         {
-            streams: allStreams,
+            userStreams: userStreams,
+            allStreams: allStreams,
             user: user,
             lists: userLists
         },
@@ -173,11 +182,9 @@ export const loader: LoaderFunction = async ({ request }: LoaderArgs) => {
 }
 
 export default function StreamsPage() {
-    const { streams, user, lists } = useLoaderData<LoaderData>();
+    const { userStreams, allStreams, user, lists } = useLoaderData<LoaderData>();
     const params = useParams();
-
     const errors = useActionData();
-
     const streamsRoot = useParams().streamName === undefined;
 
     return (
@@ -202,7 +209,11 @@ export default function StreamsPage() {
                 {/* List of Streams */}
                 <div className="flex flex-col space-y-0.5 flex-1 z-10">
                     <p className="ml-2 text-slate-400 font-medium text-xs"> {user ? `@${user.username}'s` : "Public"} Streams </p>
-                    <StreamAccordion streams={streams} lists = {lists}/>
+                    <StreamAccordion streams={userStreams} lists={lists} />
+                </div>
+                <div className="flex flex-col space-y-0.5 flex-1 z-10">
+                    <p className="ml-2 text-slate-400 font-medium text-xs"> Public Streams (Created By Other Users) </p>
+                    <StreamAccordion streams={allStreams} lists={lists} />
                 </div>
             </div>
         </div>

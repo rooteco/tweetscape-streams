@@ -2,7 +2,7 @@ import React from 'react'
 import { Link } from '@remix-run/react'
 import { Form } from '@remix-run/react'
 
-import {IoAddOutline} from 'react-icons/io5';
+import { IoAddOutline } from 'react-icons/io5';
 
 function CreateAndLogin({ user }) {
     return (
@@ -19,8 +19,6 @@ function CreateAndLogin({ user }) {
                 {user ?
                     <Form
                         action="/logout"
-                        method="post"
-
                     >
                         <button
                             type="submit"
