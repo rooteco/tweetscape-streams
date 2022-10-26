@@ -854,7 +854,7 @@ export async function getStreamTweetsNeo4j(stream: Node, skip: number = 0, limit
             OPTIONAL MATCH (t)-[tr:INCLUDED]->(entity:Entity)-[:CATEGORY]-(d:Domain {name:"Unified Twitter Taxonomy"})
             OPTIONAL MATCH (t)-[mr:ATTACHED]->(media:Media)
             OPTIONAL MATCH (t)-[ar:ANNOTATED]-(a)
-            RETURN u,t,
+            RETURN DISTINCT u,t,
                 collect(DISTINCT a) as a, 
                 collect(DISTINCT r) as refTweetRels, 
                 collect(DISTINCT ref_t) as refTweets,
