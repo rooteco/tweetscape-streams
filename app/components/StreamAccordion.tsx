@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Integer } from 'neo4j-driver';
-import { Link, useParams } from "@remix-run/react";
+import { Link, useFetcher, useParams, useSubmit, useTransition } from "@remix-run/react";
 import cn from 'classnames';
 
 
@@ -52,10 +52,14 @@ export type Stream = {
 
 
 const AccordionSummary = ({ streamName, isOpen, setOpenStream }) => {
-
   const handleClick = () => {
     isOpen ? setOpenStream(null) : setOpenStream(streamName);
   };
+  const transition = useTransition()
+  // TODO: get the path so it doesn't show every single stream as loading... 
+  if (transition.state == "loading") {
+    return <div>Loading....</div>
+  }
 
   return (
     <Link to={isOpen ? "/streams" : `${streamName}/overview`}>
@@ -141,9 +145,7 @@ const Accordion = ({ height, stream, openStream, setOpenStream, lists }) => {
 function StreamAccordion({ streams, lists }: { streams: Stream[] }) {
   // TODO: onOpen redirect to $streamName
   // TODO: perf should be much better when folding/unfolding streams
-
   const { streamName } = useParams();
-
   const openStreamName = streamName;
 
   // const [openStream, setOpenStream] = useState("");

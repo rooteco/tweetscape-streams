@@ -3,7 +3,7 @@ import { TwitterApi, TwitterV2IncludesHelper, UserSearchV1Paginator } from 'twit
 import type { TwitterApiRateLimitPlugin } from '@twitter-api-v2/plugin-rate-limit';
 import { log } from '~/log.server';
 import { driver } from "~/neo4j.server";
-import type { Record, Node } from 'neo4j-driver'
+import { Record, Node, int } from 'neo4j-driver'
 import { getListUsers, USER_FIELDS } from '~/twitter.server';
 import { createUserDb, indexUserNewTweets } from "~/models/user.server";
 import type {
@@ -98,14 +98,16 @@ export async function getStreams() {
     return streams;
 }
 
-export async function getAllStreams() {
+export async function getAllStreams(username: string) {
     const session = driver.session()
     const res = await session.executeRead((tx: any) => {
         return tx.run(`
-            MATCH (s:Stream)
+            MATCH (s:Stream)<-[:CREATED]-(creator:User)
+            WHERE creator.username <> $username
             OPTIONAL MATCH (s)-[r:CONTAINS]->(u:User)
             RETURN s, collect(u) as seedUsers
-            `
+            `,
+            { username }
         )
     })
     const streams = res.records.map((row: Record) => {
@@ -117,7 +119,8 @@ export async function getAllStreams() {
 
     const recRes = await session.executeRead((tx: any) => {
         return tx.run(`
-            MATCH (s:Stream)
+            MATCH (s:Stream)<-[:CREATED]-(creator:User)
+            WHERE creator.username <> $username
             unwind s as singleS
             MATCH (singleStream:Stream {name: singleS.name})-[:CONTAINS]->(seedUsers:User)-[:FOLLOWS]->(allFollowed:User)
             WITH collect(allFollowed) as allFollowedUsers, collect(seedUsers) as seedUsers, singleStream as singleStream 
@@ -125,7 +128,82 @@ export async function getAllStreams() {
             WHERE (allF in allFollowedUsers and seedUser in seedUsers)
             WITH collect(endNode(r)) as endingEnders, singleStream
             RETURN  singleStream.name as streamName, apoc.coll.duplicatesWithCount(endingEnders) as recU
-            `
+            `,
+            { username }
+        )
+    })
+    const recUsersMap = new Map()
+    recRes.records.map((row: Record) => {
+        let streamName = row.get("streamName")
+        let ru = row.get("recU")
+        recUsersMap.set(streamName, ru)
+    })
+    streams.forEach((row: any) => {
+        let streamName = row.stream.properties.name
+        let seedUsers = row.seedUsers;
+        let seedUserUsernames = seedUsers.map((row: any) => row.properties.username)
+
+        let recommendedUsers = recUsersMap.get(streamName)
+        if (!recommendedUsers) {
+            recommendedUsers = []
+        }
+
+        let numSeedUsersFollowedBy = seedUsers.length + 1;
+        let recommendedUsersTested: any[] = [];
+
+        if (recommendedUsers.length > 0) {
+            while (recommendedUsersTested.length < 5 && numSeedUsersFollowedBy > 1) {
+                recommendedUsersTested = [];
+                numSeedUsersFollowedBy--;
+                recommendedUsers.map((row: any) => {
+                    if (row.count.toInt() >= numSeedUsersFollowedBy && seedUserUsernames.indexOf(row.item.properties.username) == -1) {
+                        recommendedUsersTested.push(row.item)
+                    }
+                })
+            }
+
+        }
+
+        recommendedUsersTested.sort((a, b) => a.properties['public_metrics.followers_count'] - b.properties['public_metrics.followers_count'])
+
+
+        row.recommendedUsers = recommendedUsersTested
+    })
+
+    await session.close()
+    return streams;
+}
+
+export async function getUserStreams(username: string) {
+    const session = driver.session()
+    const res = await session.executeRead((tx: any) => {
+        return tx.run(`
+            MATCH (s:Stream)<-[:CREATED]-(creator:User {username: $username})
+            OPTIONAL MATCH (s)-[r:CONTAINS]->(u:User)
+            RETURN s, collect(u) as seedUsers
+            `,
+            { username }
+        )
+    })
+    const streams = res.records.map((row: Record) => {
+        return {
+            "stream": row.get("s"),
+            "seedUsers": row.get("seedUsers")
+        }
+    })
+
+    const recRes = await session.executeRead((tx: any) => {
+        return tx.run(`
+            MATCH (s:Stream)<-[:CREATED]-(creator:User {username: $username})
+            unwind s as singleS
+            MATCH (singleStream:Stream {name: singleS.name})-[:CONTAINS]->(seedUsers:User)-[:FOLLOWS]->(allFollowed:User)
+            WITH collect(allFollowed) as allFollowedUsers, collect(seedUsers) as seedUsers, singleStream as singleStream 
+            MATCH (seedUser)-[r:FOLLOWS]->(allF)
+            WHERE (allF in allFollowedUsers and seedUser in seedUsers)
+            WITH collect(endNode(r)) as endingEnders, singleStream
+            RETURN  singleStream.name as streamName, apoc.coll.duplicatesWithCount(endingEnders) as recU
+            `,
+            { username }
         )
     })
     const recUsersMap = new Map()
@@ -257,33 +335,6 @@ export async function removeSeedUserFromStream(streamName: string, username: str
     await session.close()
     return node;
 
-}
-
-async function getTweetsFromAuthorId(
-    api: TwitterApi,
-    id: string,
-    startTime: string,
-) {
-    console.log(`pulling tweets for ${id}`)
-    const tweets = await api.v2.userTimeline(
-        id,
-        {
-            'expansions': 'author_id,in_reply_to_user_id,referenced_tweets.id,referenced_tweets.id.author_id,entities.mentions.username,attachments.poll_ids,attachments.media_keys,geo.place_id',
-            'tweet.fields': 'attachments,author_id,context_annotations,conversation_id,created_at,entities,geo,id,in_reply_to_user_id,lang,public_metrics,text,possibly_sensitive,referenced_tweets,reply_settings,source,withheld',
-            'user.fields': USER_FIELDS,
-            'media.fields': 'alt_text,duration_ms,height,media_key,preview_image_url,type,url,width,public_metrics',
-            'poll.fields': 'duration_minutes,end_datetime,id,options,voting_status',
-            'place.fields': 'contained_within,country,country_code,full_name,geo,id,name,place_type',
-            'max_results': 100,
-            'start_time': startTime
-        }
-    );
-    while (!tweets.done) {
-        console.log(tweets.data.data.length);
-        await tweets.fetchNext();
-    }
-    console.log(`done pulling tweets for ${id}`)
-    return tweets;
 }
 
 async function pullTweets(api: TwitterApi, user: Node, startTime: string, now: string) {
@@ -572,14 +623,6 @@ export async function getAllUserLists(username: string) {
     return lists;
 }
 
-export async function addTwitterListToStream(api: TwitterApi, stream: Node, listId: string) {
-    const users = await getListUsers(api, listId)
-    for (const user of users) {
-        const userDb = await createUserDb(user)
-        addSeedUserToStream(api, stream, userDb)
-    }
-}
-
 export function flattenMediaPublicMetrics(data: Array<any>) {
     for (const obj of data) {
         // obj.username = obj.username.toLowerCase();
@@ -701,7 +744,6 @@ export async function addSeedUserToStream(
     }
 };
 
-
 export async function updateStreamFollowsNetwork(api: TwitterApi, limits: TwitterApiRateLimitPlugin, stream: Node, seedUsers: Node[]) {
 
     let now = new Date()
@@ -800,7 +842,7 @@ async function writeTweetData(res: TweetV2ListTweetsPaginator) {
     ])
 }
 
-export async function getStreamTweetsNeo4j(stream: Node) {
+export async function getStreamTweetsNeo4j(stream: Node, skip: number = 0, limit: number = 50) {
     const session = driver.session()
     // Create a node within a write transaction
 
@@ -822,8 +864,10 @@ export async function getStreamTweetsNeo4j(stream: Node) {
                 collect(DISTINCT media) as media, 
                 collect(DISTINCT mr) as mediaRels
             ORDER by t.created_at DESC
+            SKIP $skip
+            LIMIT $limit
         `,
-            { name: stream.properties.name })
+            { name: stream.properties.name, skip: int(skip), limit: int(limit) })
     })
 
 
@@ -908,7 +952,6 @@ export async function StreamTweetsEntityCounts(streamName: string) {
     await session.close()
     return data;
 }
-
 
 export async function getStreamTweets(name: string, startTime: string) {
     //THIS EXCLUDES RETWEETS RIGHT NOW
@@ -1050,50 +1093,4 @@ export async function getStreamRecommendedUsersByInteractions(name: string) {
     }
     await session.close()
     return recommendedUsers;
-}
-
-
-async function getTweetsFromUsernames(usernames: string[]) {
-    const queries: string[] = [];
-    usernames.forEach((username) => {
-        const query = queries[queries.length - 1];
-        if (query && `${query} OR from:${username}`.length < 512)
-            queries[queries.length - 1] = `${query} OR from:${username}`;
-        else queries.push(`from:${username}`);
-    });
-    const users: Record<string, UserV2> = {};
-    const tweets: TweetV2[] = [];
-    await Promise.all(
-        queries.map(async (query) => {
-            const res = await api.v2.search(query, {
-                'max_results': 100,
-                'tweet.fields': TWEET_FIELDS,
-                'expansions': TWEET_EXPANSIONS,
-                'user.fields': USER_FIELDS,
-            });
-            res.tweets.forEach((tweet) => tweets.push(tweet));
-            const includes = new TwitterV2IncludesHelper(res);
-            includes.users.forEach((user) => {
-                users[user.id] = user;
-            });
-        })
-    );
-    return tweets.map((tweet) => ({
-        ...tweet,
-        html: html(tweet.text),
-        author: users[tweet.author_id as string],
-    }));
-}
-
-export function html(text: string): string {
-    return autoLink(text, {
-        usernameIncludeSymbol: true,
-        linkAttributeBlock(entity, attrs) {
-            /* eslint-disable no-param-reassign */
-            attrs.target = '_blank';
-            attrs.rel = 'noopener noreferrer';
-            attrs.class = 'hover:underline text-blue-500';
-            /* eslint-enable no-param-reassign */
-        },
-    });
 }

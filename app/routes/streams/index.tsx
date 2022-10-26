@@ -1,7 +1,7 @@
 import type { ActionArgs, LoaderFunction, LoaderArgs } from "@remix-run/node";
 import type { Session } from '@remix-run/node';
 import { json, redirect } from "@remix-run/node";
-import { Form, useActionData, Link, useMatches } from "@remix-run/react";
+import { Form, useActionData, Link, useMatches, useTransition } from "@remix-run/react";
 import * as React from "react";
 import BirdIcon from '~/icons/bird';
 import { commitSession, getSession } from '~/session.server';
@@ -86,6 +86,20 @@ export default function NewNotePage() {
             bodyRef.current?.focus();
         }
     }, [actionData]);
+
+    const transition = useTransition();
+
+    if (transition.state == "loading") {
+        return (
+            <div className="flex h-full w-full justify-center align-middle items-center">
+                <div className="bg-white" style={{ width: "fit-content", borderRadius: 4, backgroundColor: "white !important" }}>
+                    <div className="flex flex-col p-4 space-y-2">
+                        <h1 className="text-lg font-medium pb-6">Loading your Stream!</h1>
+                    </div>
+                </div>
+            </div>
+        )
+    }
 
     return (
 

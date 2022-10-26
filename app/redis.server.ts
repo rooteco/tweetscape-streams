@@ -15,6 +15,7 @@ const redisOptions: RedisOptions = {
 // the server with every change, but we want to make sure we don't
 // create a new connection to the Redis with every change either.
 if (process.env.NODE_ENV === "production") {
+    redisOptions.family = 6 // ipv6 address https://github.com/luin/ioredis/issues/1576
     redis = new Redis(process.env.REDIS_URL, redisOptions);
 } else {
     if (!global.__redis) {
