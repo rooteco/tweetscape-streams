@@ -363,7 +363,25 @@ export default function Feed() {
                         <p className="text-xl font-medium">{stream.properties.name}</p>
                         <div className="flex flex-wrap mb-4">
                             <p>{tweets.length} tweets loaded for view!</p>
-                            <LoadMoreIndexMore streamName={streamName} pageNum={page.current + 1} searchParams={searchParams}></LoadMoreIndexMore>
+                            <fetcher.Form
+                                method="post"
+                                action={`/streams/${streamName}?page=${page.current + 1}&${searchParams.toString()}`}
+                                className="w-full h-hull"
+                            >
+                                <button
+                                    type='submit'
+                                    name="intent"
+                                    className="my-1 mx-1  text-center cursor-pointer rounded-full hover:bg-slate-200 bg-purple-200"
+                                >
+                                    Load More Tweets
+                                </button>
+                            </fetcher.Form>
+                            <Link
+                                to={`/streams/${streamName}?${searchParams.toString()}&indexMoreTweets=true`}
+                                className="my-1 mx-1  text-center cursor-pointer rounded-full hover:bg-slate-200 bg-red-200"
+                            >
+                                Index More Tweets
+                            </Link>
                         </div>
                         {/* DEV: Update Stream Tweets / Stream Follower Network */}
                         <div className="flex flex-row space-x-2">
@@ -446,7 +464,28 @@ export default function Feed() {
                                     </div>
                                 ))
                             }
-                            <LoadMoreIndexMore streamName={streamName} pageNum={page.current + 1} searchParams={searchParams}></LoadMoreIndexMore>
+
+                            <fetcher.Form
+                                method="post"
+                                action={`/streams/${streamName}?page=${page.current + 1}&${searchParams.toString()}`}
+                                className="w-full h-hull"
+                            >
+                                <button
+                                    type='submit'
+                                    name="intent"
+                                    className="my-1 mx-1  text-center cursor-pointer rounded-full hover:bg-slate-200 bg-purple-200"
+                                >
+                                    Load More Tweets
+                                </button>
+                            </fetcher.Form>
+
+                            <Link
+                                to={`/streams/${streamName}?${searchParams.toString()}&indexMoreTweets=true`}
+                                className="my-1 mx-1  text-center cursor-pointer rounded-full hover:bg-slate-200 bg-red-200"
+                            >
+                                Index More Tweets
+                            </Link>
+
                         </div>
                     }
                 </div>
@@ -454,33 +493,6 @@ export default function Feed() {
 
         </div >
     );
-}
-
-function LoadMoreIndexMore({ streamName, pageNum, searchParams }) {
-    const fetcher = useFetcher()
-    return (
-        <div>
-            <fetcher.Form
-                method="post"
-                action={`/streams/${streamName}?page=${pageNum}&${searchParams.toString()}`}
-                className="w-full h-hull"
-            >
-                <button
-                    type='submit'
-                    name="intent"
-                    className="my-1 mx-1  text-center cursor-pointer rounded-full hover:bg-slate-200 bg-purple-200"
-                >
-                    Load More Tweets
-                </button>
-            </fetcher.Form>
-            <Link
-                to={`/streams/${streamName}?${searchParams.toString()}&indexMoreTweets=true`}
-                className="my-1 mx-1  text-center cursor-pointer rounded-full hover:bg-slate-200 bg-red-200"
-            >
-                Index More Tweets
-            </Link>
-        </div >
-    )
 }
 
 export function ErrorBoundary({ error }: { error: Error }) {
