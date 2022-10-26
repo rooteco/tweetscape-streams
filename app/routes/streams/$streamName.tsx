@@ -438,7 +438,16 @@ export default function Feed() {
                 <div className="grow lg:w-3/4 lg:mx-2 2xl:mx-auto">
                     {busy ?
                         <div>LOADING</div> :
-                        <LoadMoreIndexMore streamName={streamName} pageNum={page.current + 1} searchParams={searchParams}></LoadMoreIndexMore>
+                        <div>
+                            {
+                                tweets.map((tweet: any, index: number) => (
+                                    <div key={`showTweets-${tweet.tweet.properties.id}-${index}`}>
+                                        <Tweet key={tweet.tweet.id} tweet={tweet} searchParams={searchParams} streamName={streamName} />
+                                    </div>
+                                ))
+                            }
+                            <LoadMoreIndexMore streamName={streamName} pageNum={page.current + 1} searchParams={searchParams}></LoadMoreIndexMore>
+                        </div>
                     }
                 </div>
             </div>
@@ -447,7 +456,7 @@ export default function Feed() {
     );
 }
 
-export default function LoadMoreIndexMore({ streamName, pageNum, searchParams }) {
+function LoadMoreIndexMore({ streamName, pageNum, searchParams }) {
     const fetcher = useFetcher()
     return (
         <div>
@@ -470,8 +479,7 @@ export default function LoadMoreIndexMore({ streamName, pageNum, searchParams })
             >
                 Index More Tweets
             </Link>
-        </fetcher.Form >
-                            </div >
+        </div >
     )
 }
 
