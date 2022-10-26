@@ -1,7 +1,7 @@
 import { Form, useTransition } from "@remix-run/react";
 
 
-function ContextAnnotationChip({ keyValue, value, caEntities, hideTopics }) {
+function ContextAnnotationChip({ keyValue, value, caEntities, hideTopics, streamName }) {
     if (!caEntities) {
         caEntities = []
     }
@@ -30,7 +30,7 @@ function ContextAnnotationChip({ keyValue, value, caEntities, hideTopics }) {
                 className={`
                     ${bg}
                     px-4 py-2 rounded-full text-gray-500  font-semibold text-sm flex align-center w-max cursor-pointer active:bg-gray-300 transition duration-300 ease`}>
-                <button className="" type="submit" name="caEntityCount" value={keyValue}>
+                <button className="" type="submit" name="topicFilter" value={keyValue}>
                     {`${keyValue} ${value ? ', ' + value : ''}`}
                 </button>
                 <button

@@ -1,13 +1,13 @@
 import type { LoaderArgs } from "@remix-run/node"
-import { useLoaderData, useMatches } from "@remix-run/react";
+import { useLoaderData, useMatches, useSearchParams } from "@remix-run/react";
 import { Link, useParams } from "@remix-run/react";
 import { StreamTweetsEntityCounts } from '~/models/streams.server'
-
 import Chip from '~/components/Chip';
 
 import ContextAnnotationChip from '~/components/ContextAnnotationChip';
 import invariant from "tiny-invariant";
 
+export { action } from '~/routes/streams/$streamName';
 
 export async function loader({ request, params }: LoaderArgs) {
     invariant(params.streamName, "streamName not found");
@@ -19,8 +19,9 @@ export async function loader({ request, params }: LoaderArgs) {
 
 export default function Overview() {
     // Responsible for rendering the overview page for a stream
-    const params = useParams();
+    const { streamName } = useParams();
     const loaderData = useLoaderData();
+    const [searchParams] = useSearchParams();
     const entityDistribution = loaderData.entityDistribution
     const matches = useMatches(); // gives access to all the routes, https://remix.run/docs/en/v1/api/remix#usematches
     const tweets = matches.filter((route) => route.id == 'routes/streams/$streamName')[0].data.tweets
@@ -122,11 +123,31 @@ export default function Overview() {
                             })
                         }
                     </div>
-                    <p className="text-md font-medium my-4">Top Twitter Topics from indexed tweets for this stream</p>
+                    <p className="text-md font-medium my-4">Selected Twitter Topics from indexed tweets for this stream</p>
                     <div className="flex flex-wrap max-w-sm">
-                        {entityDistribution.map((entity, index) => (
-                            <ContextAnnotationChip keyValue={entity.item.properties.name} value={entity.count} caEntities={[]} hideTopics={[]} key={`entityAnnotations-${entity.item.properties.name}-${index}`} />
-                        ))}
+                        {entityDistribution.filter((entity) => (searchParams.getAll("topicFilter").indexOf(entity.item.properties.name) > -1))
+                            .map((entity, index) => (
+                                <ContextAnnotationChip
+                                    keyValue={entity.item.properties.name}
+                                    value={entity.count}
+                                    caEntities={searchParams.getAll("topicFilter")}
+                                    hideTopics={[]} key={`entityAnnotations-${entity.item.properties.name}-${index}`}
+                                    streamName={streamName}
+                                />
+                            ))}
+                    </div>
+                    <p className="text-md font-medium my-4">Other AvailableTwitter Topics from indexed tweets for this stream</p>
+                    <div className="flex flex-wrap max-w-sm">
+                        {entityDistribution.filter((entity) => (searchParams.getAll("topicFilter").indexOf(entity.item.properties.name) == -1))
+                            .map((entity, index) => (
+                                <ContextAnnotationChip
+                                    keyValue={entity.item.properties.name}
+                                    value={entity.count}
+                                    caEntities={searchParams.getAll("topicFilter")}
+                                    hideTopics={[]} key={`entityAnnotations-${entity.item.properties.name}-${index}`}
+                                    streamName={streamName}
+                                />
+                            ))}
                     </div>
                 </div>
             </div>
