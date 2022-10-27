@@ -132,9 +132,6 @@ export async function loader({ request, params }: LoaderArgs) {
         return redirect(url.toString())
     }
     await updateStreamTweets(api, seedUsers)
-
-    console.log("IN LOADER WITH FILTERS")
-    console.log(url.searchParams.getAll("topicFilter"))
     let tweets = await getStreamTweetsNeo4j(stream, 0, TWEET_LOAD_LIMIT, url.searchParams.getAll("topicFilter"))
     const entityDistribution = await StreamTweetsEntityCounts(params.streamName)
     return json(
@@ -277,9 +274,6 @@ export default function Feed() {
     // Responsible for rendering a feed & annotations
     let { streamName } = useParams();
     const [searchParams] = useSearchParams();
-    console.log("HERE ARE EARCH PARAMS")
-    console.log(searchParams)
-    console.log(searchParams.toString())
     const topicFilterSearchParams = new Set(searchParams.getAll("topicFilter"));
     const topicFilters = useRef(new Set([]) as Set<string>)
 
@@ -460,7 +454,7 @@ export default function Feed() {
                             {
                                 tweets.map((tweet: any, index: number) => (
                                     <div key={`showTweets-${tweet.tweet.properties.id}-${index}`}>
-                                        <Tweet key={tweet.tweet.id} tweet={tweet} searchParams={searchParams} streamName={streamName} />
+                                        <Tweet key={tweet.tweet.id} tweet={tweet} searchParams={searchParams} />
                                     </div>
                                 ))
                             }
