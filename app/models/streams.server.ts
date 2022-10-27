@@ -461,6 +461,7 @@ export async function addUsersFollowedBy(users: any, { username }) {
         }) // First, clear old follows so we match current twitter following 
     }
     catch (e) {
+        console.log("error in streams.server addUsers followed by first section")
         console.log(e)
         await session.close()
         throw e
@@ -495,6 +496,7 @@ export async function addUsersFollowedBy(users: any, { username }) {
         return followed;
     }
     catch (e) {
+        console.log("error in streams.server addUsersFollowedBy")
         console.log(e)
         await session.close()
         throw e
