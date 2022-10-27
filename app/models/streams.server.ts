@@ -670,8 +670,11 @@ export async function addTweetsFrom(tweets: any) {
                 tweet.text = t.text,
                 tweet.created_at = t.created_at,
                 tweet.reply_settings = t.reply_settings,
-                tweet.author_id = t.author_id
-
+                tweet.author_id = t.author_id,
+                tweet.\`public_metrics.retweet_count\` = t.\`public_metrics.retweet_count\`,
+                tweet.\`public_metrics.reply_count\` = t.\`public_metrics.reply_count\`,
+                tweet.\`public_metrics.like_count\` = t.\`public_metrics.like_count\`,
+                tweet.\`public_metrics.quote_count\` = t.\`public_metrics.quote_count\`
             MERGE (user:User {id: t.author_id})
 
             MERGE (user)-[:POSTED]->(tweet)
