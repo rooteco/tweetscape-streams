@@ -1,7 +1,7 @@
 import { Form, useTransition } from "@remix-run/react";
 
 
-function ContextAnnotationChip({ keyValue, value, caEntities, hideTopics, streamName }) {
+function ContextAnnotationChip({ keyValue, value, caEntities, hideTopics }) {
     if (!caEntities) {
         caEntities = []
     }
