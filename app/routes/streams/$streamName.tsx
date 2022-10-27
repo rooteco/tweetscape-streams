@@ -415,9 +415,9 @@ export default function Feed() {
                                         value="addSeedUser"
                                         name="intent"
                                         onClick={() => setOverview(false)}
-                                        className="w-full h-hull my-1 mx-1  text-center cursor-pointer rounded-full bg-slate-50 hover:bg-slate-200"
+                                        className="w-full my-1 mx-1 flex flex-col items-center cursor-pointer rounded-full bg-slate-100 hover:bg-slate-200"
                                     >
-                                        <MdExpandLess style={{ fontSize: "1rem" }} />
+                                        <MdExpandLess className="self-center" style={{ fontSize: "4rem" }} />
                                     </button>
                                 </div>
                                 :
@@ -426,9 +426,9 @@ export default function Feed() {
                                     value="addSeedUser"
                                     name="intent"
                                     onClick={() => setOverview(true)}
-                                    className="w-full h-hull my-1 mx-1  text-center cursor-pointer rounded-full bg-slate-50 hover:bg-slate-200"
+                                    className="w-full my-1 mx-1 flex flex-col items-center cursor-pointer rounded-full bg-slate-100 hover:bg-slate-200"
                                 >
-                                    <MdExpandMore style={{ fontSize: "1rem" }} />
+                                    <MdExpandMore style={{ fontSize: "4rem" }} />
                                 </button>
                         }
                     </div>
