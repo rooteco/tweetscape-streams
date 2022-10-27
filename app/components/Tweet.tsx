@@ -108,7 +108,6 @@ function Action({
         >
             {iconWrapperComponent}
             {!!n && num(n)}
-            {num(n)}
         </a>
     );
 }
