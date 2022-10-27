@@ -71,6 +71,29 @@ export async function getStreamsUserIn(username: string) {
   return streams;
 }
 
+export async function getMetaFollowers(user1: string, user2: string) {
+  const session = driver.session()
+  // Create a node within a write transaction
+  const res = await session.executeRead((tx: any) => {
+    return tx.run(`
+        MATCH (user1:User {username: $user1 })-[:FOLLOWS]->(followedByBoth:User)
+        MATCH (user2:User {username: $user2 })-[:FOLLOWS]->(followedByBoth:User)
+        RETURN followedByBoth
+        ORDER BY followedByBoth.\`public_metrics.followers_count\`
+      `,
+      { user1: user1, user2: user2 })
+  })
+
+  let metaFollowers = [];
+  if (res.records.length > 0) {
+    metaFollowers = res.records.map((row: Record) => {
+      return row.get('followedByBoth')
+    })
+  }
+  await session.close()
+  return metaFollowers;
+}
+
 async function pullTweets(
   api: TwitterApi,
   user: Node,
@@ -269,8 +292,10 @@ export async function getUserIndexedTweets(username: string,) {
   const res = await session.executeRead((tx: any) => {
     return tx.run(`
           MATCH (u:User {username: $username} )-[:POSTED]->(t:Tweet)
-          OPTIONAL MATCH (t)-[relation:REFERENCED]->(refTweet:Tweet)
-          RETURN u,t,collect(refTweet) as refTweet,collect(relation) as rel
+          OPTIONAL MATCH (t)-[r:REFERENCED]->(ref_t:Tweet)<-[:POSTED]-(ref_a:User)
+          OPTIONAL MATCH (t)-[ar:ANNOTATED]-(a)
+          OPTIONAL MATCH (t)-[tr:INCLUDED]->(entity)
+          RETURN u,t,collect(a) as a, collect(r) as refTweetRels, collect(ref_t) as refTweets,collect(ref_a) as refTweetAuthors, collect(entity) as entities
           ORDER by t.created_at DESC
       `,
       { username })
@@ -279,10 +304,13 @@ export async function getUserIndexedTweets(username: string,) {
   if (res.records.length > 0) {
     tweets = res.records.map((row: Record) => {
       return {
-        "tweet": row.get('t'),
-        "author": row.get('u'),
-        "refTweet": row.get('refTweet'),
-        "rel": row.get("rel")
+        tweet: row.get('t'),
+        author: row.get('u'),
+        annotation: row.get('a'),
+        refTweets: row.get('refTweets'),
+        refTweetRels: row.get('refTweetRels'),
+        refTweetAuthors: row.get('refTweetAuthors'),
+        entities: row.get('entities')
       }
     })
   }
