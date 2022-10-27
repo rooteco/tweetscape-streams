@@ -177,10 +177,6 @@ export const action: ActionFunction = async ({
     // Check for and setup Topic Filters 
     const newTopicFilter = formData.get("topicFilter")
     const currentTopicFilterParams = url.searchParams.getAll("topicFilter")
-
-    console.log("IN ACTION")
-    console.log(newTopicFilter)
-    console.log(currentTopicFilterParams)
     if (newTopicFilter && currentTopicFilterParams.indexOf(newTopicFilter) == -1) {
         console.log(`adding ${newTopicFilter} to list of current topic filters`)
         url.searchParams.append("topicFilter", newTopicFilter)
