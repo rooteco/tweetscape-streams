@@ -117,7 +117,7 @@ async function pullTweets(
     delete utReq.until_id
   }
 
-  // TODO: what to do if I have a partially indexed User?
+  // TODO: what to do if I have a partially indexed User? aka username, but no id
   const tweetRes = await api.v2.userTimeline(
     user.properties.id,
     utReq
