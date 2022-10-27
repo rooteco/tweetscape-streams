@@ -1,19 +1,22 @@
 import { redirect } from "@remix-run/node";
 import type { LoaderArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { useLoaderData, useParams, useSearchParams } from "@remix-run/react";
+import { useLoaderData, useParams, useSearchParams, useTransition } from "@remix-run/react";
 import invariant from "tiny-invariant";
 
 import { getTweet } from "~/models/streams.server";
 import { getMetaFollowers, getUserByUsernameDB, getUserIndexedTweets } from "~/models/user.server";
 import { getClient } from "~/twitter.server";
 import Tweet from '~/components/Tweet';
+import { indexUser } from "~/models/user.server";
+
 
 
 export async function loader({ request, params }: LoaderArgs) {
     invariant(params.username, "username not found");
+    const { api, limits, uid, session } = await getClient(request)
     let user = await getUserByUsernameDB(params.username)
-    const { api, uid, session } = await getClient(request)
+    await indexUser(api, limits, user)
     const loggedInUser = (await api.v2.me()).data
     let metaFollowers = await getMetaFollowers(loggedInUser.username, params.username)
     let tweets = await getUserIndexedTweets(params.username)
@@ -21,11 +24,14 @@ export async function loader({ request, params }: LoaderArgs) {
 };
 
 export default function TweetRawDataPage() {
+    let transition = useTransition();
+    if (transition.submission) {
+        return (<div>Loading User Info!</div>)
+    }
     const params = useParams();
     const searchParams = useSearchParams();
     const data = useLoaderData();
     data.tweets.sort((a, b) => (b.tweet.properties['public_metrics.like_count'] - a.tweet.properties['public_metrics.like_count']))
-    console.log((data.tweets.slice(0, 5).map((row) => (row.tweet.properties))))
     return (
         <div className='h-full overflow-y-auto'>
             <div className="flex flex-row flex-nowrap items-top gap-5 justify-center py-12">
