@@ -2,8 +2,6 @@ import { TimeAgo } from '~/components/timeago';
 import ContextAnnotationChip from '~/components/ContextAnnotationChip';
 import twitter from 'twitter-text';
 import cn from 'classnames';
-
-
 import ReplyIcon from '~/icons/reply';
 import RetweetIcon from '~/icons/retweet';
 import RetweetedIcon from '~/icons/retweeted';
@@ -11,7 +9,7 @@ import ShareIcon from '~/icons/share';
 import LikeIcon from '~/icons/like';
 import LikedIcon from '~/icons/liked';
 import VerifiedIcon from '~/icons/verified';
-import { useFetcher, useFetchers, useMatches } from '@remix-run/react';
+import { useFetcher, useFetchers, useMatches, Link } from '@remix-run/react';
 
 
 function html(text: string): string {
@@ -184,11 +182,17 @@ function Tweet({ tweet, searchParams }) {
                         >{tweet.author.properties.username} retweeted</a> : null
                 }
                 <div className='mx-2 flex'>
-                    <img
-                        className='h-12 w-12 rounded-full border border-gray-300 bg-gray-100'
-                        alt=''
-                        src={tweetAuthor.properties.profile_image_url}
-                    />
+
+                    <Link
+                        to={`/streams/users/${tweetAuthor.properties.username}`}
+                        target="_blank"
+                    >
+                        <img
+                            className='h-12 w-12 rounded-full border border-gray-300 bg-gray-100'
+                            alt=''
+                            src={tweetAuthor.properties.profile_image_url}
+                        />
+                    </Link>
                     <article className='ml-2.5 flex-1'>
                         <header>
                             <h3>
