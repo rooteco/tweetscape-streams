@@ -6,13 +6,10 @@ import { useParams } from "@remix-run/react";
 import type { Session } from '@remix-run/node';
 import { Form, useActionData, Link, NavLink, Outlet, useLoaderData } from "@remix-run/react";
 import type { LoaderFunction } from '@remix-run/node';
-import { TwitterApi } from 'twitter-api-v2';
-// import { TwitterApiRateLimitPlugin } from '@twitter-api-v2/plugin-rate-limit';
-
-import cn from 'classnames';
-import StreamConfig from "~/components/StreamConfig";
-import CompactProfile from "~/components/CompactProfile";
-
+import {
+    ApiResponseError,
+    TwitterApi,
+} from 'twitter-api-v2';
 import { prisma } from "~/db.server";
 import { log } from '~/log.server';
 import { commitSession, getSession } from '~/session.server';
@@ -156,6 +153,19 @@ export const loader: LoaderFunction = async ({ request }: LoaderArgs) => {
             }
         }
     } catch (e) {
+        if (e instanceof ApiResponseError && e.rateLimitError && e.rateLimit) {
+            const msg1 =
+                `You just hit the rate limit! Limit for this endpoint is ` +
+                `${e.rateLimit.limit} requests!`;
+            const reset = new Date(e.rateLimit.reset * 1000).toLocaleString('en-US', {
+                dateStyle: 'full',
+                timeStyle: 'full',
+            });
+            const msg2 = `Request counter will reset at ${reset}.`;
+            log.error(msg1);
+            log.error(msg2);
+            throw new Error(`${msg1} ${msg2}`);
+        }
         console.log("you are unauthorized while getting client... please log back in...")
         console.log(e)
         console.log("REDIRECTING TO LOGOUT...")
