@@ -20,12 +20,10 @@ import { getClient, USER_FIELDS } from '~/twitter.server';
 import type { ListV2 } from 'twitter-api-v2';
 import {
     getStreams,
-    migrateStreams,
     getUserStreams,
     getAllStreams,
     addUserOwnedLists,
     addUserFollowedLists,
-    getAllStreams
 } from "~/models/streams.server";
 
 
@@ -177,6 +175,7 @@ export const loader: LoaderFunction = async ({ request }: LoaderArgs) => {
         userStreams = await getUserStreams(user.username);
         console.timeEnd("getAllStreams in streams.tsx")
         allStreams = await getAllStreams(user.username);
+        allStreams = allStreams.filter((stream) => (stream.stream.properties.twitterListId))
     }
 
     const headers = { 'Set-Cookie': await commitSession(session) };
