@@ -517,6 +517,7 @@ export async function addUsers(users: any) {
                 user.name = u.name,
                 user.username = u.username,
                 user.url = u.url,
+                user.description = u.description,
                 user.\`public_metrics.followers_count\`  = u.\`public_metrics.followers_count\`,
                 user.\`public_metrics.following_count\`  = u.\`public_metrics.following_count\`,
                 user.\`public_metrics.tweet_count\`  = u.\`public_metrics.tweet_count\`,
@@ -840,6 +841,7 @@ async function writeTweetData(res: TweetV2ListTweetsPaginator) {
     let tweetsFromList = []
 
     let includes = new TwitterV2IncludesHelper(res)
+
     users.push(...flattenTwitterUserPublicMetrics(includes.users))
     media.push(...includes.media)
     refTweets.push(...flattenTweetPublicMetrics(includes.tweets))
