@@ -317,6 +317,30 @@ export async function getUserIndexedTweets(username: string,) {
   return tweets;
 }
 
+export async function userIndexedEntityDistribution(username: string) {
+  const session = driver.session()
+  let params = { username: username }
+  let query = `
+      MATCH (u:User {username: $username})-[:POSTED]->(t:Tweet)
+      OPTIONAL MATCH (t)-[tr:INCLUDED]->(entity:Entity)-[:CATEGORY]-(d:Domain {name:"Unified Twitter Taxonomy"})
+      WITH collect(entity) as entities, collect(t) as tweets
+      RETURN apoc.coll.frequencies(entities) as entityDistribution, size(tweets) as numTotalTweets
+  `
+  const res = await session.executeRead((tx: any) => {
+    return tx.run(query, params)
+  })
+  let data;
+  if (res.records.length == 1) {
+    data = {
+      "entityDistribution": res.records[0].get("entityDistribution").map((row) => ({ item: row.item, count: row.count.toInt() })),
+      "numTotalTweets": res.records[0].get("numTotalTweets").toInt()
+    }
+  }
+  data.entityDistribution.sort((a, b) => (b.count - a.count))
+  await session.close()
+  return data;
+}
+
 export async function getUserContextAnnotationFrequency(username: string) {
   const session = driver.session()
   const res = await session.executeWrite((tx: any) => {
