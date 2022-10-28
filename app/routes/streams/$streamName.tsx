@@ -425,7 +425,7 @@ export default function Feed() {
                                         onClick={() => setOverview(false)}
                                         className="w-full my-1 mx-1 flex flex-col items-center cursor-pointer rounded-full bg-slate-100 hover:bg-slate-200"
                                     >
-                                        <MdExpandLess className="self-center" style={{ fontSize: "4rem" }} />
+                                        <MdExpandLess className="self-center" style={{ fontSize: "2rem" }} />
                                     </button>
                                 </div>
                                 :
@@ -436,7 +436,7 @@ export default function Feed() {
                                     onClick={() => setOverview(true)}
                                     className="w-full my-1 mx-1 flex flex-col items-center cursor-pointer rounded-full bg-slate-100 hover:bg-slate-200"
                                 >
-                                    <MdExpandMore style={{ fontSize: "4rem" }} />
+                                    <MdExpandMore style={{ fontSize: "2rem" }} />
                                 </button>
                         }
                     </div>
