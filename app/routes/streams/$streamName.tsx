@@ -131,7 +131,7 @@ export async function loader({ request, params }: LoaderArgs) {
         url.searchParams.delete("indexMoreTweets")
         return redirect(url.toString())
     }
-    await updateStreamTweets(api, seedUsers)
+    let res = await updateStreamTweets(api, seedUsers)
     let tweets = await getStreamTweetsNeo4j(stream, 0, TWEET_LOAD_LIMIT, url.searchParams.getAll("topicFilter"))
     const entityDistribution = await StreamTweetsEntityCounts(params.streamName)
     return json(
@@ -270,6 +270,7 @@ export default function Feed() {
     // Responsible for rendering a feed & annotations
     let { streamName } = useParams();
     const [searchParams] = useSearchParams();
+    const showJsonFeed = searchParams.get("showjsonfeed")
     const topicFilterSearchParams = new Set(searchParams.getAll("topicFilter"));
     const topicFilters = useRef(new Set([]) as Set<string>)
 
@@ -456,11 +457,17 @@ export default function Feed() {
                         <div>LOADING</div> :
                         <div>
                             {
-                                tweets.map((tweet: any, index: number) => (
-                                    <div key={`showTweets-${tweet.tweet.properties.id}-${index}`}>
-                                        <Tweet key={tweet.tweet.id} tweet={tweet} searchParams={searchParams} />
-                                    </div>
-                                ))
+                                !showJsonFeed ?
+                                    tweets.map((tweet: any, index: number) => (
+                                        <div key={`showTweets-${tweet.tweet.properties.id}-${index}`}>
+                                            <Tweet key={tweet.tweet.properties.id} tweet={tweet} searchParams={searchParams} />
+                                        </div>
+                                    )) :
+                                    tweets.map((tweet: any, index: number) => (
+                                        <div>
+                                            <p key={`showTweets-${tweet.tweet.properties.id}-${index}`} >{tweet.author.properties.username}:  {tweet.tweet.properties.text} </p> <br></br>
+                                        </div>
+                                    ))
                             }
 
                             <fetcher.Form
