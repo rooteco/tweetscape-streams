@@ -248,7 +248,7 @@ export async function indexUser(api: TwitterApi, limits: any, user: any) {
       }
     }
   }
-  await indexUserNewTweets(api, user) // will index the latest 100 tweets to get started for this user.. 
+  return await indexUserNewTweets(api, user) // will index the latest 100 tweets to get started for this user.. 
 }
 
 export async function updateUserIndexedTweetIds(user: Node, earliestTweetId: string, latestTweetId: string) {
