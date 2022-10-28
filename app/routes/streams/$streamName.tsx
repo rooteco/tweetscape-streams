@@ -280,6 +280,10 @@ export default function Feed() {
     const entityDistribution = loaderData.entityDistribution
     const [tweets, setTweets] = useState(loaderData.tweets);
     const stream = loaderData.stream;
+
+    const seedUsers = useRef(new Set([]) as Set<string>)
+    const loadedSeedUsers = new Set(loaderData.seedUsers.map((node) => (node.user.properties.username)))
+
     const page = useRef(0)
     const fetcher = useFetcher()
 
@@ -288,6 +292,10 @@ export default function Feed() {
         if (!eqSet(topicFilterSearchParams, topicFilters.current)) {
             console.log("SEEING A CHANGE, resetting tweets...")
             topicFilters.current = topicFilterSearchParams
+            setTweets(loaderData.tweets)
+        } else if (!eqSet(loadedSeedUsers, seedUsers.current)) {
+            console.log("seed users changed, resetting tweets...")
+            seedUsers.current = loadedSeedUsers
             setTweets(loaderData.tweets)
         }
     }, [topicFilterSearchParams])
