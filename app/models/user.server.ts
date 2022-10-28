@@ -231,8 +231,6 @@ export async function indexUser(api: TwitterApi, limits: any, user: any) {
         while (!following.done) { await following.fetchNext(); }
         console.log(`fetched ${following.data.data.length} accounts followed by '${user.properties.username}'`);
         let newUsers = flattenTwitterUserPublicMetrics(following.data.data);
-        console.log("-----adfsad------")
-        console.log(newUsers.slice(0, 2))
         let saved = await bulkWritesMulti(
           addUsersFollowedBy,
           newUsers,
