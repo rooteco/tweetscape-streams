@@ -140,6 +140,7 @@ export async function getUserTwitterLists(api: TwitterApi, user: UserV2) {
 
         return create;
     } catch (e) {
+        console.log("caught twitter api error in getUserTwitterLIsts")
         return handleTwitterApiError(e);
     }
 }
@@ -232,6 +233,7 @@ export async function getTwitterClientForUser(
             });
             api = new TwitterApi(accessToken, { plugins: [limits] })
         } catch (e) {
+            console.log("caught twitter api error in getTwitterClientForUser")
             handleTwitterApiError(e)
             // if (e instanceof ApiResponseError && e.data && e.data.error_description == "Value passed for the token was invalid.") {
             //     console.log("LOGGING TF OUT FOR YOU")
