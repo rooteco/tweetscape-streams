@@ -330,18 +330,6 @@ export default function Feed() {
                                     <MdUpdate />
                                 </button>
                             </Form>
-                            <Form
-                                method='post'
-                            >
-                                <button
-                                    type='submit'
-                                    className='\inline-block rounded border border-gray-300 bg-gray-200 w-8 h-8 text-white text-xs'
-                                    value="updateStreamFollowsNetwork"
-                                    name="intent"
-                                >
-                                    <BiNetworkChart />
-                                </button>
-                            </Form>
                         </div>
                     </div>
                     <div>

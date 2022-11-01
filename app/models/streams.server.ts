@@ -750,61 +750,6 @@ export async function addSeedUserToStream(
     }
 };
 
-export async function updateStreamFollowsNetwork(api: TwitterApi, limits: TwitterApiRateLimitPlugin, stream: Node, seedUsers: Node[]) {
-
-    let now = new Date()
-    let startTime;
-    if (stream.properties.followingLastUpdatedAt) { // this means we already did an intial pull, so we only need to pull from last time updated
-        startTime = stream.properties.followingLastUpdatedAt
-    } else { // this is the case when we haven't pulled tweets for this stream yet 
-        startTime = stream.properties.startTime
-    }
-
-    await Promise.all(seedUsers.map(async (user: Node) => {
-        user = user.user; // yes tf it does, it is a neo4j node 
-        let savedFollowsOfUser = await getSavedFollows(user.properties.username);
-        if (savedFollowsOfUser.length == user.properties["public_metrics.following_count"]) {
-            log.debug(`Looks like we have already saved the ${savedFollowsOfUser.length} users followed by '${user.properties.username}'`)
-        } else {
-            log.debug(`We have ${savedFollowsOfUser.length} users followed by '${user.properties.username}', but twitter shows ${user.properties["public_metrics.following_count"]}`)
-
-            const getFollowedLimit = await limits.v2.getRateLimit(
-                'users/:id/following'
-            );
-
-            if ((getFollowedLimit?.remaining ?? 1) > 0) {
-                log.debug(`Fetching api.v2.following for ${user.properties.username}...`);
-                // Get accounts followed by seed user
-                const following = await api.v2.following(
-                    user.properties.id,
-                    {
-                        'tweet.fields': 'attachments,author_id,context_annotations,conversation_id,created_at,entities,geo,id,in_reply_to_user_id,lang,public_metrics,text,possibly_sensitive,referenced_tweets,reply_settings,source,withheld',
-                        'user.fields': USER_FIELDS,
-                        'max_results': 1000,
-                        "asPaginator": true
-                    }
-                );
-
-                while (!following.done) { await following.fetchNext(); }
-                console.log(`fetched ${following.data.data.length} accounts followed by '${user.properties.username}'`);
-                let newUsers = flattenTwitterUserPublicMetrics(following.data.data);
-                let saved = await bulkWritesMulti(
-                    addUsersFollowedBy,
-                    newUsers,
-                    { username: user.properties.username }
-                )
-            } else {
-                log.warn(
-                    `Rate limit hit for getting user (${user.properties.username}) follwings, skipping until ${new Date(
-                        (getFollowedLimit?.reset ?? 0) * 1000
-                    ).toLocaleString()}...`
-                );
-            }
-        }
-    }))
-    await updateStreamFollowingLastUpdatedAt(stream, now.toISOString());
-}
-
 async function updateStreamFollowingLastUpdatedAt(stream: Node, now: string) {
     const session = driver.session()
     // Create a node within a write transaction
