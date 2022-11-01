@@ -5,7 +5,6 @@ import { Form, useActionData, useCatch, useLoaderData, useTransition, useFetcher
 import { Link, useParams } from "@remix-run/react";
 import invariant from "tiny-invariant";
 import { log } from '~/log.server';
-import { BiNetworkChart } from 'react-icons/bi';
 import { MdUpdate } from 'react-icons/md';
 import { MdExpandMore, MdExpandLess } from 'react-icons/md';
 import {
@@ -18,14 +17,12 @@ import {
     createStream,
     updateStreamTweets,
     indexMoreTweets,
-    StreamTweetsEntityCounts
 } from "~/models/streams.server";
 import Overview from "~/components/Overview";
 import { indexUser } from "~/models/user.server";
 import { getUserByUsernameDB, createUserDb } from "~/models/user.server";
 import { createList, getClient } from '~/twitter.server';
 import Tweet from '~/components/Tweet';
-import { useParams } from "@remix-run/react";
 import { useEffect, useRef, useState } from "react";
 import { int } from "neo4j-driver";
 
@@ -41,11 +38,7 @@ export async function loader({ request, params }: LoaderArgs) {
         throw new Response("Not Found", { status: 404 });
     }
     console.time("getting client in $streamName")
-    const { api, uid, session } = await getClient(request);
-
-    // TODO: use for the queue if I go back to that method...
-    const activeTokens = api.getActiveTokens()
-    const bearerToken = activeTokens.bearerToken;
+    const { api } = await getClient(request);
 
     console.time("getting loggedInUser in $streamName.tsx")
     const loggedInUser = (await api.v2.me()).data
@@ -59,7 +52,7 @@ export async function loader({ request, params }: LoaderArgs) {
                 , 603
             );
         }
-        const { list, members } = await createList(api, stream.properties.name, [])
+        const { list } = await createList(api, stream.properties.name, [])
         stream = await createStream(
             stream.properties.name,
             stream.properties.startTime,
@@ -117,7 +110,7 @@ export async function loader({ request, params }: LoaderArgs) {
         url.searchParams.delete("indexMoreTweets")
         return redirect(url.toString())
     }
-    let res = await updateStreamTweets(api, seedUsers)
+    await updateStreamTweets(api, seedUsers)
     let tweets = await getStreamTweetsNeo4j(stream, 0, TWEET_LOAD_LIMIT)
     return json(
         {
@@ -152,7 +145,7 @@ export const action: ActionFunction = async ({
     if (nextpage) {
         console.log("fetching data for next page")
         console.log(nextpage)
-        let { stream, creator, seedUsers } = await getStreamByName(params.streamName)
+        let { stream } = await getStreamByName(params.streamName)
         let tweets = await getStreamTweetsNeo4j(stream, TWEET_LOAD_LIMIT * int(nextpage), TWEET_LOAD_LIMIT)
         return { "tweets": tweets }
     }
@@ -162,8 +155,8 @@ export const action: ActionFunction = async ({
     const intent = formData.get("intent");
     let seedUserHandle: string = formData.get("seedUserHandle");
     if (intent === "delete") {
-        const { api, limits, uid, session } = await getClient(request);
-        let res = await deleteStreamByName(api, params.streamName);
+        const { api, } = await getClient(request);
+        await deleteStreamByName(api, params.streamName);
         return redirect(`/streams`);
     }
 
@@ -183,7 +176,7 @@ export const action: ActionFunction = async ({
         if (hasErrors) {
             return json<ActionData>(errors);
         }
-        const { api, limits, uid, session } = await getClient(request);
+        const { api, limits } = await getClient(request);
         for (const seedUser of seedUsers) {
             console.log(`${seedUser.user.properties.username} == ${seedUserHandle}`);
             if (seedUser.user.username == seedUserHandle) {
@@ -195,7 +188,6 @@ export const action: ActionFunction = async ({
         }
 
         seedUserHandle = seedUserHandle.toLowerCase().replace(/^@/, '')
-        let addedUser;
         let user = await getUserByUsernameDB(seedUserHandle);
         if (!user) {
             console.time("getUserFromTwitter")
@@ -211,14 +203,14 @@ export const action: ActionFunction = async ({
             }
         }
         console.time("addSeedUserToStream")
-        addedUser = await addSeedUserToStream(api, stream, user) // this adds a list member and an edge, it doesn't do follows or tweets fetching...
+        await addSeedUserToStream(api, stream, user) // this adds a list member and an edge, it doesn't do follows or tweets fetching...
         console.timeEnd("addSeedUserToStream")
         await indexUser(api, limits, user)
         console.log(`Added user ${user.properties.username} to stream ${stream.properties.name}`)
         return redirect(`/streams/${params.streamName}`)
     } else if (intent === "removeSeedUser") {
         let user = await getUserByUsernameDB(seedUserHandle);
-        const { api, uid, session } = await getClient(request);
+        const { api } = await getClient(request);
         await api.v2.removeListMember(stream.properties.twitterListId, user.properties.id)
         let deletedRel = await removeSeedUserFromStream(
             stream.properties.name,
@@ -233,16 +225,12 @@ export default function Feed() {
     let { streamName } = useParams();
     const [searchParams] = useSearchParams();
     const showJsonFeed = searchParams.get("showjsonfeed")
-
     const [overview, setOverview] = useState(true)
     let transition = useTransition();
     let busy = transition.submission;
     const loaderData = useLoaderData();
     const [tweets, setTweets] = useState(loaderData.tweets);
     const stream = loaderData.stream;
-
-    const seedUsers = useRef(new Set([]) as Set<string>)
-    const loadedSeedUsers = new Set(loaderData.seedUsers.map((node) => (node.user.properties.username)))
 
     const page = useRef(0)
     const fetcher = useFetcher()
@@ -260,15 +248,6 @@ export default function Feed() {
         }
     }, [fetcher.data])
 
-    let annotations = new Set();
-    for (const t of tweets) {
-        if (t.annotation && t.annotation.length > 0) {
-            for (let annotation of t.annotation) {
-                annotations.add(annotation.properties.normalized_text)
-            }
-        }
-    }
-    const annotationMap = Array.from(annotations)
     const actionData = useActionData();
 
     if (actionData) {
@@ -376,12 +355,11 @@ export default function Feed() {
                                         </div>
                                     )) :
                                     tweets.map((tweet: any, index: number) => (
-                                        <div>
-                                            <p key={`showTweets-${tweet.tweet.properties.id}-${index}`} >{tweet.author.properties.username}:  {tweet.tweet.properties.text} </p> <br></br>
+                                        <div key={`showTweets-${tweet.tweet.properties.id}-${index}`}>
+                                            <p>{tweet.author.properties.username}:  {tweet.tweet.properties.text} </p> <br></br>
                                         </div>
                                     ))
                             }
-
                             <fetcher.Form
                                 method="post"
                                 action={`/streams/${streamName}?page=${page.current + 1}&${searchParams.toString()}`}

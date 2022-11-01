@@ -1,11 +1,7 @@
-import { useSearchParams, useParams, Link } from "@remix-run/react";
-
 export default function Overview({ tweets }) {
     // Responsible for rendering the overview page for a stream
-    const { streamName } = useParams();
-    const [searchParams] = useSearchParams();
     const tweetAuthorCount = new Map()
-    tweets.map((row) => {
+    tweets.forEach((row) => {
         const author = row.author.properties.username
         const curCount = tweetAuthorCount.get(author)
         if (curCount) {
@@ -19,7 +15,7 @@ export default function Overview({ tweets }) {
         tweetAuthorCountRows.push(`${key}=${value}`)
     })
     const receivedReferenceCount = new Map()
-    tweets.map((row) => {
+    tweets.forEach((row) => {
         const tweetAuthorId = row.author.properties.id
         for (let refA of row.refTweetAuthors) {
             if (refA.properties.id != tweetAuthorId) {
@@ -40,8 +36,8 @@ export default function Overview({ tweets }) {
                     <p className="text-md font-medium my-4">Tweet Distribution (of currently loaded tweets)</p>
                     <div className="flex flex-wrap gap-1 px-1">
                         {
-                            tweetAuthorCountRows.map((row) => (
-                                <div>
+                            tweetAuthorCountRows.map((row, index) => (
+                                <div key={index}>
                                     <div className='bg-green-200 hover:bg-green-500 rounded-full flex items-center p-2'>
                                         {row}
                                     </div>

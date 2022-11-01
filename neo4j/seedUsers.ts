@@ -1,14 +1,13 @@
-import { TwitterApi, TwitterV2IncludesHelper } from 'twitter-api-v2';
-import neo4j, { Session } from 'neo4j-driver'
-import { int, isInt } from 'neo4j-driver'
+import { TwitterApi } from 'twitter-api-v2';
+import neo4j from 'neo4j-driver'
 
 let driver: any;
 
 async function initDriver(uri: string, username: string, password: string) {
     driver = neo4j.driver(uri, neo4j.auth.basic(username, password))
 
-    // Verify connectivity
-    return driver.verifyConnectivity()
+        // Verify connectivity
+        // return driver.verifyConnectivity()
         // Resolve with an instance of the driver
         .then(() => driver)
 }
