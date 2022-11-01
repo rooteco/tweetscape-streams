@@ -12,7 +12,7 @@ import CompactProfile from '~/components/CompactProfile';
 export async function loader({ request, params }: LoaderArgs) {
     const url = new URL(request.url);
     invariant(params.username, "username not found");
-    const { api, limits, uid, session } = await getClient(request)
+    const { api, limits } = await getClient(request)
     let user = await getUserByUsernameDB(params.username)
     if (url.searchParams.get("indexMoreTweets")) {
         await indexUserOlderTweets(api, user)
@@ -28,11 +28,11 @@ export async function loader({ request, params }: LoaderArgs) {
 
 export default function TweetRawDataPage() {
     let transition = useTransition();
+    const params = useParams();
+    const data = useLoaderData();
     if (transition.submission) {
         return (<div>Loading User Info!</div>)
     }
-    const params = useParams();
-    const data = useLoaderData();
     data.tweets.sort((a, b) => (b.tweet.properties['public_metrics.like_count'] - a.tweet.properties['public_metrics.like_count']))
     return (
         <div className='h-full overflow-y-auto'>

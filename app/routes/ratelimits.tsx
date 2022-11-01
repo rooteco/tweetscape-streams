@@ -1,9 +1,7 @@
-import { redirect } from "@remix-run/node";
 import type { LoaderArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { Form, Link, NavLink, Outlet, useLoaderData } from "@remix-run/react";
-import invariant from "tiny-invariant";
-import { getClient, USER_FIELDS } from '~/twitter.server';
+import { useLoaderData } from "@remix-run/react";
+import { getClient } from '~/twitter.server';
 
 
 // type LoaderData = {
@@ -12,7 +10,7 @@ import { getClient, USER_FIELDS } from '~/twitter.server';
 // }
 
 export async function loader({ request, params }: LoaderArgs) {
-    const { api, limits } = await getClient(request);
+    const { limits } = await getClient(request);
 
     const currentRateLimitForFollowing = await limits.v2.getRateLimit('users/:id/following')
     const timelineLimit = await limits.v2.getRateLimit('users/:id/tweets')
