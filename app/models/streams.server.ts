@@ -13,6 +13,7 @@ import type {
     TweetV2ListTweetsPaginator
 } from 'twitter-api-v2';
 
+
 export function flattenTwitterUserPublicMetrics(data: Array<any>) {
     for (const obj of data) {
         // obj.username = obj.username.toLowerCase();
@@ -39,7 +40,7 @@ export function flattenTweetPublicMetrics(data: Array<any>) {
     return data;
 }
 
-export async function getUserFromTwitter(api: any, username: string) {
+export async function getUserFromTwitter(api: TwitterApi, username: string) {
     const { data: user } = await api.v2.userByUsername(
         username,
         {
@@ -235,10 +236,7 @@ export async function getUserStreams(username: string) {
             }
 
         }
-
         recommendedUsersTested.sort((a, b) => a.properties['public_metrics.followers_count'] - b.properties['public_metrics.followers_count'])
-
-
         row.recommendedUsers = recommendedUsersTested
     })
 
