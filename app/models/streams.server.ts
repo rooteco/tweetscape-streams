@@ -750,23 +750,6 @@ export async function addSeedUserToStream(
     }
 };
 
-async function updateStreamFollowingLastUpdatedAt(stream: Node, now: string) {
-    const session = driver.session()
-    // Create a node within a write transaction
-    const res = await session.executeWrite((tx: any) => {
-        return tx.run(`
-        MERGE (s:Stream {name:$streamName})
-        set s.followingLastUpdatedAt = $now
-        RETURN s`,
-            { streamName: stream.properties.name, now })
-    })
-    const streams = res.records.map((row: Record) => {
-        return row.get('s')
-    })
-    await session.close()
-    return streams;
-}
-
 export async function indexMoreTweets(api: TwitterApi, seedUsers: Node[]) {
     return await Promise.all(seedUsers.map((user) => {
         return indexUserOlderTweets(api, user.user)
