@@ -1,4 +1,3 @@
-import { objectEnumValues } from "@prisma/client/runtime";
 
 import { PrismaClient } from '@prisma/client';
 
@@ -164,7 +163,7 @@ export async function seed() {
     }
 
     for (const stream of streams) {
-        const streamUp = await prisma.streams.create({
+        await prisma.streams.create({
             data: {
                 ...stream,
                 seedUsers: {

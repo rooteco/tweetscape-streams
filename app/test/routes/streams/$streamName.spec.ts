@@ -7,7 +7,7 @@ const username = "nicktorba"
 beforeAll(async () => {
     const endTime = new Date()
     const startTime = new Date(endTime.getFullYear(), endTime.getMonth(), endTime.getDate() - 7, endTime.getHours(), endTime.getMinutes())
-    let stream = await createStream(streamName, startTime.toISOString(), username)
+    await createStream(streamName, startTime.toISOString(), username)
 })
 
 afterAll(async () => {

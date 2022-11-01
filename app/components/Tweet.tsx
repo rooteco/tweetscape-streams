@@ -170,7 +170,7 @@ function Tweet({ tweet }) {
                     >
                         <img
                             className='h-12 w-12 rounded-full border border-gray-300 bg-gray-100'
-                            alt=''
+                            alt='twitter profile pic'
                             src={tweetAuthor.properties.profile_image_url}
                         />
                     </Link>
@@ -224,8 +224,10 @@ function Tweet({ tweet }) {
                                         (media) => {
                                             return (
                                                 <img
+                                                    key={media.properties.id}
                                                     className="border border-gray-800"
                                                     src={media.properties.url}
+                                                    alt="tweet media"
                                                 />
                                             )
                                         }
