@@ -20,7 +20,7 @@ import type {
 import type { Decimal } from '@prisma/client/runtime';
 import { TwitterApiRateLimitPlugin } from '@twitter-api-v2/plugin-rate-limit';
 import invariant from 'tiny-invariant';
-import type { Session } from '@remix-run/node';
+import { redirect, Session } from '@remix-run/node';
 import { prisma } from "~/db.server";
 import { flattenTwitterUserPublicMetrics } from '~/models/streams.server'
 import { getUserByUsernameDB } from '~/models/user.server'
@@ -78,6 +78,27 @@ export const TWEET_EXPANSIONS: TTweetv2Expansion[] = [
     'entities.mentions.username',
 ];
 
+export async function getUserOwnedTwitterLists(api: TwitterApi, user: UserV2) {
+    const ownedLists = [] as ListV2[];
+    log.info(`Fetching owned lists for ${user.username}...`);
+    let id = (await api.v2.me()).data.id
+    const resOwned = await api.v2.listsOwned(
+        id,
+        // {
+        //     'list.fields': [
+        //         'created_at',
+        //         'follower_count',
+        //         'member_count',
+        //         'private',
+        //         'description',
+        //         'owner_id'
+        //     ]
+        // }
+    );
+    resOwned.lists.map((l: ListV2) => ownedLists.push(l));
+    return ownedLists;
+}
+
 export async function getUserTwitterLists(api: TwitterApi, user: UserV2) {
     try {
         const create = {
@@ -119,6 +140,7 @@ export async function getUserTwitterLists(api: TwitterApi, user: UserV2) {
 
         return create;
     } catch (e) {
+        console.log("caught twitter api error in getUserTwitterLIsts")
         return handleTwitterApiError(e);
     }
 }
@@ -135,10 +157,11 @@ export async function getListUsers(api: TwitterApi, listId: string) {
 }
 
 export async function createList(api: TwitterApi, listName: string, userUsernames: string[]) {
+    console.log(`creating list ${listName}`)
     const newList = await api.v2.createList({ name: listName, private: false })
     let promises = userUsernames.map(async (username) => {
         let userDb = await getUserByUsernameDB(username)
-        return await api.v2.addListMember(newList.data.id, userDb.properties.id)
+        return api.v2.addListMember(newList.data.id, userDb.properties.id)
     })
     const newMembers = await Promise.all(promises)
     return { list: newList, members: newMembers };
@@ -157,6 +180,8 @@ export function handleTwitterApiError(e: unknown): never {
         log.error(msg1);
         log.error(msg2);
         throw new Error(`${msg1} ${msg2}`);
+    } else if (e instanceof ApiResponseError && e.data && e.data.error_description == "Value passed for the token was invalid.") {
+        throw e
     }
     throw e;
 }
@@ -169,9 +194,12 @@ export function getUserIdFromSession(session: Session) {
 
 export async function getTwitterClientForUser(
     uid: string
-): Promise<{ api: TwitterApi, limits: TwitterApiRateLimitPlugin }> {
+): Promise<{ api: TwitterApi | null, limits: TwitterApiRateLimitPlugin | null }> {
     log.info(`Fetching token for user (${uid})...`);
     const token = await prisma.tokens.findUnique({ where: { user_id: uid } });
+    if (!token) {
+        return { api: null, limits: null }
+    }
     invariant(token, `expected token for user (${uid})`);
     const expiration = token.updated_at.valueOf() + token.expires_in * 1000;
     const limits = new TwitterApiRateLimitPlugin(
@@ -189,20 +217,31 @@ export async function getTwitterClientForUser(
             clientId: process.env.OAUTH_CLIENT_ID as string,
             clientSecret: process.env.OAUTH_CLIENT_SECRET,
         });
-        const { accessToken, refreshToken, expiresIn, scope } =
-            await client.refreshOAuth2Token(token.refresh_token);
-        log.info(`Storing refreshed token for user (${uid})...`);
-        await prisma.tokens.update({
-            data: {
-                access_token: accessToken,
-                refresh_token: refreshToken,
-                expires_in: expiresIn,
-                scope: scope.join(' '),
-                updated_at: new Date(),
-            },
-            where: { user_id: String(uid) },
-        });
-        api = new TwitterApi(accessToken, { plugins: [limits] });
+        try {
+            const { accessToken, refreshToken, expiresIn, scope } =
+                await client.refreshOAuth2Token(token.refresh_token);
+            log.info(`Storing refreshed token for user (${uid})...`);
+            await prisma.tokens.update({
+                data: {
+                    access_token: accessToken,
+                    refresh_token: refreshToken,
+                    expires_in: expiresIn,
+                    scope: scope.join(' '),
+                    updated_at: new Date(),
+                },
+                where: { user_id: String(uid) },
+            });
+            api = new TwitterApi(accessToken, { plugins: [limits] })
+        } catch (e) {
+            console.log("caught twitter api error in getTwitterClientForUser")
+            handleTwitterApiError(e)
+            // if (e instanceof ApiResponseError && e.data && e.data.error_description == "Value passed for the token was invalid.") {
+            //     console.log("LOGGING TF OUT FOR YOU")
+            //     return redirect("/logout")
+            // }
+
+        }
+        //, { plugins: [limits] });
     }
     return { api, limits };
 }

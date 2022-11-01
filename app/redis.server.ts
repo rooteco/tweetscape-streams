@@ -1,9 +1,27 @@
-import { createClient } from 'redis';
+import Redis, { type Redis as RedisType, type RedisOptions } from "ioredis";
+
+let redis: RedisType;
 
 declare global {
-    var redis: ReturnType<typeof createClient>;
+    var __redis: RedisType | undefined;
 }
 
-if (!global.redis) global.redis = createClient({ url: process.env.REDIS_URL });
+const redisOptions: RedisOptions = {
+    maxRetriesPerRequest: null,
+    enableReadyCheck: false,
+};
 
-export const redis = global.redis;
+// this is needed because in development we don't want to restart
+// the server with every change, but we want to make sure we don't
+// create a new connection to the Redis with every change either.
+if (process.env.NODE_ENV === "production") {
+    redisOptions.family = 6 // ipv6 address https://github.com/luin/ioredis/issues/1576
+    redis = new Redis(process.env.REDIS_URL, redisOptions);
+} else {
+    if (!global.__redis) {
+        global.__redis = new Redis(process.env.REDIS_URL, redisOptions);
+    }
+    redis = global.__redis;
+}
+
+export default redis;
