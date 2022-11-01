@@ -35,9 +35,6 @@ export async function loader({ request, params }: LoaderArgs) {
     invariant(params.streamName, "streamName not found");
     console.time("getStreamByName")
     const url = new URL(request.url);
-    if (url.searchParams.get("clearAllTopics")) {
-        return redirect(`/streams/${params.streamName}`)
-    }
     let { stream, creator, seedUsers } = await getStreamByName(params.streamName)
     console.timeEnd("getStreamByName")
     if (!stream) {
@@ -121,14 +118,12 @@ export async function loader({ request, params }: LoaderArgs) {
         return redirect(url.toString())
     }
     let res = await updateStreamTweets(api, seedUsers)
-    let tweets = await getStreamTweetsNeo4j(stream, 0, TWEET_LOAD_LIMIT, url.searchParams.getAll("topicFilter"))
-    const entityDistribution = await StreamTweetsEntityCounts(params.streamName)
+    let tweets = await getStreamTweetsNeo4j(stream, 0, TWEET_LOAD_LIMIT)
     return json(
         {
             "stream": stream,
             "tweets": tweets,
             seedUsers: seedUsers,
-            entityDistribution: entityDistribution
         }
     )
 }
@@ -158,28 +153,10 @@ export const action: ActionFunction = async ({
         console.log("fetching data for next page")
         console.log(nextpage)
         let { stream, creator, seedUsers } = await getStreamByName(params.streamName)
-        let tweets = await getStreamTweetsNeo4j(stream, TWEET_LOAD_LIMIT * int(nextpage), TWEET_LOAD_LIMIT, url.searchParams.getAll("topicFilter"))
+        let tweets = await getStreamTweetsNeo4j(stream, TWEET_LOAD_LIMIT * int(nextpage), TWEET_LOAD_LIMIT)
         return { "tweets": tweets }
     }
     const formData = await request.formData();
-
-    // Check for and setup Topic Filters 
-    const newTopicFilter = formData.get("topicFilter")
-    const currentTopicFilterParams = url.searchParams.getAll("topicFilter")
-    if (newTopicFilter && currentTopicFilterParams.indexOf(newTopicFilter) == -1) {
-        console.log(`adding ${newTopicFilter} to list of current topic filters`)
-        url.searchParams.append("topicFilter", newTopicFilter)
-        console.log(`redirecting to url ${url.toString()}`)
-        return redirect(url.toString())
-    } else if (newTopicFilter && currentTopicFilterParams.indexOf(newTopicFilter) != -1) {
-        console.log(`removing entity ${newTopicFilter} from list of current entities`)
-        // thanks to this person: https://github.com/whatwg/url/issues/335#issuecomment-1142139561
-        const allValues = url.searchParams.getAll("topicFilter")
-        allValues.splice(allValues.indexOf(newTopicFilter), 1)
-        url.searchParams.delete("topicFilter")
-        allValues.forEach((val) => url.searchParams.append("topicFilter", val))
-        return redirect(url.toString())
-    }
 
     // Handle Seed User Operations
     const intent = formData.get("intent");
@@ -251,23 +228,16 @@ export const action: ActionFunction = async ({
     }
 }
 
-const eqSet = (xs: Set<string>, ys: Set<string>) =>
-    xs.size === ys.size &&
-    [...xs].every((x) => ys.has(x));
-
 export default function Feed() {
     // Responsible for rendering a feed & annotations
     let { streamName } = useParams();
     const [searchParams] = useSearchParams();
     const showJsonFeed = searchParams.get("showjsonfeed")
-    const topicFilterSearchParams = new Set(searchParams.getAll("topicFilter"));
-    const topicFilters = useRef(new Set([]) as Set<string>)
 
     const [overview, setOverview] = useState(true)
     let transition = useTransition();
     let busy = transition.submission;
     const loaderData = useLoaderData();
-    const entityDistribution = loaderData.entityDistribution
     const [tweets, setTweets] = useState(loaderData.tweets);
     const stream = loaderData.stream;
 
@@ -276,19 +246,6 @@ export default function Feed() {
 
     const page = useRef(0)
     const fetcher = useFetcher()
-
-    useEffect(() => {
-        console.log("in topicFiltersSearchparams useEffect")
-        if (!eqSet(topicFilterSearchParams, topicFilters.current)) {
-            console.log("SEEING A CHANGE, resetting tweets...")
-            topicFilters.current = topicFilterSearchParams
-            setTweets(loaderData.tweets)
-        } else if (!eqSet(loadedSeedUsers, seedUsers.current)) {
-            console.log("seed users changed, resetting tweets...")
-            seedUsers.current = loadedSeedUsers
-            setTweets(loaderData.tweets)
-        }
-    }, [topicFilterSearchParams])
 
     useEffect(() => {
         if (fetcher.data) {
@@ -303,17 +260,6 @@ export default function Feed() {
         }
     }, [fetcher.data])
 
-    // TODO: Decide if I would rather Have a "No Labels" warning...
-    // const emptyTopic = {
-    //     labels: ['Entity'],
-    //     properties: { name: 'No Labels', },
-    // }
-    // tweets.forEach((row, index: number) => {
-    //     if (row.entities.length == 0) {
-    //         row.entities.push(emptyTopic)
-    //     }
-    // })
-
     let annotations = new Set();
     for (const t of tweets) {
         if (t.annotation && t.annotation.length > 0) {
@@ -325,7 +271,6 @@ export default function Feed() {
     const annotationMap = Array.from(annotations)
     const actionData = useActionData();
 
-    let errors = {};
     if (actionData) {
         errors = actionData.errors;
         // recommendedUsers = actionData.recommendedUsers;
@@ -405,7 +350,6 @@ export default function Feed() {
                             overview ?
                                 <div className="relative w-full mx-auto flex flex-col items-center">
                                     <Overview
-                                        entityDistribution={entityDistribution.entityDistribution}
                                         tweets={tweets}  >
                                     </Overview>
                                     <button
@@ -430,15 +374,6 @@ export default function Feed() {
                                 </button>
                         }
                     </div>
-
-                    <div className="flex flex-row hidden">
-                        <p>Tags</p>
-                        <ol>
-                            {annotationMap.map((annotation: string) => (
-                                <li key={annotation}>{annotation}</li>
-                            ))}
-                        </ol>
-                    </div>
                 </div>
 
                 <div className="grow lg:w-3/4 lg:mx-2 2xl:mx-auto">
@@ -449,7 +384,7 @@ export default function Feed() {
                                 !showJsonFeed ?
                                     tweets.map((tweet: any, index: number) => (
                                         <div key={`showTweets-${tweet.tweet.properties.id}-${index}`}>
-                                            <Tweet key={tweet.tweet.properties.id} tweet={tweet} searchParams={searchParams} />
+                                            <Tweet key={tweet.tweet.properties.id} tweet={tweet} />
                                         </div>
                                     )) :
                                     tweets.map((tweet: any, index: number) => (

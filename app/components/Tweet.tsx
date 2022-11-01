@@ -1,5 +1,4 @@
 import { TimeAgo } from '~/components/timeago';
-import ContextAnnotationChip from '~/components/ContextAnnotationChip';
 import twitter from 'twitter-text';
 import cn from 'classnames';
 import ReplyIcon from '~/icons/reply';
@@ -8,7 +7,6 @@ import RetweetedIcon from '~/icons/retweeted';
 import ShareIcon from '~/icons/share';
 import LikeIcon from '~/icons/like';
 import LikedIcon from '~/icons/liked';
-import VerifiedIcon from '~/icons/verified';
 import { useFetcher, useFetchers, useMatches, Link } from '@remix-run/react';
 
 
@@ -110,7 +108,7 @@ function Action({
     );
 }
 
-function Tweet({ tweet, searchParams }) {
+function Tweet({ tweet }) {
     const quoteTweet = {
         tweet: null,
         author: null,
@@ -144,30 +142,13 @@ function Tweet({ tweet, searchParams }) {
     })
     const tweetText = html(tweet.tweet.properties.text)
 
-    const showTopics = (searchParams && tweet.entities)
-
     try {
         return (
             <div className="border border-gray-400 py-4 px-3 rounded-lg bg-white my-2">
-                <div className="flex flex-wrap mb-4">
-                    {
-                        showTopics &&
-                        tweet.entities.map((entity: Record, index: number) => (
-                            <div>
-                                <ContextAnnotationChip
-                                    keyValue={entity.properties.name}
-                                    value={null} caEntities={searchParams.getAll("topicFilter")}
-                                    hideTopics={[]}
-                                    key={`entityAnnotationsUnderTweet-${entity.properties.name}-${index}`}
-                                />
-                            </div>
-                        ))
-                    }
-                </div>
                 {
                     repliedToTweet.tweet ?
                         <div>
-                            <Tweet tweet={repliedToTweet} searchParams={searchParams} />
+                            <Tweet tweet={repliedToTweet} />
                             <p>reply to ^^</p>
                         </div>
                         : null
@@ -287,7 +268,7 @@ function Tweet({ tweet, searchParams }) {
                     </article>
                 </div>
                 {
-                    displayQuoteTweet(quoteTweet, searchParams)
+                    displayQuoteTweet(quoteTweet)
                 }
             </div>
         )
@@ -302,7 +283,7 @@ function displayQuoteTweet(quoteTweet, searchParams) {
     if (quoteTweet.tweet && quoteTweet.author) {
         return (
             <div className="pl-6">
-                <Tweet tweet={quoteTweet} searchParams={searchParams} />
+                <Tweet tweet={quoteTweet} />
             </div>
         )
     } else {
