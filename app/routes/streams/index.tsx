@@ -1,10 +1,9 @@
-import type { ActionArgs, LoaderFunction, LoaderArgs } from "@remix-run/node";
+import type { ActionArgs } from "@remix-run/node";
 import type { Session } from '@remix-run/node';
 import { json, redirect } from "@remix-run/node";
 import { Form, useActionData, Link, useMatches, useTransition } from "@remix-run/react";
 import * as React from "react";
 import BirdIcon from '~/icons/bird';
-import { commitSession, getSession } from '~/session.server';
 import { getClient, USER_FIELDS } from '~/twitter.server';
 import { createStream, getStreamByName } from "~/models/streams.server";
 import { getUserByUsernameDB, createUserDb } from "~/models/user.server";
@@ -28,7 +27,7 @@ type ActionData =
 export async function action({ request }: ActionArgs) {
     const formData = await request.formData();
     const name: string = formData.get("name") as string;
-    let { stream, seedUsers } = await getStreamByName(name);
+    let { stream } = await getStreamByName(name);
     if (stream) {
         let errors: ActionData = {
             streamName: `stream with name '${name}' already exists, please choose a new name.`
@@ -36,7 +35,7 @@ export async function action({ request }: ActionArgs) {
         return json<ActionData>(errors);
     }
 
-    const { api, uid, session } = await getClient(request);
+    const { api } = await getClient(request);
     let user = null;
     if (!api) {
         console.log("YOU ARE NOT LOGGED IN")
@@ -59,7 +58,7 @@ export async function action({ request }: ActionArgs) {
         return json<ActionData>(errors)
     }
     console.log(`Creating Twitter List ${name}`)
-    const { list, members } = await createList(api, name, [])
+    const { list } = await createList(api, name, [])
 
     const endTime = new Date()
     const startTime = new Date(endTime.getFullYear(), endTime.getMonth(), endTime.getDate() - 7, endTime.getHours(), endTime.getMinutes())

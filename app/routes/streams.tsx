@@ -1,10 +1,8 @@
 import { redirect, json } from "@remix-run/node";
 import type { LoaderArgs } from "@remix-run/node";
-
-import { useEffect, useState, useRef } from "react";
 import { useParams } from "@remix-run/react";
 import type { Session } from '@remix-run/node';
-import { Form, useActionData, Link, NavLink, Outlet, useLoaderData } from "@remix-run/react";
+import { Outlet, useLoaderData } from "@remix-run/react";
 import type { LoaderFunction } from '@remix-run/node';
 import {
     ApiResponseError,
@@ -13,26 +11,15 @@ import {
 import { prisma } from "~/db.server";
 import { log } from '~/log.server';
 import { commitSession, getSession } from '~/session.server';
-import { getUserTwitterLists } from "~/twitter.server";
-import { flattenTwitterUserPublicMetrics } from "~/models/user.server";
-// import { TwitterApiRateLimitDBStore } from '~/limit.server';
 import { getClient, USER_FIELDS } from '~/twitter.server';
 import type { ListV2 } from 'twitter-api-v2';
 import {
-    getStreams,
     getUserStreams,
     getAllStreams,
-    addUserOwnedLists,
-    addUserFollowedLists,
 } from "~/models/streams.server";
-
-
 import StreamAccordion from '~/components/StreamAccordion';
 import CreateAndLogin from "~/components/CreateAndLogin";
 import ExportAndDelete from "~/components/ExportAndDelete";
-
-
-
 import type { Stream } from "../components/StreamAccordion";
 
 
@@ -81,13 +68,13 @@ export const loader: LoaderFunction = async ({ request }: LoaderArgs) => {
     console.log(`UID = ${uid}`);
     try {
         if (process.env.test) {
-            const { api, uid, session } = await getClient(request);
+            const { api } = await getClient(request);
             const meData = await api.v2.me({ "user.fields": USER_FIELDS });
             user = meData.data;
         }
         else if (uid) {
             console.time("getting client")
-            const { api, uid, session } = await getClient(request);
+            const { api } = await getClient(request);
             console.timeEnd("getting client")
             console.time("getting me in streams.tsx")
             user = (await api.v2.me()).data// fields not needed here { "user.fields": USER_FIELDS });
@@ -192,8 +179,6 @@ export const loader: LoaderFunction = async ({ request }: LoaderArgs) => {
 
 export default function StreamsPage() {
     const { userStreams, allStreams, user, lists } = useLoaderData<LoaderData>();
-    const params = useParams();
-    const errors = useActionData();
     const streamsRoot = useParams().streamName === undefined;
 
     return (

@@ -1,11 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
-import { Integer } from 'neo4j-driver';
-import { Link, useFetcher, useParams, useSubmit, useTransition } from "@remix-run/react";
+import type { Integer } from 'neo4j-driver';
+import { Link, useParams, useTransition } from "@remix-run/react";
 import cn from 'classnames';
-
-
-import Chip from './Chip';
-
 
 import { MdKeyboardArrowRight } from "react-icons/md";
 

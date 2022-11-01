@@ -1,16 +1,15 @@
 
-import { TwitterApi, TwitterV2IncludesHelper, UserSearchV1Paginator } from 'twitter-api-v2';
-import type { TwitterApiRateLimitPlugin } from '@twitter-api-v2/plugin-rate-limit';
+import { TwitterV2IncludesHelper } from 'twitter-api-v2';
+import type { TwitterApi } from 'twitter-api-v2'
 import { log } from '~/log.server';
 import { driver } from "~/neo4j.server";
-import { Record, Node, int } from 'neo4j-driver'
-import { getListUsers, USER_FIELDS } from '~/twitter.server';
-import { createUserDb, indexUserNewTweets, indexUserOlderTweets } from "~/models/user.server";
+import { int } from 'neo4j-driver';
+import type { Record, Node } from 'neo4j-driver';
+import { USER_FIELDS } from '~/twitter.server';
+import { indexUserNewTweets, indexUserOlderTweets } from "~/models/user.server";
 import type {
     ListV2,
-    TweetV2,
     UserV2,
-    MediaObjectV2,
     TweetV2ListTweetsPaginator
 } from 'twitter-api-v2';
 
@@ -133,7 +132,7 @@ export async function getAllStreams(username: string) {
         )
     })
     const recUsersMap = new Map()
-    recRes.records.map((row: Record) => {
+    recRes.records.forEach((row: Record) => {
         let streamName = row.get("streamName")
         let ru = row.get("recU")
         recUsersMap.set(streamName, ru)
@@ -155,7 +154,7 @@ export async function getAllStreams(username: string) {
             while (recommendedUsersTested.length < 5 && numSeedUsersFollowedBy > 1) {
                 recommendedUsersTested = [];
                 numSeedUsersFollowedBy--;
-                recommendedUsers.map((row: any) => {
+                recommendedUsers.forEach((row: any) => {
                     if (row.count.toInt() >= numSeedUsersFollowedBy && seedUserUsernames.indexOf(row.item.properties.username) == -1) {
                         recommendedUsersTested.push(row.item)
                     }
@@ -207,7 +206,7 @@ export async function getUserStreams(username: string) {
         )
     })
     const recUsersMap = new Map()
-    recRes.records.map((row: Record) => {
+    recRes.records.forEach((row: Record) => {
         let streamName = row.get("streamName")
         let ru = row.get("recU")
         recUsersMap.set(streamName, ru)
@@ -222,14 +221,14 @@ export async function getUserStreams(username: string) {
             recommendedUsers = []
         }
 
-        let numSeedUsersFollowedBy = seedUsers.length + 1;
+        let numSeedUsersFollowedBy: number = seedUsers.length + 1;
         let recommendedUsersTested: any[] = [];
 
         if (recommendedUsers.length > 0) {
             while (recommendedUsersTested.length < 5 && numSeedUsersFollowedBy > 1) {
                 recommendedUsersTested = [];
                 numSeedUsersFollowedBy--;
-                recommendedUsers.map((row: any) => {
+                recommendedUsers.forEach((row: any) => {
                     if (row.count.toInt() >= numSeedUsersFollowedBy && seedUserUsernames.indexOf(row.item.properties.username) == -1) {
                         recommendedUsersTested.push(row.item)
                     }
@@ -311,7 +310,7 @@ export async function deleteStreamByName(api: TwitterApi, name: string) {
     const stream = (await getStreamByName(name)).stream
     const session = driver.session()
     // Create a node within a write transaction
-    const res = await session.executeWrite((tx: any) => {
+    await session.executeWrite((tx: any) => {
         return tx.run(`
         MATCH (s:Stream {name: $name} )
         DETACH DELETE s`,
@@ -385,10 +384,6 @@ export async function getTweetsFromAuthorIdForStream(
     else if (now > user.properties.tweetscapeIndexedTweetsEndTime) {
         dateRanges.push({ startTime: user.properties.tweetscapeIndexedTweetsEndTime, endTime: now })
     }
-
-    console.log("DATE RANGES")
-    console.log(dateRanges)
-    const allTweets: TweetV2[] = [];
     const tweetRes = await Promise.all(
         dateRanges.map(({ startTime, endTime }) => {
             return pullTweets(api, user, startTime, endTime)
@@ -451,7 +446,7 @@ export async function addUsersFollowedBy(users: any, { username }) {
     const session = driver.session()
     // Create a node within a write transaction
     try {
-        const clearFollows = await session.executeWrite((tx: any) => {
+        await session.executeWrite((tx: any) => {
             return tx.run(`
             MATCH (u:User {username: $followerUsername})-[r:FOLLOWS]->(uf:User) 
             DELETE r
