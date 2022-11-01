@@ -1,27 +1,17 @@
 
-import { TweetStream, TwitterApiv2, TwitterV2IncludesHelper, UserSearchV1Paginator } from 'twitter-api-v2';
+import { TwitterApi, TwitterV2IncludesHelper, UserSearchV1Paginator } from 'twitter-api-v2';
 import type { TwitterApiRateLimitPlugin } from '@twitter-api-v2/plugin-rate-limit';
-
 import { log } from '~/log.server';
 import { driver } from "~/neo4j.server";
-import type { Record, Node } from 'neo4j-driver'
+import { Record, Node, int } from 'neo4j-driver'
 import { getListUsers, USER_FIELDS } from '~/twitter.server';
-import { createUserDb } from "~/models/user.server";
-
+import { createUserDb, indexUserNewTweets, indexUserOlderTweets } from "~/models/user.server";
 import type {
     ListV2,
-    ReferencedTweetV2,
-    TTweetv2Expansion,
-    TTweetv2TweetField,
-    TTweetv2UserField,
-    TweetEntityAnnotationsV2,
-    TweetEntityHashtagV2,
-    TweetEntityUrlV2,
-    TweetSearchRecentV2Paginator,
     TweetV2,
-    TweetV2ListTweetsPaginator,
     UserV2,
-    MediaObjectV2, TwitterApi
+    MediaObjectV2,
+    TweetV2ListTweetsPaginator
 } from 'twitter-api-v2';
 
 export function flattenTwitterUserPublicMetrics(data: Array<any>) {
@@ -64,7 +54,6 @@ export async function getUserFromTwitter(api: any, username: string) {
 
 }
 
-
 export async function getTweet(tweetId: string) {
     const session = driver.session()
 
@@ -96,25 +85,29 @@ export async function getStreams() {
     // Create a node within a write transaction
     const res = await session.executeRead((tx: any) => {
         return tx.run(`
-        MATCH (s:Stream )
-        RETURN s`,
+        MATCH (s:Stream)-[r:CREATED]-(u)
+        OPTIONAL MATCH (s)-[seedUserRel:CONTAINS]->(seedUser:User) 
+        RETURN s,u,collect(seedUser) as seedUsers
+        `
         )
     })
     const streams = res.records.map((row: Record) => {
-        return row.get('s')
+        return { stream: row.get('s'), creator: row.get('u'), seedUsers: row.get('seedUsers') }
     })
     await session.close()
     return streams;
 }
 
-export async function getAllStreams() {
+export async function getAllStreams(username: string) {
     const session = driver.session()
     const res = await session.executeRead((tx: any) => {
         return tx.run(`
-            MATCH (s:Stream)
+            MATCH (s:Stream)<-[:CREATED]-(creator:User)
+            WHERE creator.username <> $username
             OPTIONAL MATCH (s)-[r:CONTAINS]->(u:User)
             RETURN s, collect(u) as seedUsers
-            `
+            `,
+            { username }
         )
     })
     const streams = res.records.map((row: Record) => {
@@ -126,7 +119,8 @@ export async function getAllStreams() {
 
     const recRes = await session.executeRead((tx: any) => {
         return tx.run(`
-            MATCH (s:Stream)
+            MATCH (s:Stream)<-[:CREATED]-(creator:User)
+            WHERE creator.username <> $username
             unwind s as singleS
             MATCH (singleStream:Stream {name: singleS.name})-[:CONTAINS]->(seedUsers:User)-[:FOLLOWS]->(allFollowed:User)
             WITH collect(allFollowed) as allFollowedUsers, collect(seedUsers) as seedUsers, singleStream as singleStream 
@@ -134,7 +128,82 @@ export async function getAllStreams() {
             WHERE (allF in allFollowedUsers and seedUser in seedUsers)
             WITH collect(endNode(r)) as endingEnders, singleStream
             RETURN  singleStream.name as streamName, apoc.coll.duplicatesWithCount(endingEnders) as recU
-            `
+            `,
+            { username }
+        )
+    })
+    const recUsersMap = new Map()
+    recRes.records.map((row: Record) => {
+        let streamName = row.get("streamName")
+        let ru = row.get("recU")
+        recUsersMap.set(streamName, ru)
+    })
+    streams.forEach((row: any) => {
+        let streamName = row.stream.properties.name
+        let seedUsers = row.seedUsers;
+        let seedUserUsernames = seedUsers.map((row: any) => row.properties.username)
+
+        let recommendedUsers = recUsersMap.get(streamName)
+        if (!recommendedUsers) {
+            recommendedUsers = []
+        }
+
+        let numSeedUsersFollowedBy = seedUsers.length + 1;
+        let recommendedUsersTested: any[] = [];
+
+        if (recommendedUsers.length > 0) {
+            while (recommendedUsersTested.length < 5 && numSeedUsersFollowedBy > 1) {
+                recommendedUsersTested = [];
+                numSeedUsersFollowedBy--;
+                recommendedUsers.map((row: any) => {
+                    if (row.count.toInt() >= numSeedUsersFollowedBy && seedUserUsernames.indexOf(row.item.properties.username) == -1) {
+                        recommendedUsersTested.push(row.item)
+                    }
+                })
+            }
+
+        }
+
+        recommendedUsersTested.sort((a, b) => a.properties['public_metrics.followers_count'] - b.properties['public_metrics.followers_count'])
+
+
+        row.recommendedUsers = recommendedUsersTested
+    })
+
+    await session.close()
+    return streams;
+}
+
+export async function getUserStreams(username: string) {
+    const session = driver.session()
+    const res = await session.executeRead((tx: any) => {
+        return tx.run(`
+            MATCH (s:Stream)<-[:CREATED]-(creator:User {username: $username})
+            OPTIONAL MATCH (s)-[r:CONTAINS]->(u:User)
+            RETURN s, collect(u) as seedUsers
+            `,
+            { username }
+        )
+    })
+    const streams = res.records.map((row: Record) => {
+        return {
+            "stream": row.get("s"),
+            "seedUsers": row.get("seedUsers")
+        }
+    })
+
+    const recRes = await session.executeRead((tx: any) => {
+        return tx.run(`
+            MATCH (s:Stream)<-[:CREATED]-(creator:User {username: $username})
+            unwind s as singleS
+            MATCH (singleStream:Stream {name: singleS.name})-[:CONTAINS]->(seedUsers:User)-[:FOLLOWS]->(allFollowed:User)
+            WITH collect(allFollowed) as allFollowedUsers, collect(seedUsers) as seedUsers, singleStream as singleStream 
+            MATCH (seedUser)-[r:FOLLOWS]->(allF)
+            WHERE (allF in allFollowedUsers and seedUser in seedUsers)
+            WITH collect(endNode(r)) as endingEnders, singleStream
+            RETURN  singleStream.name as streamName, apoc.coll.duplicatesWithCount(endingEnders) as recU
+            `,
+            { username }
         )
     })
     const recUsersMap = new Map()
@@ -184,41 +253,42 @@ export async function getStreamByName(name: string) {
     // Create a node within a write transaction
     const streamRes = await session.executeRead((tx: any) => {
         return tx.run(`
-        MATCH (s:Stream {name: $name} )
-        RETURN s
-        LIMIT 1;
+        MATCH (s:Stream {name:$name} )<-[:CREATED]-(creator:User)
+        OPTIONAL MATCH (s)-[r:CONTAINS]->(u:User)
+        RETURN DISTINCT s, creator,u,r
         `,
             { name })
     })
     let stream = null;
+    let creator = null;
+    let seedUsers;
+
     if (streamRes.records.length > 0) {
-        stream = streamRes.records[0].get("s");
-    }
-    let seedUsers: any = [];
-    if (stream) {
-        let seedUsersRes = await session.executeRead((tx: any) => {
-            return tx.run(`
-            MATCH (s:Stream {name: $name} )-[r:CONTAINS]->(u:User)
-            RETURN u,r`,
-                { name })
+        stream = streamRes.records[0].get("s"); // Stream will be the same for all users
+        creator = streamRes.records[0].get("creator")
+        seedUsers = streamRes.records.filter((row: Record) => (row.get("u") && row.get("r"))).map((row: Record) => {
+            return {
+                user: row.get('u'),
+                rel: row.get('r')
+            }
         })
-        if (seedUsersRes.records.length > 0) {
-            seedUsers = seedUsersRes.records.map((row: Record) => {
-                return { user: row.get('u'), rel: row.get('r') }
-            })
-        }
     }
 
     await session.close()
-    return { stream: stream, seedUsers: seedUsers };
+    return { stream: stream, creator: creator, seedUsers: seedUsers };
 }
 
-export async function createStream(name: string, startTime: string, username: string) {
+export async function createStream(
+    name: string,
+    startTime: string,
+    user: UserV2,
+    twitterListId: string) {
     const session = driver.session()
     // Create a node within a write transaction
     let streamData = {
         name,
         startTime,
+        twitterListId: twitterListId,
     }
     const res = await session.executeWrite((tx: any) => {
         return tx.run(`
@@ -227,7 +297,7 @@ export async function createStream(name: string, startTime: string, username: st
             SET s = $streamData
             MERGE (u)-[:CREATED]->(s)
             RETURN s`,
-            { streamData: streamData, username: username }
+            { streamData: streamData, username: user.username }
         )
     })
     // Get the `p` value from the first record
@@ -237,7 +307,8 @@ export async function createStream(name: string, startTime: string, username: st
     return node;
 }
 
-export async function deleteStreamByName(name: string) {
+export async function deleteStreamByName(api: TwitterApi, name: string) {
+    const stream = (await getStreamByName(name)).stream
     const session = driver.session()
     // Create a node within a write transaction
     const res = await session.executeWrite((tx: any) => {
@@ -246,6 +317,8 @@ export async function deleteStreamByName(name: string) {
         DETACH DELETE s`,
             { name })
     })
+    await api.v2.removeList(stream.properties.twitterListId)
+    console.log(`deleted stream '${name}' and twitter list with id ${stream.properties.twitterListId}`)
 }
 
 export async function removeSeedUserFromStream(streamName: string, username: string) {
@@ -262,33 +335,6 @@ export async function removeSeedUserFromStream(streamName: string, username: str
     await session.close()
     return node;
 
-}
-
-async function getTweetsFromAuthorId(
-    api: TwitterApi,
-    id: string,
-    startTime: string,
-) {
-    console.log(`pulling tweets for ${id}`)
-    const tweets = await api.v2.userTimeline(
-        id,
-        {
-            'expansions': 'author_id,in_reply_to_user_id,referenced_tweets.id,referenced_tweets.id.author_id,entities.mentions.username,attachments.poll_ids,attachments.media_keys,geo.place_id',
-            'tweet.fields': 'attachments,author_id,context_annotations,conversation_id,created_at,entities,geo,id,in_reply_to_user_id,lang,public_metrics,text,possibly_sensitive,referenced_tweets,reply_settings,source,withheld',
-            'user.fields': USER_FIELDS,
-            'media.fields': 'alt_text,duration_ms,height,media_key,preview_image_url,type,url,width,public_metrics',
-            'poll.fields': 'duration_minutes,end_datetime,id,options,voting_status',
-            'place.fields': 'contained_within,country,country_code,full_name,geo,id,name,place_type',
-            'max_results': 100,
-            'start_time': startTime
-        }
-    );
-    while (!tweets.done) {
-        console.log(tweets.data.data.length);
-        await tweets.fetchNext();
-    }
-    console.log(`done pulling tweets for ${id}`)
-    return tweets;
 }
 
 async function pullTweets(api: TwitterApi, user: Node, startTime: string, now: string) {
@@ -315,7 +361,7 @@ async function pullTweets(api: TwitterApi, user: Node, startTime: string, now: s
     return tweets;
 }
 
-async function getTweetsFromAuthorIdForStream(
+export async function getTweetsFromAuthorIdForStream(
     api: TwitterApi,
     user: Node,
     stream: Node,
@@ -385,7 +431,7 @@ async function streamContainsUser(username: string, streamName: string) {
     return node;
 }
 
-async function getSavedFollows(username: string) {
+export async function getSavedFollows(username: string) {
     const session = driver.session()
     // Create a node within a write transaction
     const res = await session.executeRead((tx: any) => {
@@ -401,7 +447,7 @@ async function getSavedFollows(username: string) {
     return users;
 }
 
-async function addUsersFollowedBy(users: any, { username }) {
+export async function addUsersFollowedBy(users: any, { username }) {
     const session = driver.session()
     // Create a node within a write transaction
     try {
@@ -415,6 +461,7 @@ async function addUsersFollowedBy(users: any, { username }) {
         }) // First, clear old follows so we match current twitter following 
     }
     catch (e) {
+        console.log("error in streams.server addUsers followed by first section")
         console.log(e)
         await session.close()
         throw e
@@ -449,6 +496,7 @@ async function addUsersFollowedBy(users: any, { username }) {
         return followed;
     }
     catch (e) {
+        console.log("error in streams.server addUsersFollowedBy")
         console.log(e)
         await session.close()
         throw e
@@ -469,6 +517,7 @@ export async function addUsers(users: any) {
                 user.name = u.name,
                 user.username = u.username,
                 user.url = u.url,
+                user.description = u.description,
                 user.\`public_metrics.followers_count\`  = u.\`public_metrics.followers_count\`,
                 user.\`public_metrics.following_count\`  = u.\`public_metrics.following_count\`,
                 user.\`public_metrics.tweet_count\`  = u.\`public_metrics.tweet_count\`,
@@ -500,7 +549,7 @@ export async function bulkWrites(objs: any, writeFunc: any) {
     return singleList;
 }
 
-async function bulkWritesMulti(writeFunc: any, objectsToWrite: any, args: object) {
+export async function bulkWritesMulti(writeFunc: any, objectsToWrite: any, args: object) {
     const chunkSize = 100;
     let chunkWrites = [];
     console.log(`writing ${objectsToWrite.length} objects with ${writeFunc.name}`)
@@ -577,14 +626,6 @@ export async function getAllUserLists(username: string) {
     return lists;
 }
 
-export async function addTwitterListToStream(api: TwitterApi, stream: Node, listId: string) {
-    const users = await getListUsers(api, listId)
-    for (const user of users) {
-        const userDb = await createUserDb(user)
-        addSeedUserToStream(api, stream, userDb)
-    }
-}
-
 export function flattenMediaPublicMetrics(data: Array<any>) {
     for (const obj of data) {
         // obj.username = obj.username.toLowerCase();
@@ -631,8 +672,12 @@ export async function addTweetsFrom(tweets: any) {
                 tweet.lang = t.lang,
                 tweet.text = t.text,
                 tweet.created_at = t.created_at,
-                tweet.reply_settings = t.reply_settings
-
+                tweet.reply_settings = t.reply_settings,
+                tweet.author_id = t.author_id,
+                tweet.\`public_metrics.retweet_count\` = t.\`public_metrics.retweet_count\`,
+                tweet.\`public_metrics.reply_count\` = t.\`public_metrics.reply_count\`,
+                tweet.\`public_metrics.like_count\` = t.\`public_metrics.like_count\`,
+                tweet.\`public_metrics.quote_count\` = t.\`public_metrics.quote_count\`
             MERGE (user:User {id: t.author_id})
 
             MERGE (user)-[:POSTED]->(tweet)
@@ -689,100 +734,18 @@ export async function addTweetsFrom(tweets: any) {
 
 export async function addSeedUserToStream(
     api: TwitterApi,
-    limits: any,
     stream: Node,
     user: any, // has already been added to db before calling this func
-    now: string = (new Date()).toISOString()
 ) {
     try {
         log.debug(`adding user '${user.properties.username}' to stream '${stream.properties.name}`)
+        log.debug(`${user.properties.id}, ${stream.properties.twitterListId}`)
         // Add new seedUsers relation to Stream
-        const reses = await Promise.all([
-            getTweetsFromAuthorIdForStream(
-                api,
-                user,
-                stream,
-                now
-            ),
-            getSavedFollows(user.properties.username)
-        ])
 
-        const tweetRes = reses[0]
-        const savedFollowsOfUser = reses[1]
-
-        if (tweetRes.tweets.length > 0) {
-            let data = await Promise.all([
-                bulkWrites(tweetRes.users, addUsers),
-                bulkWrites(tweetRes.media, addTweetMedia),
-                bulkWrites(tweetRes.refTweets, addTweetsFrom),
-                bulkWrites(tweetRes.tweets, addTweetsFrom)
-            ])
-
-            let tweetTimeMax = new Date(Math.max.apply(null, tweetRes.tweets.map((t) => new Date(t.created_at))))
-            let tweetTimeMin = new Date(Math.min.apply(null, tweetRes.tweets.map((t) => new Date(t.created_at))))
-
-            let newMax = user.properties.tweetscapeIndexedTweetsEndTime;
-            let newMin = user.properties.tweetscapeIndexedTweetsStartTime;
-            if (!user.properties.tweetscapeIndexedTweetsEndTime) {
-                newMax = tweetTimeMax.toISOString()
-            } else if (user.properties.tweetscapeIndexedTweetsEndTime < tweetTimeMax.toISOString()) {
-                newMax = tweetTimeMax.toISOString()
-            }
-            if (!user.properties.tweetscapeIndexedTweetsEndTime) {
-                newMin = tweetTimeMin.toISOString()
-            }
-            else if (user.properties.tweetscapeIndexedTweetsStartTime > tweetTimeMin.toISOString()) {
-                newMin = tweetTimeMin.toISOString()
-            }
-
-            updateUserTweetscapeTweetIndexTimes(user, newMin, newMax)
-        }
-
-        if (savedFollowsOfUser.length == user.properties["public_metrics.following_count"]) {
-            log.debug(`Looks like we have already saved the ${savedFollowsOfUser.length} users followed by '${user.properties.username}'`)
-        } else {
-            log.debug(`We have ${savedFollowsOfUser.length} users followed by '${user.properties.username}', but twitter shows ${user.properties["public_metrics.following_count"]}`)
-
-            const getFollowedLimit = await limits.v2.getRateLimit(
-                'users/:id/following'
-            );
-
-            if ((getFollowedLimit?.remaining ?? 1) > 0) {
-                log.debug(`Fetching api.v2.following for ${user.properties.username}...`);
-                // Get accounts followed by seed user
-                const following = await api.v2.following(
-                    user.properties.id,
-                    {
-                        'tweet.fields': 'attachments,author_id,context_annotations,conversation_id,created_at,entities,geo,id,in_reply_to_user_id,lang,public_metrics,text,possibly_sensitive,referenced_tweets,reply_settings,source,withheld',
-                        'user.fields': USER_FIELDS,
-                        'max_results': 1000,
-                        "asPaginator": true
-                    }
-                );
-
-                while (!following.done) { await following.fetchNext(); }
-                console.log(`fetched ${following.data.data.length} accounts followed by '${user.properties.username}'`);
-                let newUsers = flattenTwitterUserPublicMetrics(following.data.data);
-                console.log("-----adfsad------")
-                console.log(newUsers.slice(0, 2))
-                let saved = await bulkWritesMulti(
-                    addUsersFollowedBy,
-                    newUsers,
-                    { username: user.properties.username }
-                )
-            } else {
-                log.warn(
-                    `Rate limit hit for getting user (${user.properties.username}) follwings, skipping until ${new Date(
-                        (getFollowedLimit?.reset ?? 0) * 1000
-                    ).toLocaleString()}...`
-                );
-            }
-        }
-
-
+        await api.v2.addListMember(stream.properties.twitterListId, user.properties.id)
         return await streamContainsUser(user.properties.username, stream.properties.name)
     } catch (e) {
-        log.error(`Error fetching tweets: ${JSON.stringify(e, null, 2)}`);
+        log.error(`Error adding seed user to stream: ${JSON.stringify(e, null, 2)}`);
         throw e;
     }
 };
@@ -842,41 +805,6 @@ export async function updateStreamFollowsNetwork(api: TwitterApi, limits: Twitte
     await updateStreamFollowingLastUpdatedAt(stream, now.toISOString());
 }
 
-async function updateStreamTweetsLastUpdatedAt(stream: Node, user: Node, now: string) {
-    const session = driver.session()
-    // Create a node within a write transaction
-    const res = await session.executeWrite((tx: any) => {
-        return tx.run(`
-        MERGE (s:Stream {name:$streamName})-[r:CONTAINS]->(:User {username:$username})
-        set r.tweetsLastUpdatedAt = $now
-        RETURN r`,
-            { streamName: stream.properties.name, username: user.properties.username, now })
-    })
-    const streams = res.records.map((row: Record) => {
-        return row.get('r')
-    })
-    await session.close()
-    return streams;
-}
-
-async function getStreamUserRel(stream: Node, user: Node) {//}, now: string) {
-    const session = driver.session()
-    // Create a node within a write transaction
-    const res = await session.executeRead((tx: any) => {
-        return tx.run(`
-        MATCH (s:Stream {name:$streamName})-[r:CONTAINS]->(:User {username:$username})
-        RETURN r`,
-            { streamName: stream.properties.name, username: user.properties.username })
-    })
-    console.log(`getting relationship stream ${stream.properties.name} for user ${user.properties.username}`)
-    const singleRecord = res.records[0]
-    const node = singleRecord.get("r")
-    console.log("RELATIONSIHP")
-    console.log(node.properties)
-    await session.close()
-    return node;
-}
-
 async function updateStreamFollowingLastUpdatedAt(stream: Node, now: string) {
     const session = driver.session()
     // Create a node within a write transaction
@@ -894,81 +822,171 @@ async function updateStreamFollowingLastUpdatedAt(stream: Node, now: string) {
     return streams;
 }
 
-export async function updateStreamTweets(api: TwitterApi, stream: Node, seedUsers: Node[], now: string = (new Date()).toISOString()) {
-    // Add the tweets from stream's date Range to the DB to build a feed
-    // let now = new Date()
-    // const endTime = new Date()
-    // const startTime = new Date(endTime.getFullYear(), endTime.getMonth(), endTime.getDate() - 7, endTime.getHours(), endTime.getMinutes())
-    let tweets: TweetV2[] = [];
-    let refTweets: TweetV2[] = [];
-    let users: UserV2[] = [];
-    let media: MediaObjectV2[] = [];
-    const tweetResponses = await Promise.all(seedUsers.map((user) => {
-        return getTweetsFromAuthorIdForStream(
-            api,
-            user,
-            stream,
-            now
-        )
+export async function indexMoreTweets(api: TwitterApi, seedUsers: Node[]) {
+    return await Promise.all(seedUsers.map((user) => {
+        return indexUserOlderTweets(api, user.user)
     }))
-    for (let res of tweetResponses) {
-        users.push(...res.users)
-        media.push(...res.media)
-        refTweets.push(...res.refTweets)
-        tweets.push(...res.tweets)
-    }
-    let data = await Promise.all([
+}
+export async function updateStreamTweets(api: TwitterApi, seedUsers: Node[]) {
+    return await Promise.all(seedUsers.map((user) => {
+        return indexUserNewTweets(api, user.user)
+    }))
+}
+
+
+async function writeTweetData(res: TweetV2ListTweetsPaginator) {
+    let media = []
+    let users = []
+    let refTweets = []
+    let tweetsFromList = []
+
+    let includes = new TwitterV2IncludesHelper(res)
+
+    users.push(...flattenTwitterUserPublicMetrics(includes.users))
+    media.push(...includes.media)
+    refTweets.push(...flattenTweetPublicMetrics(includes.tweets))
+    tweetsFromList.push(...flattenTweetPublicMetrics(res.tweets))
+    await Promise.all([
         bulkWrites(users, addUsers),
         bulkWrites(media, addTweetMedia),
         bulkWrites(refTweets, addTweetsFrom),
-        bulkWrites(tweets, addTweetsFrom)
+        bulkWrites(tweetsFromList, addTweetsFrom)
     ])
-    await Promise.all(seedUsers.map((user: any) => {
-        let tweetTimeMax = new Date(Math.max.apply(null, tweets.map((t) => new Date(t.created_at))))
-        let tweetTimeMin = new Date(Math.min.apply(null, tweets.map((t) => new Date(t.created_at))))
-
-        console.log("TWEETTIMEMAX")
-        console.log(tweetTimeMax)
-        console.log(tweets.map((t) => new Date(t.created_at)))
-
-        let newMax = user.properties.tweetscapeIndexedTweetsEndTime;
-        let newMin = user.properties.tweetscapeIndexedTweetsStartTime;
-        if (!user.properties.tweetscapeIndexedTweetsEndTime) {
-            newMax = tweetTimeMax.toISOString()
-        } else if (user.properties.tweetscapeIndexedTweetsEndTime < tweetTimeMax.toISOString()) {
-            newMax = tweetTimeMax.toISOString()
-        }
-
-
-        if (!user.properties.tweetscapeIndexedTweetsEndTime) {
-            newMin = tweetTimeMin.toISOString()
-        }
-        else if (user.properties.tweetscapeIndexedTweetsStartTime > tweetTimeMin.toISOString()) {
-            newMin = tweetTimeMin.toISOString()
-        }
-        console.log(newMin)
-        console.log(newMax)
-        updateUserTweetscapeTweetIndexTimes(user, newMin, newMax)
-    }))
-    return data;
 }
 
-async function updateUserTweetscapeTweetIndexTimes(user: Node, startTime: string, endTime: string) {
+export async function getStreamTweetsNeo4j(stream: Node, skip: number = 0, limit: number = 50, tags: string[] = []) {
+    const noTagsQuery = `
+        MATCH (s:Stream {name: $name} )-[:CONTAINS]->(u:User)-[:POSTED]->(t:Tweet)
+        OPTIONAL MATCH (t)-[r:REFERENCED]->(ref_t:Tweet)<-[:POSTED]-(ref_a:User)
+        OPTIONAL MATCH (t)-[tr:INCLUDED]->(entity:Entity)-[:CATEGORY]-(d:Domain {name:"Unified Twitter Taxonomy"})
+        OPTIONAL MATCH (t)-[mr:ATTACHED]->(media:Media)
+        OPTIONAL MATCH (t)-[ar:ANNOTATED]-(a)
+        RETURN DISTINCT u,t,
+            collect(DISTINCT a) as a, 
+            collect(DISTINCT r) as refTweetRels, 
+            collect(DISTINCT ref_t) as refTweets,
+            collect(ref_a) as refTweetAuthors, 
+            collect(DISTINCT entity) as entities,
+            collect(DISTINCT d) as domains,
+            collect(DISTINCT media) as media, 
+            collect(DISTINCT mr) as mediaRels
+        ORDER by t.created_at DESC
+        SKIP $skip
+        LIMIT $limit
+    `
+    const withTagsQuery = `
+        MATCH (s:Stream {name: $name} )-[:CONTAINS]->(u:User)-[:POSTED]->(t:Tweet)
+        MATCH (t)-[tr:INCLUDED]->(entity:Entity)-[:CATEGORY]-(d:Domain {name:"Unified Twitter Taxonomy"})
+        WHERE entity.name IN $tags
+        OPTIONAL MATCH (t)-[r:REFERENCED]->(ref_t:Tweet)<-[:POSTED]-(ref_a:User)
+        OPTIONAL MATCH (t)-[mr:ATTACHED]->(media:Media)
+        OPTIONAL MATCH (t)-[ar:ANNOTATED]-(a)
+        RETURN DISTINCT u,t,
+            collect(DISTINCT a) as a, 
+            collect(DISTINCT r) as refTweetRels, 
+            collect(DISTINCT ref_t) as refTweets,
+            collect(ref_a) as refTweetAuthors, 
+            collect(DISTINCT entity) as entities,
+            collect(DISTINCT d) as domains,
+            collect(DISTINCT media) as media, 
+            collect(DISTINCT mr) as mediaRels
+        ORDER by t.created_at DESC
+        SKIP $skip
+        LIMIT $limit
+    `
     const session = driver.session()
     // Create a node within a write transaction
-    const res = await session.executeWrite((tx: any) => {
-        return tx.run(`
-        MERGE (u:User {username: $username})
-        SET u.tweetscapeIndexedTweetsStartTime = $startTime
-        SET u.tweetscapeIndexedTweetsEndTime = $endTime
-        RETURN u`,
-            { username: user.properties.username, startTime, endTime })
+
+    // NOTE: BE V CAREFUL ABOUT WHICH OF THE COLLECT() RETURNS ARE DISTINCT (REF_TWEET_AUTHORS IS AN EXAMPLE OF ONE THAT SHOULD NOT BE)
+    const query = (tags.length > 0 ? withTagsQuery : noTagsQuery)
+    const res = await session.executeRead((tx: any) => {
+        return tx.run(
+            query,
+            { name: stream.properties.name, skip: int(skip), limit: int(limit), tags: tags }
+        )
     })
-    const streams = res.records.map((row: Record) => {
-        return row.get('u')
-    })
+
+
+    let tweets = [];
+    if (res.records.length > 0) {
+        tweets = res.records.map((row: Record) => {
+            return {
+                tweet: row.get('t'),
+                author: row.get('u'),
+                annotation: row.get('a'),
+                refTweets: row.get('refTweets'),
+                refTweetRels: row.get('refTweetRels'),
+                refTweetAuthors: row.get('refTweetAuthors'),
+                entities: row.get('entities'),
+                domains: row.get('domains'),
+                media: row.get('media'),
+                mediaRels: row.get('mediaRels')
+            }
+        })
+    }
     await session.close()
-    return streams;
+    return tweets;
+}
+
+export async function writeStreamListTweetsToNeo4j(api: TwitterApi, stream: Node, numPages: number = 10, maxResults: number = 100, sinceId: string | null = null) {
+    let listTweetsRes
+    let reqBody = {
+        'expansions': 'author_id,in_reply_to_user_id,referenced_tweets.id,referenced_tweets.id.author_id,entities.mentions.username,attachments.poll_ids,attachments.media_keys,geo.place_id',
+        'tweet.fields': 'attachments,author_id,context_annotations,conversation_id,created_at,entities,geo,id,in_reply_to_user_id,lang,public_metrics,text,possibly_sensitive,referenced_tweets,reply_settings,source,withheld',
+        'user.fields': USER_FIELDS,
+        'media.fields': 'alt_text,duration_ms,height,media_key,preview_image_url,type,url,width,public_metrics',
+        'poll.fields': 'duration_minutes,end_datetime,id,options,voting_status',
+        'place.fields': 'contained_within,country,country_code,full_name,geo,id,name,place_type',
+        'max_results': maxResults,
+    }
+    try {
+        listTweetsRes = await api.v2.listTweets(
+            stream.properties.twitterListId,
+            reqBody
+        )
+
+        let results: TweetV2ListTweetsPaginator[] = []
+        results.push(listTweetsRes)
+        for (let step = 0; step < numPages; step++) {
+            let last: TweetV2ListTweetsPaginator = results.slice(-1)[0]
+            console.log(`pulling tweets for page ${step}`)
+            let next = await last.next()
+            await writeTweetData(next)
+            let tweetIds = next.tweets.map((t) => (t.id))
+            if (sinceId && tweetIds.indexOf(sinceId) > -1) {
+                console.log(`hit tweet with id ${sinceId} in latest pull, so stopping queueed data writing job`)
+                break;
+            }
+            results.push(next)
+        }
+    } catch (e) {
+        log.error(`error getting list tweets for '${stream.properties.name}': ${JSON.stringify(e, null, 2)}`);
+        throw e
+    }
+}
+
+export async function StreamTweetsEntityCounts(streamName: string) {
+    const session = driver.session()
+    let params = { streamName: streamName }
+    let query = `
+    MATCH (s:Stream {name:$streamName})-[:CONTAINS]->(u:User)-[:POSTED]->(t:Tweet)
+    OPTIONAL MATCH (t)-[tr:INCLUDED]->(entity:Entity)-[:CATEGORY]-(d:Domain {name:"Unified Twitter Taxonomy"})
+    WITH collect(entity) as entities, collect(t) as tweets
+    RETURN apoc.coll.frequencies(entities) as entityDistribution, size(tweets) as numTotalTweets
+        `
+    const res = await session.executeRead((tx: any) => {
+        return tx.run(query, params)
+    })
+    let data;
+    if (res.records.length == 1) {
+        data = {
+            "entityDistribution": res.records[0].get("entityDistribution").map((row) => ({ item: row.item, count: row.count.toInt() })),
+            "numTotalTweets": res.records[0].get("numTotalTweets")
+        }
+    }
+    data.entityDistribution.sort((a, b) => (b.count - a.count))
+    await session.close()
+    return data;
 }
 
 export async function getStreamTweets(name: string, startTime: string) {
@@ -1004,7 +1022,6 @@ export async function getStreamTweets(name: string, startTime: string) {
     await session.close()
     return tweets;
 }
-
 
 export async function getStreamRecommendedUsers(name: string) {
     //THIS EXCLUDES RETWEETS RIGHT NOW
@@ -1090,7 +1107,6 @@ export async function getStreamDistinctInteractionedWithAccounts(name: string) {
     return frequencies;
 }
 
-
 export async function getStreamRecommendedUsersByInteractions(name: string) {
     //THIS EXCLUDES RETWEETS RIGHT NOW
     const session = driver.session()
@@ -1113,50 +1129,4 @@ export async function getStreamRecommendedUsersByInteractions(name: string) {
     }
     await session.close()
     return recommendedUsers;
-}
-
-
-async function getTweetsFromUsernames(usernames: string[]) {
-    const queries: string[] = [];
-    usernames.forEach((username) => {
-        const query = queries[queries.length - 1];
-        if (query && `${query} OR from:${username}`.length < 512)
-            queries[queries.length - 1] = `${query} OR from:${username}`;
-        else queries.push(`from:${username}`);
-    });
-    const users: Record<string, UserV2> = {};
-    const tweets: TweetV2[] = [];
-    await Promise.all(
-        queries.map(async (query) => {
-            const res = await api.v2.search(query, {
-                'max_results': 100,
-                'tweet.fields': TWEET_FIELDS,
-                'expansions': TWEET_EXPANSIONS,
-                'user.fields': USER_FIELDS,
-            });
-            res.tweets.forEach((tweet) => tweets.push(tweet));
-            const includes = new TwitterV2IncludesHelper(res);
-            includes.users.forEach((user) => {
-                users[user.id] = user;
-            });
-        })
-    );
-    return tweets.map((tweet) => ({
-        ...tweet,
-        html: html(tweet.text),
-        author: users[tweet.author_id as string],
-    }));
-}
-
-export function html(text: string): string {
-    return autoLink(text, {
-        usernameIncludeSymbol: true,
-        linkAttributeBlock(entity, attrs) {
-            /* eslint-disable no-param-reassign */
-            attrs.target = '_blank';
-            attrs.rel = 'noopener noreferrer';
-            attrs.class = 'hover:underline text-blue-500';
-            /* eslint-enable no-param-reassign */
-        },
-    });
 }

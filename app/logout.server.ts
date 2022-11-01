@@ -1,5 +1,5 @@
 import type { ActionFunction } from '@remix-run/node';
-
+import { redirect } from "@remix-run/node";
 import { destroySession, getSession } from '~/session.server';
 
 export const action: ActionFunction = async ({ request }) => {
