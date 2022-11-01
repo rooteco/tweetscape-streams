@@ -148,24 +148,22 @@ export async function getAllStreams(username: string) {
         }
 
         let numSeedUsersFollowedBy = seedUsers.length + 1;
-        let recommendedUsersTested: any[] = [];
+        let recommendedUsersTested = []//: any[] = [];
 
         if (recommendedUsers.length > 0) {
             while (recommendedUsersTested.length < 5 && numSeedUsersFollowedBy > 1) {
                 recommendedUsersTested = [];
                 numSeedUsersFollowedBy--;
-                recommendedUsers.forEach((row: any) => {
-                    if (row.count.toInt() >= numSeedUsersFollowedBy && seedUserUsernames.indexOf(row.item.properties.username) == -1) {
-                        recommendedUsersTested.push(row.item)
+                for (let i = 0; i < recommendedUsers.length; i++) {
+                    let recUser = recommendedUsers[i];
+                    if (recUser.count >= numSeedUsersFollowedBy && seedUserUsernames.indexOf(recUser.item.properties.username) == -1) {
+                        recommendedUsersTested.push(recUser.item)
                     }
-                })
+                }
             }
 
         }
-
         recommendedUsersTested.sort((a, b) => a.properties['public_metrics.followers_count'] - b.properties['public_metrics.followers_count'])
-
-
         row.recommendedUsers = recommendedUsersTested
     })
 
@@ -228,11 +226,12 @@ export async function getUserStreams(username: string) {
             while (recommendedUsersTested.length < 5 && numSeedUsersFollowedBy > 1) {
                 recommendedUsersTested = [];
                 numSeedUsersFollowedBy--;
-                recommendedUsers.forEach((row: any) => {
-                    if (row.count.toInt() >= numSeedUsersFollowedBy && seedUserUsernames.indexOf(row.item.properties.username) == -1) {
-                        recommendedUsersTested.push(row.item)
+                for (let i = 0; i < recommendedUsers.length; i++) {
+                    let recUser = recommendedUsers[i];
+                    if (recUser.count >= numSeedUsersFollowedBy && seedUserUsernames.indexOf(recUser.item.properties.username) == -1) {
+                        recommendedUsersTested.push(recUser.item)
                     }
-                })
+                }
             }
 
         }
