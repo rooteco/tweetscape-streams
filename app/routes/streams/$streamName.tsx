@@ -131,10 +131,7 @@ export async function loader({ request, params }: LoaderArgs) {
         url.searchParams.delete("indexMoreTweets")
         return redirect(url.toString())
     }
-    await updateStreamTweets(api, seedUsers)
-
-    console.log("IN LOADER WITH FILTERS")
-    console.log(url.searchParams.getAll("topicFilter"))
+    let res = await updateStreamTweets(api, seedUsers)
     let tweets = await getStreamTweetsNeo4j(stream, 0, TWEET_LOAD_LIMIT, url.searchParams.getAll("topicFilter"))
     const entityDistribution = await StreamTweetsEntityCounts(params.streamName)
     return json(
@@ -180,10 +177,6 @@ export const action: ActionFunction = async ({
     // Check for and setup Topic Filters 
     const newTopicFilter = formData.get("topicFilter")
     const currentTopicFilterParams = url.searchParams.getAll("topicFilter")
-
-    console.log("IN ACTION")
-    console.log(newTopicFilter)
-    console.log(currentTopicFilterParams)
     if (newTopicFilter && currentTopicFilterParams.indexOf(newTopicFilter) == -1) {
         console.log(`adding ${newTopicFilter} to list of current topic filters`)
         url.searchParams.append("topicFilter", newTopicFilter)
@@ -277,9 +270,7 @@ export default function Feed() {
     // Responsible for rendering a feed & annotations
     let { streamName } = useParams();
     const [searchParams] = useSearchParams();
-    console.log("HERE ARE EARCH PARAMS")
-    console.log(searchParams)
-    console.log(searchParams.toString())
+    const showJsonFeed = searchParams.get("showjsonfeed")
     const topicFilterSearchParams = new Set(searchParams.getAll("topicFilter"));
     const topicFilters = useRef(new Set([]) as Set<string>)
 
@@ -290,6 +281,10 @@ export default function Feed() {
     const entityDistribution = loaderData.entityDistribution
     const [tweets, setTweets] = useState(loaderData.tweets);
     const stream = loaderData.stream;
+
+    const seedUsers = useRef(new Set([]) as Set<string>)
+    const loadedSeedUsers = new Set(loaderData.seedUsers.map((node) => (node.user.properties.username)))
+
     const page = useRef(0)
     const fetcher = useFetcher()
 
@@ -298,6 +293,10 @@ export default function Feed() {
         if (!eqSet(topicFilterSearchParams, topicFilters.current)) {
             console.log("SEEING A CHANGE, resetting tweets...")
             topicFilters.current = topicFilterSearchParams
+            setTweets(loaderData.tweets)
+        } else if (!eqSet(loadedSeedUsers, seedUsers.current)) {
+            console.log("seed users changed, resetting tweets...")
+            seedUsers.current = loadedSeedUsers
             setTweets(loaderData.tweets)
         }
     }, [topicFilterSearchParams])
@@ -425,9 +424,9 @@ export default function Feed() {
                                         value="addSeedUser"
                                         name="intent"
                                         onClick={() => setOverview(false)}
-                                        className="w-full h-hull my-1 mx-1  text-center cursor-pointer rounded-full bg-slate-50 hover:bg-slate-200"
+                                        className="w-full my-1 mx-1 flex flex-col items-center cursor-pointer rounded-full bg-slate-100 hover:bg-slate-200"
                                     >
-                                        <MdExpandLess style={{ fontSize: "1rem" }} />
+                                        <MdExpandLess className="self-center" style={{ fontSize: "2rem" }} />
                                     </button>
                                 </div>
                                 :
@@ -436,9 +435,9 @@ export default function Feed() {
                                     value="addSeedUser"
                                     name="intent"
                                     onClick={() => setOverview(true)}
-                                    className="w-full h-hull my-1 mx-1  text-center cursor-pointer rounded-full bg-slate-50 hover:bg-slate-200"
+                                    className="w-full my-1 mx-1 flex flex-col items-center cursor-pointer rounded-full bg-slate-100 hover:bg-slate-200"
                                 >
-                                    <MdExpandMore style={{ fontSize: "1rem" }} />
+                                    <MdExpandMore style={{ fontSize: "2rem" }} />
                                 </button>
                         }
                     </div>
@@ -458,11 +457,17 @@ export default function Feed() {
                         <div>LOADING</div> :
                         <div>
                             {
-                                tweets.map((tweet: any, index: number) => (
-                                    <div key={`showTweets-${tweet.tweet.properties.id}-${index}`}>
-                                        <Tweet key={tweet.tweet.id} tweet={tweet} searchParams={searchParams} streamName={streamName} />
-                                    </div>
-                                ))
+                                !showJsonFeed ?
+                                    tweets.map((tweet: any, index: number) => (
+                                        <div key={`showTweets-${tweet.tweet.properties.id}-${index}`}>
+                                            <Tweet key={tweet.tweet.properties.id} tweet={tweet} searchParams={searchParams} />
+                                        </div>
+                                    )) :
+                                    tweets.map((tweet: any, index: number) => (
+                                        <div>
+                                            <p key={`showTweets-${tweet.tweet.properties.id}-${index}`} >{tweet.author.properties.username}:  {tweet.tweet.properties.text} </p> <br></br>
+                                        </div>
+                                    ))
                             }
 
                             <fetcher.Form
@@ -505,8 +510,6 @@ export function CatchBoundary() {
     const caught = useCatch();
     if (caught.status === 404) {
         return <div>Note not found, {caught.data}</div>;
-    } else if (caught.status === 400) {
-        return <div>here the fuck i am baby</div>
     } else if (caught.status === 603) {
         return <div>{caught.data.message}</div>
     }

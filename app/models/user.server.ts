@@ -71,6 +71,29 @@ export async function getStreamsUserIn(username: string) {
   return streams;
 }
 
+export async function getMetaFollowers(user1: string, user2: string) {
+  const session = driver.session()
+  // Create a node within a write transaction
+  const res = await session.executeRead((tx: any) => {
+    return tx.run(`
+        MATCH (user1:User {username: $user1 })-[:FOLLOWS]->(followedByBoth:User)
+        MATCH (user2:User {username: $user2 })-[:FOLLOWS]->(followedByBoth:User)
+        RETURN followedByBoth
+        ORDER BY followedByBoth.\`public_metrics.followers_count\`
+      `,
+      { user1: user1, user2: user2 })
+  })
+
+  let metaFollowers = [];
+  if (res.records.length > 0) {
+    metaFollowers = res.records.map((row: Record) => {
+      return row.get('followedByBoth')
+    })
+  }
+  await session.close()
+  return metaFollowers;
+}
+
 async function pullTweets(
   api: TwitterApi,
   user: Node,
@@ -94,6 +117,7 @@ async function pullTweets(
     delete utReq.until_id
   }
 
+  // TODO: what to do if I have a partially indexed User? aka username, but no id
   const tweetRes = await api.v2.userTimeline(
     user.properties.id,
     utReq
@@ -207,8 +231,6 @@ export async function indexUser(api: TwitterApi, limits: any, user: any) {
         while (!following.done) { await following.fetchNext(); }
         console.log(`fetched ${following.data.data.length} accounts followed by '${user.properties.username}'`);
         let newUsers = flattenTwitterUserPublicMetrics(following.data.data);
-        console.log("-----adfsad------")
-        console.log(newUsers.slice(0, 2))
         let saved = await bulkWritesMulti(
           addUsersFollowedBy,
           newUsers,
@@ -224,7 +246,7 @@ export async function indexUser(api: TwitterApi, limits: any, user: any) {
       }
     }
   }
-  await indexUserNewTweets(api, user) // will index the latest 100 tweets to get started for this user.. 
+  return await indexUserNewTweets(api, user) // will index the latest 100 tweets to get started for this user.. 
 }
 
 export async function updateUserIndexedTweetIds(user: Node, earliestTweetId: string, latestTweetId: string) {
@@ -269,8 +291,10 @@ export async function getUserIndexedTweets(username: string,) {
   const res = await session.executeRead((tx: any) => {
     return tx.run(`
           MATCH (u:User {username: $username} )-[:POSTED]->(t:Tweet)
-          OPTIONAL MATCH (t)-[relation:REFERENCED]->(refTweet:Tweet)
-          RETURN u,t,collect(refTweet) as refTweet,collect(relation) as rel
+          OPTIONAL MATCH (t)-[r:REFERENCED]->(ref_t:Tweet)<-[:POSTED]-(ref_a:User)
+          OPTIONAL MATCH (t)-[ar:ANNOTATED]-(a)
+          OPTIONAL MATCH (t)-[tr:INCLUDED]->(entity)
+          RETURN u,t,collect(a) as a, collect(r) as refTweetRels, collect(ref_t) as refTweets,collect(ref_a) as refTweetAuthors, collect(entity) as entities
           ORDER by t.created_at DESC
       `,
       { username })
@@ -279,15 +303,42 @@ export async function getUserIndexedTweets(username: string,) {
   if (res.records.length > 0) {
     tweets = res.records.map((row: Record) => {
       return {
-        "tweet": row.get('t'),
-        "author": row.get('u'),
-        "refTweet": row.get('refTweet'),
-        "rel": row.get("rel")
+        tweet: row.get('t'),
+        author: row.get('u'),
+        annotation: row.get('a'),
+        refTweets: row.get('refTweets'),
+        refTweetRels: row.get('refTweetRels'),
+        refTweetAuthors: row.get('refTweetAuthors'),
+        entities: row.get('entities')
       }
     })
   }
   await session.close()
   return tweets;
+}
+
+export async function userIndexedEntityDistribution(username: string) {
+  const session = driver.session()
+  let params = { username: username }
+  let query = `
+      MATCH (u:User {username: $username})-[:POSTED]->(t:Tweet)
+      OPTIONAL MATCH (t)-[tr:INCLUDED]->(entity:Entity)-[:CATEGORY]-(d:Domain {name:"Unified Twitter Taxonomy"})
+      WITH collect(entity) as entities, collect(t) as tweets
+      RETURN apoc.coll.frequencies(entities) as entityDistribution, size(tweets) as numTotalTweets
+  `
+  const res = await session.executeRead((tx: any) => {
+    return tx.run(query, params)
+  })
+  let data;
+  if (res.records.length == 1) {
+    data = {
+      "entityDistribution": res.records[0].get("entityDistribution").map((row) => ({ item: row.item, count: row.count.toInt() })),
+      "numTotalTweets": res.records[0].get("numTotalTweets").toInt()
+    }
+  }
+  data.entityDistribution.sort((a, b) => (b.count - a.count))
+  await session.close()
+  return data;
 }
 
 export async function getUserContextAnnotationFrequency(username: string) {
