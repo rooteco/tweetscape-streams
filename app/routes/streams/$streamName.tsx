@@ -271,7 +271,6 @@ export default function Feed() {
     const annotationMap = Array.from(annotations)
     const actionData = useActionData();
 
-    let errors = {};
     if (actionData) {
         errors = actionData.errors;
         // recommendedUsers = actionData.recommendedUsers;
@@ -374,15 +373,6 @@ export default function Feed() {
                                     <MdExpandMore style={{ fontSize: "2rem" }} />
                                 </button>
                         }
-                    </div>
-
-                    <div className="flex flex-row hidden">
-                        <p>Tags</p>
-                        <ol>
-                            {annotationMap.map((annotation: string) => (
-                                <li key={annotation}>{annotation}</li>
-                            ))}
-                        </ol>
                     </div>
                 </div>
 
