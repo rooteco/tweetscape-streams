@@ -13,7 +13,7 @@ sudo wget https://github.com/neo4j-contrib/neo4j-apoc-procedures/releases/downlo
 ```
 
 #### Seed DB
-The seed data for neo4j is in `data/neo4j`. This data was pulled by running `npx ts-node neo4j/saveSeedData.ts`, which pulls data from twitter and stores it in json files. You can pull new data from twitter by running that script again. 
+The seed data for neo4j is in `neo4j/seed-data`. This data was pulled by running `npx ts-node neo4j/saveSeedData.ts`, which pulls data from twitter and stores it in json files. You can pull new data from twitter by running that script again. 
 
 To seed the db with data in json file (which you should do every time you run the test suite), run
 ```
