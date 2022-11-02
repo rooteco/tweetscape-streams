@@ -37,8 +37,11 @@ async function dumpTweetData() {
         }
     })
 
-    type UserTweets = { [author_id: string]: Tweetv2TimelineResult }; // https://stackoverflow.com/questions/41045924/how-to-represent-a-variable-key-name-in-typescript-interface
-    const tweets: UserTweets = {} as UserTweets;
+    type UserTweets = {
+        author_id: string,
+        data: Tweetv2TimelineResult
+    };
+    const tweets: UserTweets[] = [];
 
     for await (const user of data.data) { // for loop of this style has the operations complete before moving on to writing files
         let userTweets = await api.v2.userTimeline(
@@ -53,7 +56,10 @@ async function dumpTweetData() {
                 'max_results': 10,
             }
         )
-        tweets[user.id] = userTweets.data;
+        tweets.push({
+            author_id: user.id,
+            data: userTweets.data
+        })
     }
     const tweetsJsonStr = JSON.stringify(tweets, null, 2)
     const tweetsFileName = '/home/nick/Documents/GitHub/tweetscape-streams/data/neo4j/tweets.json'
