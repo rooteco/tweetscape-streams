@@ -1,16 +1,13 @@
 /* eslint-disable react/jsx-key */
-import { Form, useFetcher } from "@remix-run/react";
+import { useFetcher } from "@remix-run/react";
 import { useState } from "react";
-import Downshift from "downshift";
-
 import { CiSearch } from 'react-icons/ci';
-import { relative } from "node:path/win32";
 
 function StreamConfig(props: any) {
     // Responsible for Stream Management
     // Add seed users from Search or Lists, Delete Stream
-    const { streamName, userLists } = props;
-    const [search, setSearch] = useState(true);
+    const { streamName } = props;
+    const [search] = useState(true);
     const [handle, setHandle] = useState("");
 
     let fetcher = useFetcher()

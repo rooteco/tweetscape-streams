@@ -16,10 +16,9 @@ const queue = Queue<QueueData>("notifier", async (job) => {
     console.log("can i pass teh request object?")
     console.log(job.data.bearerToken)
     const streamName = job.data.streamName;
-    const sinceId = job.data.sinceId
     const api = new TwitterApi(job.data.bearerToken)
 
-    let { stream, creator, seedUsers } = await getStreamByName(streamName)
+    let { stream } = await getStreamByName(streamName)
     writeStreamListTweetsToNeo4j(api, stream, 3, 100)
 
     console.log("HERE IS USER FROM INSIDE QUEUE")
