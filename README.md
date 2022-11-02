@@ -1,6 +1,7 @@
 # Setting Up Local Environment with Docker 
 
-## Getting Neo4j Ready 
+## Prepare Local Env to run Neo4j
+#### APOC Plugin 
 You need to download the APOC plugin, we are using it for some aggregation calculations (like recommended Users). 
 
 [Here](https://neo4j.com/labs/apoc/4.0/installation/#docker) are docs for APOC install on docker image
@@ -10,6 +11,14 @@ In the docker-compose, under neo4j, you will see we mount a few volumes, one of 
 cd $HOME/neo4j/plugins:/plugins
 sudo wget https://github.com/neo4j-contrib/neo4j-apoc-procedures/releases/download/4.4.0.9/apoc-4.4.0.9-all.jar
 ```
+
+#### Seed DB
+The seed data for neo4j is in `neo4j/seed-data`. This data was pulled by running `npx ts-node neo4j/saveSeedData.ts`, which pulls data from twitter and stores it in json files. You can pull new data from twitter by running that script again. 
+
+To seed the db with data in json file (which you should do every time you run the test suite), run
+```
+npx ts-node neo4j/seed.ts
+``` 
 
 ### Local Creds
 Also, make sure you update your `.env` file: 
