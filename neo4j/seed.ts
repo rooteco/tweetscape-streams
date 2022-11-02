@@ -40,7 +40,6 @@ async function run() {
     // ADD CONSTRAINTS, indices are auto-created for properties with unique constraints
     const session = driver.session();
     await session.run("CREATE CONSTRAINT ON (u:User) ASSERT u.username IS UNIQUE");
-    await session.run("CREATE CONSTRAINT FOR (u:User) REQUIRE u.id IS UNIQUE");
     await session.run("CREATE CONSTRAINT FOR (t:Tweet) REQUIRE t.id IS UNIQUE");
     await session.run("CREATE CONSTRAINT FOR (h:Hashtag) REQUIRE h.tag IS UNIQUE");
     await session.run("CREATE CONSTRAINT FOR (h:Cashtag) REQUIRE h.tag IS UNIQUE");
@@ -50,7 +49,7 @@ async function run() {
     await session.run("CREATE CONSTRAINT FOR (s:Stream) REQUIRE s.name IS UNIQUE");
 
     // ADD INDEXES, TODO: investigate indexing strategy: https://neo4j.com/docs/cypher-manual/current/indexes-for-search-performance/
-
+    await session.run("CREATE INDEX ON :User(id)");
 
     // ADD USERS CALL apoc.load.json("/seed-data/users.json")
     await session.executeWrite((tx: any) => {
