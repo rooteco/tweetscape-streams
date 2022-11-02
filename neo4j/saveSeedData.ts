@@ -28,7 +28,7 @@ async function dumpTweetData() {
     );
 
     const jsonStr = JSON.stringify(data.data, null, 2)
-    const filename = '/home/nick/Documents/GitHub/tweetscape-streams/data/neo4j/users.json'
+    const filename = 'neo4j/seed-data/users.json'
     fs.writeFile(filename, jsonStr, (err: any) => {
         if (err) {
             console.log('Error writing file', err)
@@ -62,7 +62,7 @@ async function dumpTweetData() {
         })
     }
     const tweetsJsonStr = JSON.stringify(tweets, null, 2)
-    const tweetsFileName = '/home/nick/Documents/GitHub/tweetscape-streams/data/neo4j/tweets.json'
+    const tweetsFileName = 'neo4j/seed-data/tweets.json'
     fs.writeFile(tweetsFileName, tweetsJsonStr, (err: any) => {
         if (err) {
             console.log('Error writing file', err)
