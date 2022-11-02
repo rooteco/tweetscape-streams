@@ -1,26 +1,17 @@
 import {
     ApiResponseError,
     TwitterApi,
-    TwitterV2IncludesHelper,
 } from 'twitter-api-v2';
 import type {
     ListV2,
-    ReferencedTweetV2,
     TTweetv2Expansion,
     TTweetv2TweetField,
     TTweetv2UserField,
-    TweetEntityAnnotationsV2,
-    TweetEntityHashtagV2,
-    TweetEntityUrlV2,
-    TweetSearchRecentV2Paginator,
-    TweetV2,
-    TweetV2ListTweetsPaginator,
     UserV2,
 } from 'twitter-api-v2';
-import type { Decimal } from '@prisma/client/runtime';
 import { TwitterApiRateLimitPlugin } from '@twitter-api-v2/plugin-rate-limit';
 import invariant from 'tiny-invariant';
-import { redirect, Session } from '@remix-run/node';
+import type { Session } from '@remix-run/node';
 import { prisma } from "~/db.server";
 import { flattenTwitterUserPublicMetrics } from '~/models/streams.server'
 import { getUserByUsernameDB } from '~/models/user.server'
@@ -118,9 +109,8 @@ export async function getUserTwitterLists(api: TwitterApi, user: UserV2) {
             'expansions': ['owner_id'],
             'user.fields': USER_FIELDS,
         });
-        const includes = new TwitterV2IncludesHelper(resFollowed);
         resFollowed.lists
-            .map((l: ListV2) => {
+            .forEach((l: ListV2) => {
                 create.followedLists.push(l)
             });
 

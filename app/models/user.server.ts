@@ -1,15 +1,13 @@
 // import type { Password, User } from "@prisma/client";
 import bcrypt from "bcryptjs";
-import { TweetStream, TwitterApi, TwitterV2IncludesHelper, UserSearchV1Paginator } from 'twitter-api-v2';
-
+import { TwitterV2IncludesHelper } from 'twitter-api-v2';
+import type { TwitterApi } from 'twitter-api-v2';
 import { prisma } from "~/db.server";
-import type { users } from "@prisma/client";
 import { log } from '~/log.server';
 import { USER_FIELDS } from '~/twitter.server';
 
 import { driver } from "~/neo4j.server";
 import type { Record } from 'neo4j-driver';
-import { session } from 'neo4j-driver'
 import {
   getSavedFollows,
   flattenTweetPublicMetrics,
@@ -231,7 +229,7 @@ export async function indexUser(api: TwitterApi, limits: any, user: any) {
         while (!following.done) { await following.fetchNext(); }
         console.log(`fetched ${following.data.data.length} accounts followed by '${user.properties.username}'`);
         let newUsers = flattenTwitterUserPublicMetrics(following.data.data);
-        let saved = await bulkWritesMulti(
+        await bulkWritesMulti(
           addUsersFollowedBy,
           newUsers,
           { username: user.properties.username }

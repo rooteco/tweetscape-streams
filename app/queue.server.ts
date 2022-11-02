@@ -2,7 +2,6 @@ import {
     type Processor,
     Queue as BullQueue,
     Worker,
-    QueueScheduler,
 } from "bullmq";
 
 import redis from "./redis.server";

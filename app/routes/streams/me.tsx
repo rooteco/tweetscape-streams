@@ -1,18 +1,15 @@
-import { redirect } from "@remix-run/node";
 import type { LoaderArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { Form, Link, NavLink, Outlet, useLoaderData } from "@remix-run/react";
-import invariant from "tiny-invariant";
+import { useLoaderData } from "@remix-run/react";
 import { getClient, USER_FIELDS } from '~/twitter.server';
 import { getUserContextAnnotationFrequency, getStreamsUserIn, getUserIndexedTweets } from '~/models/user.server';
 
 // import { D3BarChart, IData } from '~/components/barChart';
 
-import { TweetSearchAllV2Paginator } from "twitter-api-v2";
 
 
-export async function loader({ request, params }: LoaderArgs) {
-    const { api, uid, session } = await getClient(request);
+export async function loader({ request }: LoaderArgs) {
+    const { api } = await getClient(request);
     const meData = await api.v2.me({ "user.fields": USER_FIELDS });
     let user = meData.data;
     const streams = await getStreamsUserIn(user.username)

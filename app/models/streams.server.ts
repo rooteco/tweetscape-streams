@@ -1,18 +1,18 @@
 
-import { TwitterApi, TwitterV2IncludesHelper, UserSearchV1Paginator } from 'twitter-api-v2';
-import type { TwitterApiRateLimitPlugin } from '@twitter-api-v2/plugin-rate-limit';
+import { TwitterV2IncludesHelper } from 'twitter-api-v2';
+import type { TwitterApi } from 'twitter-api-v2'
 import { log } from '~/log.server';
 import { driver } from "~/neo4j.server";
-import { Record, Node, int } from 'neo4j-driver'
-import { getListUsers, USER_FIELDS } from '~/twitter.server';
-import { createUserDb, indexUserNewTweets, indexUserOlderTweets } from "~/models/user.server";
+import { int } from 'neo4j-driver';
+import type { Record, Node } from 'neo4j-driver';
+import { USER_FIELDS } from '~/twitter.server';
+import { indexUserNewTweets, indexUserOlderTweets } from "~/models/user.server";
 import type {
     ListV2,
-    TweetV2,
     UserV2,
-    MediaObjectV2,
     TweetV2ListTweetsPaginator
 } from 'twitter-api-v2';
+
 
 export function flattenTwitterUserPublicMetrics(data: Array<any>) {
     for (const obj of data) {
@@ -40,7 +40,7 @@ export function flattenTweetPublicMetrics(data: Array<any>) {
     return data;
 }
 
-export async function getUserFromTwitter(api: any, username: string) {
+export async function getUserFromTwitter(api: TwitterApi, username: string) {
     const { data: user } = await api.v2.userByUsername(
         username,
         {
@@ -133,7 +133,7 @@ export async function getAllStreams(username: string) {
         )
     })
     const recUsersMap = new Map()
-    recRes.records.map((row: Record) => {
+    recRes.records.forEach((row: Record) => {
         let streamName = row.get("streamName")
         let ru = row.get("recU")
         recUsersMap.set(streamName, ru)
@@ -149,24 +149,22 @@ export async function getAllStreams(username: string) {
         }
 
         let numSeedUsersFollowedBy = seedUsers.length + 1;
-        let recommendedUsersTested: any[] = [];
+        let recommendedUsersTested = []//: any[] = [];
 
         if (recommendedUsers.length > 0) {
             while (recommendedUsersTested.length < 5 && numSeedUsersFollowedBy > 1) {
                 recommendedUsersTested = [];
                 numSeedUsersFollowedBy--;
-                recommendedUsers.map((row: any) => {
-                    if (row.count.toInt() >= numSeedUsersFollowedBy && seedUserUsernames.indexOf(row.item.properties.username) == -1) {
-                        recommendedUsersTested.push(row.item)
+                for (let i = 0; i < recommendedUsers.length; i++) {
+                    let recUser = recommendedUsers[i];
+                    if (recUser.count >= numSeedUsersFollowedBy && seedUserUsernames.indexOf(recUser.item.properties.username) == -1) {
+                        recommendedUsersTested.push(recUser.item)
                     }
-                })
+                }
             }
 
         }
-
         recommendedUsersTested.sort((a, b) => a.properties['public_metrics.followers_count'] - b.properties['public_metrics.followers_count'])
-
-
         row.recommendedUsers = recommendedUsersTested
     })
 
@@ -207,7 +205,7 @@ export async function getUserStreams(username: string) {
         )
     })
     const recUsersMap = new Map()
-    recRes.records.map((row: Record) => {
+    recRes.records.forEach((row: Record) => {
         let streamName = row.get("streamName")
         let ru = row.get("recU")
         recUsersMap.set(streamName, ru)
@@ -222,25 +220,23 @@ export async function getUserStreams(username: string) {
             recommendedUsers = []
         }
 
-        let numSeedUsersFollowedBy = seedUsers.length + 1;
+        let numSeedUsersFollowedBy: number = seedUsers.length + 1;
         let recommendedUsersTested: any[] = [];
 
         if (recommendedUsers.length > 0) {
             while (recommendedUsersTested.length < 5 && numSeedUsersFollowedBy > 1) {
                 recommendedUsersTested = [];
                 numSeedUsersFollowedBy--;
-                recommendedUsers.map((row: any) => {
-                    if (row.count.toInt() >= numSeedUsersFollowedBy && seedUserUsernames.indexOf(row.item.properties.username) == -1) {
-                        recommendedUsersTested.push(row.item)
+                for (let i = 0; i < recommendedUsers.length; i++) {
+                    let recUser = recommendedUsers[i];
+                    if (recUser.count >= numSeedUsersFollowedBy && seedUserUsernames.indexOf(recUser.item.properties.username) == -1) {
+                        recommendedUsersTested.push(recUser.item)
                     }
-                })
+                }
             }
 
         }
-
         recommendedUsersTested.sort((a, b) => a.properties['public_metrics.followers_count'] - b.properties['public_metrics.followers_count'])
-
-
         row.recommendedUsers = recommendedUsersTested
     })
 
@@ -311,7 +307,7 @@ export async function deleteStreamByName(api: TwitterApi, name: string) {
     const stream = (await getStreamByName(name)).stream
     const session = driver.session()
     // Create a node within a write transaction
-    const res = await session.executeWrite((tx: any) => {
+    await session.executeWrite((tx: any) => {
         return tx.run(`
         MATCH (s:Stream {name: $name} )
         DETACH DELETE s`,
@@ -385,10 +381,6 @@ export async function getTweetsFromAuthorIdForStream(
     else if (now > user.properties.tweetscapeIndexedTweetsEndTime) {
         dateRanges.push({ startTime: user.properties.tweetscapeIndexedTweetsEndTime, endTime: now })
     }
-
-    console.log("DATE RANGES")
-    console.log(dateRanges)
-    const allTweets: TweetV2[] = [];
     const tweetRes = await Promise.all(
         dateRanges.map(({ startTime, endTime }) => {
             return pullTweets(api, user, startTime, endTime)
@@ -451,7 +443,7 @@ export async function addUsersFollowedBy(users: any, { username }) {
     const session = driver.session()
     // Create a node within a write transaction
     try {
-        const clearFollows = await session.executeWrite((tx: any) => {
+        await session.executeWrite((tx: any) => {
             return tx.run(`
             MATCH (u:User {username: $followerUsername})-[r:FOLLOWS]->(uf:User) 
             DELETE r
@@ -749,78 +741,6 @@ export async function addSeedUserToStream(
         throw e;
     }
 };
-
-export async function updateStreamFollowsNetwork(api: TwitterApi, limits: TwitterApiRateLimitPlugin, stream: Node, seedUsers: Node[]) {
-
-    let now = new Date()
-    let startTime;
-    if (stream.properties.followingLastUpdatedAt) { // this means we already did an intial pull, so we only need to pull from last time updated
-        startTime = stream.properties.followingLastUpdatedAt
-    } else { // this is the case when we haven't pulled tweets for this stream yet 
-        startTime = stream.properties.startTime
-    }
-
-    await Promise.all(seedUsers.map(async (user: Node) => {
-        user = user.user; // yes tf it does, it is a neo4j node 
-        let savedFollowsOfUser = await getSavedFollows(user.properties.username);
-        if (savedFollowsOfUser.length == user.properties["public_metrics.following_count"]) {
-            log.debug(`Looks like we have already saved the ${savedFollowsOfUser.length} users followed by '${user.properties.username}'`)
-        } else {
-            log.debug(`We have ${savedFollowsOfUser.length} users followed by '${user.properties.username}', but twitter shows ${user.properties["public_metrics.following_count"]}`)
-
-            const getFollowedLimit = await limits.v2.getRateLimit(
-                'users/:id/following'
-            );
-
-            if ((getFollowedLimit?.remaining ?? 1) > 0) {
-                log.debug(`Fetching api.v2.following for ${user.properties.username}...`);
-                // Get accounts followed by seed user
-                const following = await api.v2.following(
-                    user.properties.id,
-                    {
-                        'tweet.fields': 'attachments,author_id,context_annotations,conversation_id,created_at,entities,geo,id,in_reply_to_user_id,lang,public_metrics,text,possibly_sensitive,referenced_tweets,reply_settings,source,withheld',
-                        'user.fields': USER_FIELDS,
-                        'max_results': 1000,
-                        "asPaginator": true
-                    }
-                );
-
-                while (!following.done) { await following.fetchNext(); }
-                console.log(`fetched ${following.data.data.length} accounts followed by '${user.properties.username}'`);
-                let newUsers = flattenTwitterUserPublicMetrics(following.data.data);
-                let saved = await bulkWritesMulti(
-                    addUsersFollowedBy,
-                    newUsers,
-                    { username: user.properties.username }
-                )
-            } else {
-                log.warn(
-                    `Rate limit hit for getting user (${user.properties.username}) follwings, skipping until ${new Date(
-                        (getFollowedLimit?.reset ?? 0) * 1000
-                    ).toLocaleString()}...`
-                );
-            }
-        }
-    }))
-    await updateStreamFollowingLastUpdatedAt(stream, now.toISOString());
-}
-
-async function updateStreamFollowingLastUpdatedAt(stream: Node, now: string) {
-    const session = driver.session()
-    // Create a node within a write transaction
-    const res = await session.executeWrite((tx: any) => {
-        return tx.run(`
-        MERGE (s:Stream {name:$streamName})
-        set s.followingLastUpdatedAt = $now
-        RETURN s`,
-            { streamName: stream.properties.name, now })
-    })
-    const streams = res.records.map((row: Record) => {
-        return row.get('s')
-    })
-    await session.close()
-    return streams;
-}
 
 export async function indexMoreTweets(api: TwitterApi, seedUsers: Node[]) {
     return await Promise.all(seedUsers.map((user) => {

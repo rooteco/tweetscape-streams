@@ -1,24 +1,18 @@
 import { redirect } from "@remix-run/node";
 import type { LoaderArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { useLoaderData, useParams, useSearchParams, useTransition, Link } from "@remix-run/react";
+import { useLoaderData, useParams, useTransition, Link } from "@remix-run/react";
 import invariant from "tiny-invariant";
-
-import { getTweet } from "~/models/streams.server";
-import { indexUserOlderTweets, getMetaFollowers, getUserByUsernameDB, getUserIndexedTweets, userIndexedEntityDistribution } from "~/models/user.server";
+import { indexUserOlderTweets, getMetaFollowers, getUserByUsernameDB, getUserIndexedTweets } from "~/models/user.server";
 import { getClient } from "~/twitter.server";
 import Tweet from '~/components/Tweet';
 import { indexUser } from "~/models/user.server";
 import CompactProfile from '~/components/CompactProfile';
-import ContextAnnotationChip from '~/components/ContextAnnotationChip';
-
-
-
 
 export async function loader({ request, params }: LoaderArgs) {
     const url = new URL(request.url);
     invariant(params.username, "username not found");
-    const { api, limits, uid, session } = await getClient(request)
+    const { api, limits } = await getClient(request)
     let user = await getUserByUsernameDB(params.username)
     if (url.searchParams.get("indexMoreTweets")) {
         await indexUserOlderTweets(api, user)
@@ -29,19 +23,16 @@ export async function loader({ request, params }: LoaderArgs) {
     const loggedInUser = (await api.v2.me()).data
     let metaFollowers = await getMetaFollowers(loggedInUser.username, params.username)
     let tweets = await getUserIndexedTweets(params.username)
-    const entityDistribution = await userIndexedEntityDistribution(params.username)
-    return json({ user, metaFollowers, tweets, entityDistribution });
+    return json({ user, metaFollowers, tweets });
 };
 
 export default function TweetRawDataPage() {
     let transition = useTransition();
+    const params = useParams();
+    const data = useLoaderData();
     if (transition.submission) {
         return (<div>Loading User Info!</div>)
     }
-    const params = useParams();
-    const searchParams = useSearchParams();
-    const data = useLoaderData();
-    console.log(data.entityDistribution)
     data.tweets.sort((a, b) => (b.tweet.properties['public_metrics.like_count'] - a.tweet.properties['public_metrics.like_count']))
     return (
         <div className='h-full overflow-y-auto'>
@@ -93,20 +84,6 @@ export default function TweetRawDataPage() {
                     ))}
                 </div>
                 <div className="just-a-border h-full p-6 text-left flex-1 flex-grow">
-                    <p>
-                        {data.entityDistribution.numTotalTweets} tweets indexed for user
-                    </p>
-                    <div className="flex flex-wrap max-w-sm">
-                        {data.entityDistribution.entityDistribution
-                            .map((entity, index) => (
-                                <ContextAnnotationChip
-                                    keyValue={entity.item.properties.name}
-                                    value={entity.count}
-                                    caEntities={[]}
-                                    hideTopics={[]} key={`entityAnnotations-${entity.item.properties.name}-${index}`}
-                                />
-                            ))}
-                    </div>
                     <h1 className="mb-2 text-sm font-medium uppercase">
                         {params.username} top 5 liked tweets (from our index)
                     </h1>

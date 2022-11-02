@@ -1,7 +1,5 @@
-import type { Hash } from 'crypto';
 import { TwitterApi } from 'twitter-api-v2';
 import type { LoaderFunction } from '@remix-run/node';
-import { nanoid } from 'nanoid';
 import { redirect } from '@remix-run/node';
 import { commitSession, getSession } from '~/session.server';
 

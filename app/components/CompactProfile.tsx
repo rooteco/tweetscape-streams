@@ -1,4 +1,4 @@
-import { Form, Link, useFetcher } from '@remix-run/react'
+import { Link, useFetcher } from '@remix-run/react'
 import type { userNode } from './StreamAccordion'
 
 
@@ -27,10 +27,11 @@ function CompactProfile({ user, isSeed, streamName }: { user: userNode, isSeed: 
             <Link
                 to={`/streams/users/${user.properties.username}`}
                 target="_blank"
+                rel="noreferrer"
             >
                 <img
                     src={user.properties.profile_image_url}
-                    alt="profile image"
+                    alt="profile pic"
                     className="rounded-full w-8 h-8" />
             </Link>
 
@@ -39,6 +40,7 @@ function CompactProfile({ user, isSeed, streamName }: { user: userNode, isSeed: 
                     className="text-sm font-medium "
                     href={`https://twitter.com/${user.properties.username}`}
                     target="_blank"
+                    rel="noreferrer"
                 >
                     <p className='text-sm font-medium hover:text-gray-500'>{user.properties.name}</p>
                 </a>

@@ -1,5 +1,5 @@
 import { getStreamByName } from "~/models/streams.server";
-import { loader, action } from "~/routes/streams/index";
+import { action } from "~/routes/streams/index";
 
 const streamName = "TEST-STREAM-in-index"
 
