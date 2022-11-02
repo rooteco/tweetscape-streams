@@ -29,6 +29,9 @@ services:
       - $HOME/neo4j/logs:/logs
       - $HOME/neo4j/import:/var/lib/neo4j/import
       - $HOME/neo4j/plugins:/plugins
+      - /home/nick/Documents/GitHub/tweetscape-streams/neo4j/seed-data:/var/lib/neo4j/import/seed-data
     environment:
       - NEO4J_AUTH=neo4j/test
       - NEO4JLABS_PLUGINS=\[\"apoc\"\]
+      - NEO4J_apoc_import_file_enabled=true
+      - NEO4J_dbms_security_procedures_unrestricted=apoc.*

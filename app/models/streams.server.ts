@@ -679,7 +679,13 @@ export async function addTweetsFrom(tweets: any) {
                 MERGE (tweet)-[:MENTIONED]->(mentioned)
             )
             FOREACH (u IN t.entities.urls |
-                MERGE (url:Link {url:u.expanded_url})
+                MERGE (url:Link {url:u.url})
+                SET url.start = u.start,
+                    url.end = u.end,
+                    url.url = u.url,
+                    url.expanded_url = u.expanded_url,
+                    url.display_url = u.display_url,
+                    url.media_key = u.media_key
                 MERGE (tweet)-[:LINKED]->(url)
             )
             FOREACH (a IN t.entities.annotations |

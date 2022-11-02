@@ -25,13 +25,11 @@ let driver: Driver;
 //     driver = global.__neo4jClient__;
 // }
 
-function initDriver(uri: string, username: string, password: string) {
+async function initDriver(uri: string, username: string, password: string) {
     driver = neo4j.driver(uri, neo4j.auth.basic(username, password))
-
     // Verify connectivity
-    return driver.verifyConnectivity()
-        // Resolve with an instance of the driver
-        .then(() => driver)
+    await driver.getServerInfo()
+    return driver
 }
 export function closeDriver() {
     return driver && driver.close()
