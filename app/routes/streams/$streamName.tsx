@@ -54,10 +54,8 @@ export async function loader({ request, params }: LoaderArgs) {
         }
         const { list } = await createList(api, stream.properties.name, [])
         stream = await createStream(
-            stream.properties.name,
-            stream.properties.startTime,
-            loggedInUser,
-            list.data.id
+            { name: stream.properties.name, twitterListId: list.data.id },
+            loggedInUser.username
         )
         seedUsers.forEach(async (user) => {
             await addSeedUserToStream(api, stream, user.user)
@@ -86,10 +84,8 @@ export async function loader({ request, params }: LoaderArgs) {
             let newList = await createList(api, stream.properties.name, seedUsers.map((user) => (user.user.properties.username)))
             list = newList.list
             await createStream(
-                stream.properties.name,
-                stream.properties.startTime,
-                loggedInUser,
-                list.data.id
+                { name: stream.properties.name, twitterListId: list.data.id },
+                loggedInUser.username
             )
         }
 
