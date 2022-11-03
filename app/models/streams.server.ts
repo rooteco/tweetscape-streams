@@ -280,7 +280,7 @@ export async function getStreamByName(name: string) {
     })
     let stream = null;
     let creator = null;
-    let seedUsers;
+    let seedUsers = null;
 
     if (streamRes.records.length > 0) {
         stream = streamRes.records[0].get("s"); // Stream will be the same for all users
