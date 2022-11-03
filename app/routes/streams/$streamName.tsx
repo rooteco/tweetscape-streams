@@ -154,6 +154,7 @@ export const action: ActionFunction = async ({
     if (intent === "delete") {
         const { api, } = await getClient(request);
         await deleteStreamByName(api, params.streamName);
+        await api.v2.removeList(stream.properties.twitterListId)
         return redirect(`/streams`);
     }
 

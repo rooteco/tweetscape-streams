@@ -314,18 +314,18 @@ export async function createStream(streamProperties: StreamProperties, username:
     return stream;
 }
 
-export async function deleteStreamByName(api: TwitterApi, name: string) {
+export async function deleteStreamByName(name: string) {
     const stream = (await getStreamByName(name)).stream
     const session = driver.session()
     // Create a node within a write transaction
     await session.executeWrite((tx: any) => {
         return tx.run(`
-        MATCH (s:Stream {name: $name} )
+        MATCH(s: Stream { name: $name })
         DETACH DELETE s`,
             { name })
     })
-    await api.v2.removeList(stream.properties.twitterListId)
-    console.log(`deleted stream '${name}' and twitter list with id ${stream.properties.twitterListId}`)
+}
+
 export async function deleteAllStreams() {
     const session = driver.session()
     // Create a node within a write transaction
@@ -342,7 +342,7 @@ export async function removeSeedUserFromStream(streamName: string, username: str
     // Create a node within a write transaction
     const res = await session.executeWrite((tx: any) => {
         return tx.run(`
-        MATCH (s:Stream {name: $streamName} )-[rc:CONTAINS]->(u:User {username: $username})
+        MATCH(s: Stream { name: $streamName }) - [rc: CONTAINS] -> (u:User { username: $username })
         DELETE rc RETURN rc`,
             { streamName, username })
     })
