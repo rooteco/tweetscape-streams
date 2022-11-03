@@ -14,7 +14,7 @@ import invariant from 'tiny-invariant';
 import type { Session } from '@remix-run/node';
 import { prisma } from "~/db.server";
 import { flattenTwitterUserPublicMetrics } from '~/models/streams.server'
-import { getUserByUsernameDB } from '~/models/user.server'
+import { getUserNeo4j } from '~/models/user.server'
 // import type {
 //     Annotation,
 //     AnnotationType,
@@ -150,7 +150,7 @@ export async function createList(api: TwitterApi, listName: string, userUsername
     console.log(`creating list ${listName}`)
     const newList = await api.v2.createList({ name: listName, private: false })
     let promises = userUsernames.map(async (username) => {
-        let userDb = await getUserByUsernameDB(username)
+        let userDb = await getUserNeo4j(username)
         return api.v2.addListMember(newList.data.id, userDb.properties.id)
     })
     const newMembers = await Promise.all(promises)

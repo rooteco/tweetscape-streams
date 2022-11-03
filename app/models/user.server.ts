@@ -383,7 +383,7 @@ export async function getUserContextAnnotationFrequency(username: string) {
   return frequencies;
 }
 
-export async function getUserByUsernameDB(username: string) {
+export async function getUserNeo4j(username: string): Promise<userNode | null> {
   const session = driver.session()
   const res = await session.executeWrite((tx: any) => {
     return tx.run(`

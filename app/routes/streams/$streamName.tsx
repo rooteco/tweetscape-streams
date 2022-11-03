@@ -20,7 +20,7 @@ import {
 } from "~/models/streams.server";
 import Overview from "~/components/Overview";
 import { indexUser } from "~/models/user.server";
-import { getUserByUsernameDB, createUserDb } from "~/models/user.server";
+import { getUserNeo4j, createUserNeo4j } from "~/models/user.server";
 import { createList, getClient } from '~/twitter.server';
 import Tweet from '~/components/Tweet';
 import { useEffect, useRef, useState } from "react";
@@ -188,7 +188,7 @@ export const action: ActionFunction = async ({
         }
 
         seedUserHandle = seedUserHandle.toLowerCase().replace(/^@/, '')
-        let user = await getUserByUsernameDB(seedUserHandle);
+        let user = await getUserNeo4j(seedUserHandle);
         if (!user) {
             console.time("getUserFromTwitter")
             user = await getUserFromTwitter(api, seedUserHandle); // This func already flattens the data
@@ -209,7 +209,7 @@ export const action: ActionFunction = async ({
         console.log(`Added user ${user.properties.username} to stream ${stream.properties.name}`)
         return redirect(`/streams/${params.streamName}`)
     } else if (intent === "removeSeedUser") {
-        let user = await getUserByUsernameDB(seedUserHandle);
+        let user = await getUserNeo4j(seedUserHandle);
         const { api } = await getClient(request);
         await api.v2.removeListMember(stream.properties.twitterListId, user.properties.id)
         let deletedRel = await removeSeedUserFromStream(
