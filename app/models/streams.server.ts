@@ -1,17 +1,21 @@
 
 import { TwitterV2IncludesHelper } from 'twitter-api-v2';
 import type { TwitterApi } from 'twitter-api-v2'
+import type { Integer } from 'neo4j-driver';
 import { log } from '~/log.server';
 import { driver } from "~/neo4j.server";
 import { int } from 'neo4j-driver';
 import type { Record, Node } from 'neo4j-driver';
 import { USER_FIELDS } from '~/twitter.server';
-import { indexUserNewTweets, indexUserOlderTweets } from "~/models/user.server";
+import { getUserNeo4j, indexUserNewTweets, indexUserOlderTweets } from "~/models/user.server";
+import type { userNode } from '~/models/user.server';
 import type {
     ListV2,
     UserV2,
     TweetV2ListTweetsPaginator
 } from 'twitter-api-v2';
+
+import { StreamError } from '~/models/streams.errors';
 
 export type StreamProperties = {
     name: string,
