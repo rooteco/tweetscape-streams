@@ -267,7 +267,7 @@ export async function getUserStreams(username: string) {
     return streams;
 }
 
-export async function getStreamByName(name: string) {
+export async function getStreamByName(name: string): Promise<{ stream: streamNode, creator: userNode, seedUsers: Array<userNode> }> {
     const session = driver.session()
     // Create a node within a write transaction
     const streamRes = await session.executeRead((tx: any) => {
@@ -297,7 +297,7 @@ export async function getStreamByName(name: string) {
     return { stream: stream, creator: creator, seedUsers: seedUsers };
 }
 
-export async function createStream(streamProperties: StreamProperties, username: string) {
+export async function createStream(streamProperties: StreamProperties, username: string): Promise<streamNode> {
     let { stream: checkForStream } = await getStreamByName(streamProperties.name)
     if (checkForStream) {
         throw new StreamError(`Stream '${streamProperties.name}' already exists`)
