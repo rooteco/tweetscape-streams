@@ -58,7 +58,8 @@ export async function loader({ request, params }: LoaderArgs) {
             loggedInUser.username
         )
         seedUsers.forEach(async (user) => {
-            await addSeedUserToStream(api, stream, user.user)
+            await addSeedUserToStream(stream.properties.name, user.user.properties.username)
+            await api.v2.addListMember(stream.properties.twitterListId, user.user.properties.id)
         })
     } else {
         let list
@@ -195,11 +196,12 @@ export const action: ActionFunction = async ({
                 }
                 return json<ActionData>(errors); // throw error if user is not found;
             } else {
-                user = await createUserDb(user)
+                user = await createUserNeo4j(user)
             }
         }
         console.time("addSeedUserToStream")
-        await addSeedUserToStream(api, stream, user) // this adds a list member and an edge, it doesn't do follows or tweets fetching...
+        await addSeedUserToStream(stream.properties.name, user.properties.username) // this adds a list member and an edge, it doesn't do follows or tweets fetching...
+        await api.v2.addListMember(stream.properties.twitterListId, user.properties.id)
         console.timeEnd("addSeedUserToStream")
         await indexUser(api, limits, user)
         console.log(`Added user ${user.properties.username} to stream ${stream.properties.name}`)
