@@ -13,6 +13,25 @@ import type {
     TweetV2ListTweetsPaginator
 } from 'twitter-api-v2';
 
+export type StreamProperties = {
+    name: string,
+    twitterListId: string
+}
+
+export type streamNode = {
+    identity: Array<Integer>,
+    labels: any[],
+    properties: StreamProperties,
+    elementId: string
+}
+
+export type relNode = {
+    identity: Array<Integer>,
+    start: number,
+    end: number,
+    type: string,
+    properties: any,
+}
 
 export function flattenTwitterUserPublicMetrics(data: Array<any>) {
     for (const obj of data) {

@@ -17,6 +17,29 @@ import {
 
 export type { users } from "@prisma/client";
 
+export type UserProperties = {
+  username: string,
+  name: string,
+  verified: boolean,
+  created_at: string,
+  description: string,
+  profile_image_url: string,
+  url?: string,
+  protected: boolean,
+  location: string,
+  id: string,
+  "public_metrics.tweet_count": number,
+  "public_metrics.listed_count": number,
+  "public_metrics.following_count": number,
+  "public_metrics.followers_count": number,
+}
+
+export type userNode = {
+  identity: Integer,
+  labels: string[],
+  properties: UserProperties,
+  elementId: string
+}
 
 export function flattenTwitterUserPublicMetrics(data: Array<any>) {
   for (const obj of data) {
