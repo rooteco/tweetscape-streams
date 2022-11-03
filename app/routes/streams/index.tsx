@@ -6,7 +6,6 @@ import * as React from "react";
 import BirdIcon from '~/icons/bird';
 import { getClient, USER_FIELDS } from '~/twitter.server';
 import { createStream, getStreamByName } from "~/models/streams.server";
-import { getUserByUsernameDB, createUserDb } from "~/models/user.server";
 import { flattenTwitterUserPublicMetrics } from "~/models/user.server";
 import type { UserV2 } from 'twitter-api-v2';
 import { createList, getUserOwnedTwitterLists } from '~/twitter.server'
@@ -44,7 +43,7 @@ export async function action({ request }: ActionArgs) {
     const meData = await api.v2.me({ "user.fields": USER_FIELDS });
     user = meData.data as UserV2;
 
-    let userDb = await getUserByUsernameDB(user.username)
+    let userDb = await getUserNeo4j(user.username)
     if (!userDb) {
         createUserDb(flattenTwitterUserPublicMetrics([user])[0])
     }
