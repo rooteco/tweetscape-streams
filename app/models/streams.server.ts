@@ -326,6 +326,15 @@ export async function deleteStreamByName(api: TwitterApi, name: string) {
     })
     await api.v2.removeList(stream.properties.twitterListId)
     console.log(`deleted stream '${name}' and twitter list with id ${stream.properties.twitterListId}`)
+export async function deleteAllStreams() {
+    const session = driver.session()
+    // Create a node within a write transaction
+    await session.executeWrite((tx: any) => {
+        return tx.run(`
+            MATCH(s: Stream )
+            DETACH DELETE s`
+        )
+    })
 }
 
 export async function removeSeedUserFromStream(streamName: string, username: string) {
