@@ -434,10 +434,10 @@ async function streamContainsUser(username: string, streamName: string) {
     // Create a node within a write transaction
     const res = await session.executeWrite((tx: any) => {
         return tx.run(`
-        MATCH (u:User {username: $username}) 
-        MATCH (s:Stream {name: $streamName})
-        MERGE (s)-[r:CONTAINS]->(u)
-        RETURN s,r,u`,
+        MATCH(u: User { username: $username }) 
+        MATCH(s: Stream { name: $streamName })
+        MERGE(s) - [r: CONTAINS] -> (u)
+        RETURN s, r, u`,
             { username, streamName }
         )
     })
