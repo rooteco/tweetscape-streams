@@ -3,7 +3,7 @@ import type { LoaderArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { useLoaderData, useParams, useTransition, Link } from "@remix-run/react";
 import invariant from "tiny-invariant";
-import { indexUserOlderTweets, getMetaFollowers, getUserByUsernameDB, getUserIndexedTweets } from "~/models/user.server";
+import { indexUserOlderTweets, getMetaFollowers, getUserNeo4j, getUserIndexedTweets } from "~/models/user.server";
 import { getClient } from "~/twitter.server";
 import Tweet from '~/components/Tweet';
 import { indexUser } from "~/models/user.server";
@@ -13,7 +13,7 @@ export async function loader({ request, params }: LoaderArgs) {
     const url = new URL(request.url);
     invariant(params.username, "username not found");
     const { api, limits } = await getClient(request)
-    let user = await getUserByUsernameDB(params.username)
+    let user = await getUserNeo4j(params.username)
     if (url.searchParams.get("indexMoreTweets")) {
         await indexUserOlderTweets(api, user)
         url.searchParams.delete("indexMoreTweets")
