@@ -293,33 +293,25 @@ export async function getStreamByName(name: string) {
     return { stream: stream, creator: creator, seedUsers: seedUsers };
 }
 
-export async function createStream(
-    name: string,
-    startTime: string,
-    user: UserV2,
-    twitterListId: string) {
+export async function createStream(streamProperties: StreamProperties, username: string) {
+    let { stream: checkForStream } = await getStreamByName(streamProperties.name)
+    if (checkForStream) {
+        throw new StreamError(`Stream '${streamProperties.name}' already exists`)
+    }
     const session = driver.session()
     // Create a node within a write transaction
-    let streamData = {
-        name,
-        startTime,
-        twitterListId: twitterListId,
-    }
     const res = await session.executeWrite((tx: any) => {
         return tx.run(`
-            MATCH (u:User {username: $username}) 
-            MERGE (s:Stream {name: $streamData.name})
-            SET s = $streamData
-            MERGE (u)-[:CREATED]->(s)
-            RETURN s`,
-            { streamData: streamData, username: user.username }
-        )
+            MATCH(u: User { username: $username })
+            CREATE(s: Stream $streamProperties)
+            CREATE(u) - [: CREATED] -> (s)
+            RETURN s
+            `,
+            { username, streamProperties })
     })
-    // Get the `p` value from the first record
-    const singleRecord = res.records[0]
-    const node = singleRecord.get("s")
+    const stream = res.records[0].get("s")
     await session.close()
-    return node;
+    return stream;
 }
 
 export async function deleteStreamByName(api: TwitterApi, name: string) {
