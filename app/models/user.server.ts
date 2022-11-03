@@ -1,11 +1,11 @@
 // import type { Password, User } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { TwitterV2IncludesHelper } from 'twitter-api-v2';
+import type { Integer } from 'neo4j-driver';
 import type { TwitterApi } from 'twitter-api-v2';
 import { prisma } from "~/db.server";
 import { log } from '~/log.server';
 import { USER_FIELDS } from '~/twitter.server';
-
 import { driver } from "~/neo4j.server";
 import type { Record } from 'neo4j-driver';
 import {
@@ -392,19 +392,17 @@ export async function getUserNeo4j(username: string): Promise<userNode | null> {
       { username: username }
     )
   })
-  let node;
+  let node = null;
   if (res.records.length == 1) {
     const singleRecord: Record = res.records[0]
     node = singleRecord.get("u")
     return node;
-  } else {
-    node = null;
   }
   await session.close()
   return node;
 }
 
-export async function createUserDb(user: any) {
+export async function createUserNeo4j(user: UserProperties) {
   const session = driver.session()
   const res = await session.executeWrite((tx: any) => {
     return tx.run(`
@@ -418,6 +416,21 @@ export async function createUserDb(user: any) {
   const node = singleRecord.get("u")
   await session.close()
   return node;
+}
+
+export async function deleteUserNeo4j(username: string) {
+  const user = (await getUserNeo4j(username))
+  if (!user) {
+    throw new Error(`Cannot delete user '${username}', user does not exist in db`)
+  }
+  const session = driver.session()
+  // Create a node within a write transaction
+  await session.executeWrite((tx: any) => {
+    return tx.run(`
+      MATCH(u: User { username: $username })
+      DETACH DELETE u`,
+      { username })
+  })
 }
 
 export async function verifyLogin(
