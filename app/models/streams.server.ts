@@ -452,7 +452,7 @@ export async function getSavedFollows(username: string) {
     // Create a node within a write transaction
     const res = await session.executeRead((tx: any) => {
         return tx.run(`
-        MATCH (u:User {username: $username})-[:FOLLOWS]->(uf:User) RETURN uf`,
+        MATCH(u: User { username: $username }) - [: FOLLOWS] -> (uf:User) RETURN uf`,
             { username }
         )
     })
@@ -469,7 +469,7 @@ export async function addUsersFollowedBy(users: any, { username }) {
     try {
         await session.executeWrite((tx: any) => {
             return tx.run(`
-            MATCH (u:User {username: $followerUsername})-[r:FOLLOWS]->(uf:User) 
+        MATCH(u: User { username: $followerUsername }) - [r: FOLLOWS] -> (uf:User) 
             DELETE r
             `,
                 { followerUsername: username }
@@ -486,19 +486,19 @@ export async function addUsersFollowedBy(users: any, { username }) {
         const res = await session.executeWrite((tx: any) => {
             return tx.run(`
             UNWIND $users AS u
-            MATCH (followerUser:User {username: $followerUsername})
-            MERGE (followedUser:User {username: u.username})
-            SET followedUser.id = u.id,
-                followedUser.created_at = u.created_at,
-                followedUser.verified = u.verified,
-                followedUser.profile_image_url = u.profile_image_url,
-                followedUser.name = u.name,
-                followedUser.username = u.username,
-                followedUser.url = u.url,
-                followedUser.\`public_metrics.followers_count\`  = u.\`public_metrics.followers_count\`,
-                followedUser.\`public_metrics.following_count\`  = u.\`public_metrics.following_count\`,
-                followedUser.\`public_metrics.tweet_count\`  = u.\`public_metrics.tweet_count\`,
-                followedUser.\`public_metrics.listed_count\`  = u.\`public_metrics.listed_count\`
+            MATCH(followerUser: User { username: $followerUsername })
+            MERGE(followedUser: User { username: u.username })
+                SET followedUser.id = u.id,
+                    followedUser.created_at = u.created_at,
+                    followedUser.verified = u.verified,
+                    followedUser.profile_image_url = u.profile_image_url,
+                    followedUser.name = u.name,
+                    followedUser.username = u.username,
+                    followedUser.url = u.url,
+                    followedUser.\`public_metrics.followers_count\`  = u.\`public_metrics.followers_count\`,
+                    followedUser.\`public_metrics.following_count\`  = u.\`public_metrics.following_count\`,
+                    followedUser.\`public_metrics.tweet_count\`  = u.\`public_metrics.tweet_count\`,
+                    followedUser.\`public_metrics.listed_count\`  = u.\`public_metrics.listed_count\`
             MERGE (followerUser)-[r:FOLLOWS]->(followedUser)
             RETURN followedUser
             `,
