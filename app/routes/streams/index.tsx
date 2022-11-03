@@ -46,7 +46,7 @@ export async function action({ request }: ActionArgs) {
 
     let userDb = await getUserByUsernameDB(user.username)
     if (!userDb) {
-        createUserDb(flattenTwitterUserPublicMetrics([user])[0])
+        await createUserDb(flattenTwitterUserPublicMetrics([user])[0])
     }
 
     const userOwnedListsNames = (await getUserOwnedTwitterLists(api, user)).map((row) => (row.name));
