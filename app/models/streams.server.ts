@@ -742,21 +742,28 @@ export async function addTweetsFrom(tweets: any) {
 };
 
 export async function addSeedUserToStream(
-    api: TwitterApi,
-    stream: Node,
-    user: any, // has already been added to db before calling this func
-) {
-    try {
-        log.debug(`adding user '${user.properties.username}' to stream '${stream.properties.name}`)
-        log.debug(`${user.properties.id}, ${stream.properties.twitterListId}`)
-        // Add new seedUsers relation to Stream
-
-        await api.v2.addListMember(stream.properties.twitterListId, user.properties.id)
-        return await streamContainsUser(user.properties.username, stream.properties.name)
-    } catch (e) {
-        log.error(`Error adding seed user to stream: ${JSON.stringify(e, null, 2)}`);
-        throw e;
+    streamName: string,
+    username: string, // has already been added to db before calling this func
+): Promise<{ stream: streamNode, rel: relNode, user: userNode }> {
+    let user = await getUserNeo4j(username);
+    if (!user) {
+        throw new StreamError(`Cannot add user with username '${username}' to stream '${streamName}.' User not found in db`);
     }
+    const session = driver.session()
+    // Create a node within a write transaction
+    const res = await session.executeWrite((tx: any) => {
+        return tx.run(`
+        MATCH(u: User { username: $username }) 
+        MATCH(s: Stream { name: $streamName })
+        MERGE(s) - [r: CONTAINS] -> (u)
+        RETURN s, r, u`,
+            { username, streamName }
+        )
+    })
+    const singleRecord = res.records[0]
+    const node = { stream: singleRecord.get("s"), rel: singleRecord.get("r"), user: singleRecord.get("u") }
+    await session.close()
+    return node;
 };
 
 export async function indexMoreTweets(api: TwitterApi, seedUsers: Node[]) {
