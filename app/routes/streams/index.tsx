@@ -6,6 +6,7 @@ import * as React from "react";
 import BirdIcon from '~/icons/bird';
 import { getClient, USER_FIELDS } from '~/twitter.server';
 import { createStream, getStreamByName } from "~/models/streams.server";
+import { getUserNeo4j, createUserNeo4j } from "~/models/user.server";
 import { flattenTwitterUserPublicMetrics } from "~/models/user.server";
 import type { UserV2 } from 'twitter-api-v2';
 import { createList, getUserOwnedTwitterLists } from '~/twitter.server'
@@ -45,7 +46,7 @@ export async function action({ request }: ActionArgs) {
 
     let userDb = await getUserNeo4j(user.username)
     if (!userDb) {
-        createUserDb(flattenTwitterUserPublicMetrics([user])[0])
+        createUserNeo4j(flattenTwitterUserPublicMetrics([user])[0])
     }
 
     const userOwnedListsNames = (await getUserOwnedTwitterLists(api, user)).map((row) => (row.name));
@@ -60,8 +61,7 @@ export async function action({ request }: ActionArgs) {
     const { list } = await createList(api, name, [])
 
     const endTime = new Date()
-    const startTime = new Date(endTime.getFullYear(), endTime.getMonth(), endTime.getDate() - 7, endTime.getHours(), endTime.getMinutes())
-    stream = await createStream(name, startTime.toISOString(), user, list.data.id)
+    stream = await createStream({ name, twitterListId: list.data.id }, user.username)
     if (stream.errors) {
         let errors: ActionData = stream.errors;
         return json<ActionData>(errors);
