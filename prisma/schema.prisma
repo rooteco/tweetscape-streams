@@ -18,7 +18,7 @@ model users {
   protected                      Boolean
   verified                       Boolean
   created_at                     DateTime
-  url                            String
+  url                            String?
   name                           String
   profile_image_url              String
   location                       String?
