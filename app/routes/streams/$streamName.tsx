@@ -139,7 +139,7 @@ export const action: ActionFunction = async ({
     // Load More Data (page should never be part of user facing url, it is fetched with the fetcher as a non-navigation)
     const url = new URL(request.url);
     const nextpage = url.searchParams.get('page');
-    let { stream } = await getStreamByName(params.streamName)
+    const { stream, seedUsers } = await getStreamByName(params.streamName)
     if (nextpage) {
         console.log("fetching data for next page")
         console.log(nextpage)
@@ -157,8 +157,6 @@ export const action: ActionFunction = async ({
         await api.v2.removeList(stream.properties.twitterListId)
         return redirect(`/streams`);
     }
-
-    const { stream, seedUsers } = await getStreamByName(params.streamName);
 
     if (!stream) {
         throw new Response("Not Found", { status: 404 });
