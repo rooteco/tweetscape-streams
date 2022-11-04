@@ -108,7 +108,7 @@ export async function loader({ request, params }: LoaderArgs) {
         return redirect(url.toString())
     }
     await updateStreamTweets(api, seedUsers)
-    let tweets = await getStreamTweetsNeo4j(stream, 0, TWEET_LOAD_LIMIT)
+    let tweets = await getStreamTweetsNeo4j(stream.properties.name, 0, TWEET_LOAD_LIMIT)
     return json(
         {
             "stream": stream,
@@ -139,11 +139,11 @@ export const action: ActionFunction = async ({
     // Load More Data (page should never be part of user facing url, it is fetched with the fetcher as a non-navigation)
     const url = new URL(request.url);
     const nextpage = url.searchParams.get('page');
+    let { stream } = await getStreamByName(params.streamName)
     if (nextpage) {
         console.log("fetching data for next page")
         console.log(nextpage)
-        let { stream } = await getStreamByName(params.streamName)
-        let tweets = await getStreamTweetsNeo4j(stream, TWEET_LOAD_LIMIT * int(nextpage), TWEET_LOAD_LIMIT)
+        let tweets = await getStreamTweetsNeo4j(stream.properties.name, TWEET_LOAD_LIMIT * int(nextpage), TWEET_LOAD_LIMIT)
         return { "tweets": tweets }
     }
     const formData = await request.formData();
@@ -153,7 +153,7 @@ export const action: ActionFunction = async ({
     let seedUserHandle: string = formData.get("seedUserHandle");
     if (intent === "delete") {
         const { api, } = await getClient(request);
-        await deleteStreamByName(api, params.streamName);
+        await deleteStreamByName(params.streamName);
         await api.v2.removeList(stream.properties.twitterListId)
         return redirect(`/streams`);
     }
