@@ -811,7 +811,51 @@ async function writeTweetData(res: TweetV2ListTweetsPaginator) {
     ])
 }
 
-export async function getStreamTweetsNeo4j(stream: Node, skip: number = 0, limit: number = 50, tags: string[] = []) {
+type annotationNode = {
+    identity: number,
+    labels: Array<string>,
+    properties: {
+        "probability": number,
+        "normalized_text": string,
+        "type": string
+    }
+}
+type entityNode = {
+    identity: number,
+    labels: Array<string>,
+    properties: {
+        "name": "Social media",
+        "id": "1196446161223028736"
+    }
+}
+
+type domainNode = {
+    identity: number,
+    labels: Array<string>,
+    properties: {
+        "name": string,
+        "description": string,
+        "id": number
+    }
+}
+
+export async function getStreamTweetsNeo4j(
+    streamName: string,
+    skip: number = 0,
+    limit: number = 50,
+    tags: string[] = []
+): Promise<Array<{
+    tweet: tweetNode,
+    author: userNode,
+    annotation: annotationNode,
+    refTweets: Array<tweetNode>,
+    refTweetRels: Array<relNode>,
+    refTweetAuthors: Array<userNode>,
+    entities: Array<entityNode>,
+    domains: Array<domainNode>,
+    media: Array<domainNode>,
+    mediaRels: Array<relNode>,
+}>> {
     const noTagsQuery = `
         MATCH (s:Stream {name: $name} )-[:CONTAINS]->(u:User)-[:POSTED]->(t:Tweet)
         OPTIONAL MATCH (t)-[r:REFERENCED]->(ref_t:Tweet)<-[:POSTED]-(ref_a:User)
