@@ -21,6 +21,7 @@ import StreamAccordion from '~/components/StreamAccordion';
 import CreateAndLogin from "~/components/CreateAndLogin";
 import ExportAndDelete from "~/components/ExportAndDelete";
 import type { Stream } from "../components/StreamAccordion";
+import { optionalUid } from "~/utils";
 
 
 type LoaderData = {
@@ -63,8 +64,8 @@ export const loader: LoaderFunction = async ({ request }: LoaderArgs) => {
     const stateId = url.searchParams.get('state');
     const code = url.searchParams.get('code');
 
-    let session = await getSession(request.headers.get('Cookie'));
-    let uid = getUserIdFromSession(session);
+    let { uid, session } = await optionalUid(request)
+
     console.log(`UID = ${uid}`);
     try {
         if (process.env.test) {
