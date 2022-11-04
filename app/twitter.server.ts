@@ -49,6 +49,57 @@ export const TWEET_EXPANSIONS: TTweetv2Expansion[] = [
     'entities.mentions.username',
 ];
 
+export async function getTwitterClientForUser(
+    uid: string
+): Promise<{ api: TwitterApi, limits: TwitterApiRateLimitPlugin }> {
+    log.info(`Fetching token for user (${uid})...`);
+    const token = await prisma.tokens.findUnique({ where: { user_id: uid } });
+    invariant(token, `No token found for user (${uid})`);
+    const expiration = token.updated_at.valueOf() + token.expires_in * 1000;
+    const limits = new TwitterApiRateLimitPlugin(
+        new TwitterApiRateLimitDBStore(uid)
+    );
+    let api = new TwitterApi(token.access_token, { plugins: [limits] });
+
+    if (expiration < new Date().valueOf()) {
+        log.info(
+            `User (${uid}) access token expired at ${new Date(
+                expiration
+            ).toLocaleString('en-US')}, refreshing...`
+        );
+        const client = new TwitterApi({
+            clientId: process.env.OAUTH_CLIENT_ID as string,
+            clientSecret: process.env.OAUTH_CLIENT_SECRET,
+        });
+        try {
+            const { accessToken, refreshToken, expiresIn, scope } =
+                await client.refreshOAuth2Token(token.refresh_token);
+            log.info(`Storing refreshed token for user (${uid})...`);
+            await prisma.tokens.update({
+                data: {
+                    access_token: accessToken,
+                    refresh_token: refreshToken,
+                    expires_in: expiresIn,
+                    scope: scope.join(' '),
+                    updated_at: new Date(),
+                },
+                where: { user_id: String(uid) },
+            });
+            api = new TwitterApi(accessToken, { plugins: [limits] })
+        } catch (e) {
+            console.log("caught twitter api error in getTwitterClientForUser")
+            handleTwitterApiError(e)
+            // if (e instanceof ApiResponseError && e.data && e.data.error_description == "Value passed for the token was invalid.") {
+            //     console.log("LOGGING TF OUT FOR YOU")
+            //     return redirect("/logout")
+            // }
+
+        }
+        //, { plugins: [limits] });
+    }
+    return { api, limits };
+}
+
 export async function getUserOwnedTwitterLists(api: TwitterApi, user: UserV2) {
     const ownedLists = [] as ListV2[];
     log.info(`Fetching owned lists for ${user.username}...`);
@@ -154,56 +205,5 @@ export function handleTwitterApiError(e: unknown): never {
         throw e
     }
     throw e;
-}
-
-export async function getTwitterClientForUser(
-    uid: string
-): Promise<{ api: TwitterApi, limits: TwitterApiRateLimitPlugin }> {
-    log.info(`Fetching token for user (${uid})...`);
-    const token = await prisma.tokens.findUnique({ where: { user_id: uid } });
-    invariant(token, `No token found for user (${uid})`);
-    const expiration = token.updated_at.valueOf() + token.expires_in * 1000;
-    const limits = new TwitterApiRateLimitPlugin(
-        new TwitterApiRateLimitDBStore(uid)
-    );
-    let api = new TwitterApi(token.access_token, { plugins: [limits] });
-
-    if (expiration < new Date().valueOf()) {
-        log.info(
-            `User (${uid}) access token expired at ${new Date(
-                expiration
-            ).toLocaleString('en-US')}, refreshing...`
-        );
-        const client = new TwitterApi({
-            clientId: process.env.OAUTH_CLIENT_ID as string,
-            clientSecret: process.env.OAUTH_CLIENT_SECRET,
-        });
-        try {
-            const { accessToken, refreshToken, expiresIn, scope } =
-                await client.refreshOAuth2Token(token.refresh_token);
-            log.info(`Storing refreshed token for user (${uid})...`);
-            await prisma.tokens.update({
-                data: {
-                    access_token: accessToken,
-                    refresh_token: refreshToken,
-                    expires_in: expiresIn,
-                    scope: scope.join(' '),
-                    updated_at: new Date(),
-                },
-                where: { user_id: String(uid) },
-            });
-            api = new TwitterApi(accessToken, { plugins: [limits] })
-        } catch (e) {
-            console.log("caught twitter api error in getTwitterClientForUser")
-            handleTwitterApiError(e)
-            // if (e instanceof ApiResponseError && e.data && e.data.error_description == "Value passed for the token was invalid.") {
-            //     console.log("LOGGING TF OUT FOR YOU")
-            //     return redirect("/logout")
-            // }
-
-        }
-        //, { plugins: [limits] });
-    }
-    return { api, limits };
 }
 
