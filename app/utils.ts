@@ -1,12 +1,44 @@
 import { useMatches } from "@remix-run/react";
 import { useMemo } from "react";
+import { getSession } from '~/session.server';
+import type { Session } from '@remix-run/node';
 
-import type { User } from "~/models/user.server";
+import type { UserProperties } from "~/models/user.server";
 
 const DEFAULT_REDIRECT = "/";
 
 
+import { redirect } from "@remix-run/node";
 
+export function getUserIdFromSession(session: Session) {
+  const userId = session.get('uid') as string | undefined;
+  const uid = userId ? String(userId) : undefined;
+  return uid;
+}
+
+export async function optionalUid(request: Request): Promise<{ session: Session, uid: string | undefined }> {
+  const session = await getSession(request.headers.get('Cookie'));
+  return { session, uid: getUserIdFromSession(session) };
+}
+
+export async function requireUserSession(request: Request): Promise<{ session: Session, uid: string }> {
+  // get the session
+  const cookie = request.headers.get("cookie");
+  const session = await getSession(cookie);
+
+  if (!session) {
+    throw redirect("/streams");
+  }
+
+  const uid = getUserIdFromSession(session);
+
+  if (!uid) {
+    // if there is no user session, redirect to login
+    throw redirect("/streams");
+  }
+
+  return { session, uid };
+}
 
 /**
  * This should be used any time the redirect path is user-provided
@@ -47,11 +79,8 @@ export function useMatchesData(
   return route?.data;
 }
 
-function isUser(user: any): user is User {
-  return user && typeof user === "object" && typeof user.email === "string";
-}
 
-export function useOptionalUser(): User | undefined {
+export function useOptionalUser(): UserProperties | undefined {
   const data = useMatchesData("root");
   if (!data || !isUser(data.user)) {
     return undefined;

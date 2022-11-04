@@ -1,7 +1,9 @@
 import type { LoaderArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
-import { getClient } from '~/twitter.server';
+import { getTwitterClientForUser } from '~/twitter.server';
+import { requireUserSession } from "~/utils";
+
 
 
 // type LoaderData = {

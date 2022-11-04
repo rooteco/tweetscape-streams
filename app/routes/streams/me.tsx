@@ -6,10 +6,12 @@ import { getUserContextAnnotationFrequency, getStreamsUserIn, getUserIndexedTwee
 
 // import { D3BarChart, IData } from '~/components/barChart';
 
+import { requireUserSession } from "~/utils";
 
 
 export async function loader({ request }: LoaderArgs) {
     const { api } = await getClient(request);
+    const { session, uid } = await requireUserSession(request); // will automatically redirect to login if uid is not in the session
     const meData = await api.v2.me({ "user.fields": USER_FIELDS });
     let user = meData.data;
     const streams = await getStreamsUserIn(user.username)
