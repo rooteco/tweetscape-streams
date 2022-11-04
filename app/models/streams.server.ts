@@ -16,6 +16,7 @@ import type {
 } from 'twitter-api-v2';
 
 import { StreamError } from '~/models/streams.errors';
+import { tweetNode, annotationNode, entityNode, domainNode } from './tweets.server';
 
 export type StreamProperties = {
     name: string,
@@ -811,34 +812,6 @@ async function writeTweetData(res: TweetV2ListTweetsPaginator) {
     ])
 }
 
-type annotationNode = {
-    identity: number,
-    labels: Array<string>,
-    properties: {
-        "probability": number,
-        "normalized_text": string,
-        "type": string
-    }
-}
-type entityNode = {
-    identity: number,
-    labels: Array<string>,
-    properties: {
-        "name": "Social media",
-        "id": "1196446161223028736"
-    }
-}
-
-type domainNode = {
-    identity: number,
-    labels: Array<string>,
-    properties: {
-        "name": string,
-        "description": string,
-        "id": number
-    }
-}
-
 export async function getStreamTweetsNeo4j(
     streamName: string,
     skip: number = 0,
@@ -903,7 +876,7 @@ export async function getStreamTweetsNeo4j(
     const res = await session.executeRead((tx: any) => {
         return tx.run(
             query,
-            { name: stream.properties.name, skip: int(skip), limit: int(limit), tags: tags }
+            { name: streamName, skip: int(skip), limit: int(limit), tags: tags }
         )
     })
 
