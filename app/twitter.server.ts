@@ -11,7 +11,6 @@ import type {
 } from 'twitter-api-v2';
 import { TwitterApiRateLimitPlugin } from '@twitter-api-v2/plugin-rate-limit';
 import invariant from 'tiny-invariant';
-import type { Session } from '@remix-run/node';
 import { prisma } from "~/db.server";
 import { flattenTwitterUserPublicMetrics } from '~/models/streams.server'
 import { getUserNeo4j } from '~/models/user.server'
@@ -176,21 +175,12 @@ export function handleTwitterApiError(e: unknown): never {
     throw e;
 }
 
-export function getUserIdFromSession(session: Session) {
-    const userId = session.get('uid') as string | undefined;
-    const uid = userId ? String(userId) : undefined;
-    return uid;
-}
-
 export async function getTwitterClientForUser(
     uid: string
-): Promise<{ api: TwitterApi | null, limits: TwitterApiRateLimitPlugin | null }> {
+): Promise<{ api: TwitterApi, limits: TwitterApiRateLimitPlugin }> {
     log.info(`Fetching token for user (${uid})...`);
     const token = await prisma.tokens.findUnique({ where: { user_id: uid } });
-    if (!token) {
-        return { api: null, limits: null }
-    }
-    invariant(token, `expected token for user (${uid})`);
+    invariant(token, `No token found for user (${uid})`);
     const expiration = token.updated_at.valueOf() + token.expires_in * 1000;
     const limits = new TwitterApiRateLimitPlugin(
         new TwitterApiRateLimitDBStore(uid)
@@ -234,28 +224,6 @@ export async function getTwitterClientForUser(
         //, { plugins: [limits] });
     }
     return { api, limits };
-}
-
-export async function getClient(request: Request) {
-    const session = await getSession(request.headers.get('Cookie'));
-    let uid;
-    if (process.env.TEST) {
-        console.log("MANUALLY SETTING UID")
-        uid = process.env.TEST_USER_ID
-    } else {
-        uid = getUserIdFromSession(session)
-    }
-
-    // const client = uid
-    //     ? await getTwitterClientForUser(uid)
-    //     : { api: new TwitterApi(process.env.TWITTER_TOKEN as string) };
-    let client;
-    if (uid) {
-        client = await getTwitterClientForUser(uid)
-    } else {
-        client = null;
-    }
-    return { ...client, uid, session };
 }
 
 
