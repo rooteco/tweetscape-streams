@@ -15,8 +15,6 @@ import {
   addTweetsFrom, addUsers, addTweetMedia, bulkWritesMulti
 } from "~/models/streams.server";
 
-export type { users } from "@prisma/client";
-
 export type UserProperties = {
   username: string,
   name: string,
