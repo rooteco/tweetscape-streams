@@ -12,7 +12,8 @@ import { requireUserSession } from "~/utils";
 // }
 
 export async function loader({ request, params }: LoaderArgs) {
-    const { limits } = await getClient(request);
+    const { session, uid } = await requireUserSession(request);
+    const { limits } = await getTwitterClientForUser(uid);
 
     const currentRateLimitForFollowing = await limits.v2.getRateLimit('users/:id/following')
     const timelineLimit = await limits.v2.getRateLimit('users/:id/tweets')

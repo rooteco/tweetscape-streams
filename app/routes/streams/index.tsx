@@ -4,7 +4,7 @@ import { json, redirect } from "@remix-run/node";
 import { Form, useActionData, Link, useMatches, useTransition } from "@remix-run/react";
 import * as React from "react";
 import BirdIcon from '~/icons/bird';
-import { getClient, USER_FIELDS } from '~/twitter.server';
+import { getTwitterClientForUser, USER_FIELDS } from '~/twitter.server';
 import { createStream, getStreamByName } from "~/models/streams.server";
 import { getUserNeo4j, createUserNeo4j } from "~/models/user.server";
 import { flattenTwitterUserPublicMetrics } from "~/models/user.server";
@@ -12,12 +12,6 @@ import type { UserV2 } from 'twitter-api-v2';
 import { createList, getUserOwnedTwitterLists } from '~/twitter.server'
 import { optionalUid } from "~/utils";
 
-
-export function getUserIdFromSession(session: Session) {
-    const userId = session.get('uid') as string | undefined;
-    const uid = userId ? String(userId) : undefined;
-    return uid;
-}
 
 type ActionData =
     | {
@@ -42,8 +36,9 @@ export async function action({ request }: ActionArgs) {
         console.log("YOU ARE NOT LOGGED IN")
         return null
     }
+    const { api } = await getTwitterClientForUser(String(uid));
     const meData = await api.v2.me({ "user.fields": USER_FIELDS });
-    user = meData.data as UserV2;
+    let user = meData.data as UserV2;
 
     let userDb = await getUserNeo4j(user.username)
     if (!userDb) {
@@ -133,14 +128,14 @@ export default function NewNotePage() {
                 <div>
                     <div style={{ width: "fit-content", maxWidth: "30vw", borderRadius: 4 }}>
                         <div className="flex flex-col p-4 space-y-2">
-                            <p>Choose a stream from the sidebar to explore, or login with twitter to create your own</p>
+                            <p>Login with Twitter get started with Tweetscape!</p>
                             <div className="flex">
                                 <Link
                                     className='hover:bg-blue-500 active:bg-blue-600 w-auto mr-1.5 flex truncate items-center text-white text-xs bg-sky-500 rounded px-2 h-6'
                                     to='/oauth'
                                 >
                                     <BirdIcon className='shrink-0 w-3.5 h-3.5 mr-1 fill-white' />
-                                    <span>Login with Twitter to Create Streams</span>
+                                    <span>Login with Twitter</span>
                                 </Link>
                             </div>
                         </div>

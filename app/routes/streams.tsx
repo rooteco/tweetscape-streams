@@ -10,8 +10,8 @@ import {
 } from 'twitter-api-v2';
 import { prisma } from "~/db.server";
 import { log } from '~/log.server';
-import { commitSession, getSession } from '~/session.server';
-import { getClient, USER_FIELDS } from '~/twitter.server';
+import { commitSession } from '~/session.server';
+import { getTwitterClientForUser, USER_FIELDS } from '~/twitter.server';
 import type { ListV2 } from 'twitter-api-v2';
 import {
     getUserStreams,
@@ -68,18 +68,15 @@ export const loader: LoaderFunction = async ({ request }: LoaderArgs) => {
 
     console.log(`UID = ${uid}`);
     try {
-        if (process.env.test) {
-            const { api } = await getClient(request);
+        if (process.env.test) { /// TODO: update how I'm creating client for testing... 
+            const { api } = await getTwitterClientForUser(uid);
             const meData = await api.v2.me({ "user.fields": USER_FIELDS });
             user = meData.data;
         }
         else if (uid) {
-            console.time("getting client")
-            const { api } = await getClient(request);
-            console.timeEnd("getting client")
-            console.time("getting me in streams.tsx")
+            console.log("GETTING CLIENT HERE")
+            const { api } = await getTwitterClientForUser(uid);
             user = (await api.v2.me()).data// fields not needed here { "user.fields": USER_FIELDS });
-            console.timeEnd("getting me in streams.tsx")
         }
         else if (stateId && code) {
             const storedStateId = session.get('stateIdTwitter') as string;
