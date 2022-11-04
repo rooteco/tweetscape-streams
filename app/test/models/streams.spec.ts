@@ -1,4 +1,4 @@
-import { deleteStreamByName, createStream, getStreamByName, deleteAllStreams, addSeedUserToStream } from "~/models/streams.server";
+import { deleteStreamByName, createStream, getStreamByName, deleteAllStreams, addSeedUserToStream, getStreamTweetsNeo4j } from "~/models/streams.server";
 import * as dotenv from "dotenv";
 import type { StreamProperties } from "~/models/streams.server";
 import { StreamError } from '~/models/streams.errors';
@@ -99,5 +99,22 @@ describe("Testing Streams Functions", () => {
             expect(e).toBeInstanceOf(StreamError)
             expect(e.message).toBe(`Cannot add user with username '${seedUserUsername}' to stream '${stream.properties.name}.' User not found in db`)
         }
+    })
+
+    test("Get Stream Tweets", async () => {
+        const streamProperties: StreamProperties = {
+            name: "seedUserStream3",
+            twitterListId: "fake-id",
+        }
+        const creatorUsername = "nicktorba"
+        const seedUserUsername = "not-real-user"
+        await createStream(streamProperties, creatorUsername)
+        let { stream, creator, seedUsers } = await getStreamByName(streamProperties.name)
+        await addSeedUserToStream(stream.properties.name, "nicktorba")
+        await addSeedUserToStream(stream.properties.name, "RhysLindmark")
+        let tweets = await getStreamTweetsNeo4j(stream.properties.name)
+        expect(tweets.length).toBe(21) // 21 tweets from Rhys and Nick, 1 of those tweets is included from ref tweets of seed data
+        expect(tweets[0].author.properties.username).toBe("RhysLindmark") // Rhys has the most recent tweet of seed data
+
     })
 });
