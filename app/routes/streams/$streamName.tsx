@@ -147,8 +147,6 @@ export const action: ActionFunction = async ({
     const nextpage = url.searchParams.get('page');
     const { stream, seedUsers } = await getStreamByName(params.streamName)
 
-
-
     if (nextpage) {
         console.log("fetching data for next page")
         console.log(nextpage)
@@ -218,11 +216,11 @@ export const action: ActionFunction = async ({
         let user = await getUserNeo4j(seedUserHandle);
         const { api } = await getTwitterClientForUser(uid);
         await api.v2.removeListMember(stream.properties.twitterListId, user.properties.id)
-        let deletedRel = await removeSeedUserFromStream(
+        await removeSeedUserFromStream(
             stream.properties.name,
             user.properties.username
         )
-        return deletedRel;
+        return redirect(`/streams/${params.streamName}`);
     }
 }
 
@@ -235,6 +233,7 @@ export default function Feed() {
     let transition = useTransition();
     let busy = transition.submission;
     const loaderData = useLoaderData();
+    const [seedUsers, setSeedUsers] = useState(loaderData.seedUsers);
     const [tweets, setTweets] = useState(loaderData.tweets);
     const stream = loaderData.stream;
 
@@ -253,6 +252,11 @@ export default function Feed() {
             setTweets((prevTweets) => [...prevTweets, ...fetcher.data.tweets])
         }
     }, [fetcher.data])
+
+    if (seedUsers != loaderData.seedUsers) {
+        setSeedUsers(loaderData.seedUsers)
+        setTweets(loaderData.tweets)
+    }
 
     const actionData = useActionData();
 
