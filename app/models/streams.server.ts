@@ -884,6 +884,11 @@ export async function getStreamTweetsNeo4j(
     let tweets = [];
     if (res.records.length > 0) {
         tweets = res.records.map((row: Record) => {
+            // let iTweet = row.get("t")
+            // iTweet.properties["public_metrics.like_count"] = iTweet.properties["public_metrics.like_count"].toInt()
+            // iTweet.properties["public_metrics.retweet_count"] = iTweet.properties["public_metrics.retweet_count"].toInt()
+            // iTweet.properties["public_metrics.reply_count"] = iTweet.properties["public_metrics.reply_count"].toInt()
+            // iTweet.properties["public_metrics.quote_count"] = iTweet.properties["public_metrics.quote_count"].toInt()
             return {
                 tweet: row.get('t'),
                 author: row.get('u'),
