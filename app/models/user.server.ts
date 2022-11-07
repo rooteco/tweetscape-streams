@@ -30,6 +30,8 @@ export type UserProperties = {
   "public_metrics.listed_count": number,
   "public_metrics.following_count": number,
   "public_metrics.followers_count": number,
+  latestTweetId?: string,
+  earliestTweetId?: string
 }
 
 export type userNode = {
@@ -115,7 +117,7 @@ export async function getMetaFollowers(user1: string, user2: string) {
 
 async function pullTweets(
   api: TwitterApi,
-  user: Node,
+  user: userNode,
   sinceId: string | null = null,
   untilId: string | null = null) {
   const utReq = {
@@ -151,7 +153,7 @@ async function pullTweets(
   return tweetRes;
 }
 
-export async function indexUserOlderTweets(api: TwitterApi, user: any) {
+export async function indexUserOlderTweets(api: TwitterApi, user: userNode) {
   console.log(`indexing older tweets for ${user.properties.username}`)
 
   let newLatestTweetId = user.properties.latestTweetId
@@ -182,7 +184,7 @@ export async function indexUserOlderTweets(api: TwitterApi, user: any) {
   )
 }
 
-export async function indexUserNewTweets(api: TwitterApi, user: any) {
+export async function indexUserNewTweets(api: TwitterApi, user: userNode) {
   console.log(`indexing New tweets for ${user.properties.username}`)
 
   let tweetRes;
@@ -268,7 +270,7 @@ export async function indexUser(api: TwitterApi, limits: any, user: any) {
   return await indexUserNewTweets(api, user) // will index the latest 100 tweets to get started for this user.. 
 }
 
-export async function updateUserIndexedTweetIds(user: Node, earliestTweetId: string, latestTweetId: string) {
+export async function updateUserIndexedTweetIds(user: userNode, earliestTweetId: string, latestTweetId: string) {
   const session = driver.session()
   // Create a node within a write transaction
   const res = await session.executeWrite((tx: any) => {
