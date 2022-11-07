@@ -20,3 +20,4 @@ neo4j/cluster_credentials.env
 .env.test
 data/
 coverage
+neo4j/test/logs/debug.log
