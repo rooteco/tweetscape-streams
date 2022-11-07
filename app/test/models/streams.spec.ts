@@ -77,7 +77,6 @@ describe("Testing Streams Functions", () => {
         await addSeedUserToStream(streamProperties.name, seedUserUsername)
         let { stream: stream2, creator: creator2, seedUsers: seedUsers2 } = await getStreamByName(streamProperties.name)
         expect(seedUsers2.length).toBe(1)
-        console.log(seedUsers2)
         expect(seedUsers2[0].user.properties.username).toBe(seedUserUsername)
         expect(creator2.properties.username).toBe(creatorUsername)
     })
