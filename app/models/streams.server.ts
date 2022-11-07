@@ -268,7 +268,7 @@ export async function getUserStreams(username: string) {
     return streams;
 }
 
-export async function getStreamByName(name: string): Promise<{ stream: streamNode, creator: userNode, seedUsers: Array<{ u: userNode, r: relNode }> }> {
+export async function getStreamByName(name: string): Promise<{ stream: streamNode, creator: userNode, seedUsers: Array<{ user: userNode, rel: relNode }> }> {
     const session = driver.session()
     // Create a node within a write transaction
     const streamRes = await session.executeRead((tx: any) => {
@@ -780,12 +780,12 @@ export async function addSeedUserToStream(
     return node;
 };
 
-export async function indexMoreTweets(api: TwitterApi, seedUsers: Node[]) {
+export async function indexMoreTweets(api: TwitterApi, seedUsers: Array<{ user: userNode, rel: relNode }>) {
     return await Promise.all(seedUsers.map((user) => {
         return indexUserOlderTweets(api, user.user)
     }))
 }
-export async function updateStreamTweets(api: TwitterApi, seedUsers: Node[]) {
+export async function updateStreamTweets(api: TwitterApi, seedUsers: Array<{ user: userNode, rel: relNode }>) {
     return await Promise.all(seedUsers.map((user) => {
         return indexUserNewTweets(api, user.user)
     }))
