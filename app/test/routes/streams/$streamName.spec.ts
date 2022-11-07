@@ -4,16 +4,18 @@ const streamName = "TEST-STREAM"
 
 describe("Testing $streamName", () => {
     test("Check the loader when accessing without auth", async () => {
+        let error = null;
         await loader({
             request: new Request("http://localhost:3000/streams/streamName", { method: "GET" }),
             params: { streamName: streamName },
             context: {},
         })
             .then(() => { })
-            .catch((error) => {
+            .catch((e) => {
                 // catching the redirect
-                expect(error.status).toBe(302)
+                error = e
             });
+        expect(error.status).toBe(302)
     });
 
 });

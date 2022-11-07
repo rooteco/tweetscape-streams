@@ -1,5 +1,4 @@
 import type { ActionArgs } from "@remix-run/node";
-import type { Session } from '@remix-run/node';
 import { json, redirect } from "@remix-run/node";
 import { Form, useActionData, Link, useMatches, useTransition } from "@remix-run/react";
 import * as React from "react";
@@ -56,7 +55,6 @@ export async function action({ request }: ActionArgs) {
     console.log(`Creating Twitter List ${name}`)
     const { list } = await createList(api, name, [])
 
-    const endTime = new Date()
     stream = await createStream({ name, twitterListId: list.data.id }, user.username)
     if (stream.errors) {
         let errors: ActionData = stream.errors;

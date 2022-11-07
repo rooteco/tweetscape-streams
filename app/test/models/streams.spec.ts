@@ -56,12 +56,15 @@ describe("Testing Streams Functions", () => {
         expect(stream.properties.name).toBe(stream.properties.name)
         expect(creator.properties.username).toBe(username)
         expect(seedUsers.length).toBe(0)
+
+        let error = null;
         try {
             await createStream(stream1Properties, username)
-        } catch (error) {
-            expect(error).toBeInstanceOf(StreamError)
-            expect(error.message).toBe(`Stream '${stream1Properties.name}' already exists`)
+        } catch (e) {
+            error = e
         }
+        expect(error).toBeInstanceOf(StreamError)
+        expect(error.message).toBe(`Stream '${stream1Properties.name}' already exists`)
     })
 
     test("Add Seed User to Stream", async () => {
@@ -72,10 +75,10 @@ describe("Testing Streams Functions", () => {
         const creatorUsername = "nicktorba"
         const seedUserUsername = "RhysLindmark"
         await createStream(streamProperties, creatorUsername)
-        let { stream, creator, seedUsers } = await getStreamByName(streamProperties.name)
+        let { seedUsers } = await getStreamByName(streamProperties.name)
         expect(seedUsers.length).toBe(0)
         await addSeedUserToStream(streamProperties.name, seedUserUsername)
-        let { stream: stream2, creator: creator2, seedUsers: seedUsers2 } = await getStreamByName(streamProperties.name)
+        let { creator: creator2, seedUsers: seedUsers2 } = await getStreamByName(streamProperties.name)
         expect(seedUsers2.length).toBe(1)
         expect(seedUsers2[0].user.properties.username).toBe(seedUserUsername)
         expect(creator2.properties.username).toBe(creatorUsername)
@@ -89,15 +92,17 @@ describe("Testing Streams Functions", () => {
         const creatorUsername = "nicktorba"
         const seedUserUsername = "not-real-user"
         await createStream(streamProperties, creatorUsername)
-        let { stream, creator, seedUsers } = await getStreamByName(streamProperties.name)
+        let { stream } = await getStreamByName(streamProperties.name)
 
+        let error = null;
         try {
             await addSeedUserToStream(stream.properties.name, seedUserUsername)
         }
         catch (e) {
-            expect(e).toBeInstanceOf(StreamError)
-            expect(e.message).toBe(`Cannot add user with username '${seedUserUsername}' to stream '${stream.properties.name}.' User not found in db`)
+            error = e
         }
+        expect(error).toBeInstanceOf(StreamError)
+        expect(error.message).toBe(`Cannot add user with username '${seedUserUsername}' to stream '${stream.properties.name}.' User not found in db`)
     })
 
     test("Get Stream Tweets", async () => {
@@ -106,9 +111,8 @@ describe("Testing Streams Functions", () => {
             twitterListId: "fake-id",
         }
         const creatorUsername = "nicktorba"
-        const seedUserUsername = "not-real-user"
         await createStream(streamProperties, creatorUsername)
-        let { stream, creator, seedUsers } = await getStreamByName(streamProperties.name)
+        let { stream } = await getStreamByName(streamProperties.name)
         await addSeedUserToStream(stream.properties.name, "nicktorba")
         await addSeedUserToStream(stream.properties.name, "RhysLindmark")
         let tweets = await getStreamTweetsNeo4j(stream.properties.name)

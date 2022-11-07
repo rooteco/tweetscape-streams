@@ -9,7 +9,7 @@ import { requireUserSession } from "~/utils";
 
 
 export async function loader({ request }: LoaderArgs) {
-    const { session, uid } = await requireUserSession(request); // will automatically redirect to login if uid is not in the session
+    const { uid } = await requireUserSession(request); // will automatically redirect to login if uid is not in the session
     const { api } = await getTwitterClientForUser(uid)
     const meData = await api.v2.me({ "user.fields": USER_FIELDS });
     let user = meData.data;
