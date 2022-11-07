@@ -55,7 +55,7 @@ jobs:
         with:
           useLockFile: false
       - name: 🐳 Docker compose
-        run: docker-compose up -d && sleep 3
+        run: docker-compose -f docker-compose-test.yml up -d && sleep 3
         env:
           DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/postgres"
           NEO4J_URI: "neo4j://localhost:7687"
