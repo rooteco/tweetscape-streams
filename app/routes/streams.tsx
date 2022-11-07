@@ -73,7 +73,6 @@ export const loader: LoaderFunction = async ({ request }: LoaderArgs) => {
             user = meData.data;
         }
         else if (uid) {
-            console.log("GETTING CLIENT HERE")
             const { api } = await getTwitterClientForUser(uid);
             user = (await api.v2.me()).data// fields not needed here { "user.fields": USER_FIELDS });
         }
