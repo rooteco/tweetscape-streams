@@ -20,25 +20,29 @@ import {
 } from "~/models/streams.server";
 import Overview from "~/components/Overview";
 import { indexUser } from "~/models/user.server";
-import { getUserByUsernameDB, createUserDb } from "~/models/user.server";
-import { createList, getClient } from '~/twitter.server';
+import { getUserNeo4j, createUserNeo4j } from "~/models/user.server";
+import { createList, getTwitterClientForUser } from '~/twitter.server';
 import Tweet from '~/components/Tweet';
 import { useEffect, useRef, useState } from "react";
 import { int } from "neo4j-driver";
+import { requireUserSession } from "~/utils";
+
 
 const TWEET_LOAD_LIMIT = 25
 
 export async function loader({ request, params }: LoaderArgs) {
     invariant(params.streamName, "streamName not found");
-    console.time("getStreamByName")
     const url = new URL(request.url);
+    const { uid } = await requireUserSession(request); // will automatically redirect to login if uid is not in the session
+
+    console.time("getStreamByName")
     let { stream, creator, seedUsers } = await getStreamByName(params.streamName)
     console.timeEnd("getStreamByName")
     if (!stream) {
         throw new Response("Not Found", { status: 404 });
     }
-    console.time("getting client in $streamName")
-    const { api } = await getClient(request);
+
+    const { api } = await getTwitterClientForUser(uid)
 
     console.time("getting loggedInUser in $streamName.tsx")
     const loggedInUser = (await api.v2.me()).data
@@ -54,13 +58,12 @@ export async function loader({ request, params }: LoaderArgs) {
         }
         const { list } = await createList(api, stream.properties.name, [])
         stream = await createStream(
-            stream.properties.name,
-            stream.properties.startTime,
-            loggedInUser,
-            list.data.id
+            { name: stream.properties.name, twitterListId: list.data.id },
+            loggedInUser.username
         )
         seedUsers.forEach(async (user) => {
-            await addSeedUserToStream(api, stream, user.user)
+            await addSeedUserToStream(stream.properties.name, user.user.properties.username)
+            await api.v2.addListMember(stream.properties.twitterListId, user.user.properties.id)
         })
     } else {
         let list
@@ -86,10 +89,8 @@ export async function loader({ request, params }: LoaderArgs) {
             let newList = await createList(api, stream.properties.name, seedUsers.map((user) => (user.user.properties.username)))
             list = newList.list
             await createStream(
-                stream.properties.name,
-                stream.properties.startTime,
-                loggedInUser,
-                list.data.id
+                { name: stream.properties.name, twitterListId: list.data.id },
+                loggedInUser.username
             )
         }
 
@@ -105,13 +106,14 @@ export async function loader({ request, params }: LoaderArgs) {
         // }
     }
 
+
     if (url.searchParams.get("indexMoreTweets")) {
         await indexMoreTweets(api, seedUsers)
         url.searchParams.delete("indexMoreTweets")
         return redirect(url.toString())
     }
     await updateStreamTweets(api, seedUsers)
-    let tweets = await getStreamTweetsNeo4j(stream, 0, TWEET_LOAD_LIMIT)
+    let tweets = await getStreamTweetsNeo4j(stream.properties.name, 0, TWEET_LOAD_LIMIT)
     return json(
         {
             "stream": stream,
@@ -138,29 +140,30 @@ export const action: ActionFunction = async ({
 
     // structure from https://egghead.io/lessons/remix-add-delete-functionality-to-posts-page-in-remix, which was from https://github.com/remix-run/remix/discussions/3138
     invariant(params.streamName, "streamName not found");
+    const { uid } = await requireUserSession(request); // will automatically redirect to login if uid is not in the session
 
     // Load More Data (page should never be part of user facing url, it is fetched with the fetcher as a non-navigation)
     const url = new URL(request.url);
     const nextpage = url.searchParams.get('page');
+    const { stream, seedUsers } = await getStreamByName(params.streamName)
+
     if (nextpage) {
         console.log("fetching data for next page")
         console.log(nextpage)
-        let { stream } = await getStreamByName(params.streamName)
-        let tweets = await getStreamTweetsNeo4j(stream, TWEET_LOAD_LIMIT * int(nextpage), TWEET_LOAD_LIMIT)
+        let tweets = await getStreamTweetsNeo4j(stream.properties.name, TWEET_LOAD_LIMIT * int(nextpage), TWEET_LOAD_LIMIT)
         return { "tweets": tweets }
     }
     const formData = await request.formData();
 
     // Handle Seed User Operations
     const intent = formData.get("intent");
-    let seedUserHandle: string = formData.get("seedUserHandle");
+    let seedUserHandle: string = formData.get("seedUserHandle") as string;
     if (intent === "delete") {
-        const { api, } = await getClient(request);
-        await deleteStreamByName(api, params.streamName);
+        const { api } = await getTwitterClientForUser(uid);
+        await deleteStreamByName(params.streamName);
+        await api.v2.removeList(stream.properties.twitterListId)
         return redirect(`/streams`);
     }
-
-    const { stream, seedUsers } = await getStreamByName(params.streamName);
 
     if (!stream) {
         throw new Response("Not Found", { status: 404 });
@@ -176,7 +179,7 @@ export const action: ActionFunction = async ({
         if (hasErrors) {
             return json<ActionData>(errors);
         }
-        const { api, limits } = await getClient(request);
+        const { api, limits } = await getTwitterClientForUser(uid);
         for (const seedUser of seedUsers) {
             console.log(`${seedUser.user.properties.username} == ${seedUserHandle}`);
             if (seedUser.user.username == seedUserHandle) {
@@ -188,7 +191,7 @@ export const action: ActionFunction = async ({
         }
 
         seedUserHandle = seedUserHandle.toLowerCase().replace(/^@/, '')
-        let user = await getUserByUsernameDB(seedUserHandle);
+        let user = await getUserNeo4j(seedUserHandle);
         if (!user) {
             console.time("getUserFromTwitter")
             user = await getUserFromTwitter(api, seedUserHandle); // This func already flattens the data
@@ -199,24 +202,25 @@ export const action: ActionFunction = async ({
                 }
                 return json<ActionData>(errors); // throw error if user is not found;
             } else {
-                user = await createUserDb(user)
+                user = await createUserNeo4j(user)
             }
         }
         console.time("addSeedUserToStream")
-        await addSeedUserToStream(api, stream, user) // this adds a list member and an edge, it doesn't do follows or tweets fetching...
+        await addSeedUserToStream(stream.properties.name, user.properties.username) // this adds a list member and an edge, it doesn't do follows or tweets fetching...
+        await api.v2.addListMember(stream.properties.twitterListId, user.properties.id)
         console.timeEnd("addSeedUserToStream")
         await indexUser(api, limits, user)
         console.log(`Added user ${user.properties.username} to stream ${stream.properties.name}`)
         return redirect(`/streams/${params.streamName}`)
     } else if (intent === "removeSeedUser") {
-        let user = await getUserByUsernameDB(seedUserHandle);
-        const { api } = await getClient(request);
+        let user = await getUserNeo4j(seedUserHandle);
+        const { api } = await getTwitterClientForUser(uid);
         await api.v2.removeListMember(stream.properties.twitterListId, user.properties.id)
-        let deletedRel = await removeSeedUserFromStream(
+        await removeSeedUserFromStream(
             stream.properties.name,
             user.properties.username
         )
-        return deletedRel;
+        return redirect(`/streams/${params.streamName}`);
     }
 }
 
@@ -229,6 +233,7 @@ export default function Feed() {
     let transition = useTransition();
     let busy = transition.submission;
     const loaderData = useLoaderData();
+    const [seedUsers, setSeedUsers] = useState(loaderData.seedUsers);
     const [tweets, setTweets] = useState(loaderData.tweets);
     const stream = loaderData.stream;
 
@@ -247,6 +252,11 @@ export default function Feed() {
             setTweets((prevTweets) => [...prevTweets, ...fetcher.data.tweets])
         }
     }, [fetcher.data])
+
+    if (seedUsers != loaderData.seedUsers) {
+        setSeedUsers(loaderData.seedUsers)
+        setTweets(loaderData.tweets)
+    }
 
     const actionData = useActionData();
 

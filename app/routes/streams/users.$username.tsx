@@ -3,17 +3,18 @@ import type { LoaderArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { useLoaderData, useParams, useTransition, Link } from "@remix-run/react";
 import invariant from "tiny-invariant";
-import { indexUserOlderTweets, getMetaFollowers, getUserByUsernameDB, getUserIndexedTweets } from "~/models/user.server";
-import { getClient } from "~/twitter.server";
-import Tweet from '~/components/Tweet';
+import { indexUserOlderTweets, getMetaFollowers, getUserNeo4j, getUserIndexedTweets } from "~/models/user.server";
+import { getTwitterClientForUser } from '~/twitter.server';
+import { requireUserSession } from "~/utils"; import Tweet from '~/components/Tweet';
 import { indexUser } from "~/models/user.server";
 import CompactProfile from '~/components/CompactProfile';
 
 export async function loader({ request, params }: LoaderArgs) {
     const url = new URL(request.url);
     invariant(params.username, "username not found");
-    const { api, limits } = await getClient(request)
-    let user = await getUserByUsernameDB(params.username)
+    const { uid } = await requireUserSession(request); // will automatically redirect to login if uid is not in the session
+    const { api } = await getTwitterClientForUser(uid)
+    let user = await getUserNeo4j(params.username)
     if (url.searchParams.get("indexMoreTweets")) {
         await indexUserOlderTweets(api, user)
         url.searchParams.delete("indexMoreTweets")
