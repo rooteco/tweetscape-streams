@@ -5,14 +5,8 @@ import { getTwitterClientForUser } from '~/twitter.server';
 import { requireUserSession } from "~/utils";
 
 
-
-// type LoaderData = {
-//     // this is a handy way to say: "posts is whatever type getStreams resolves to"
-//     tweet: Awaited<ReturnType<typeof getTweet>>;
-// }
-
 export async function loader({ request, params }: LoaderArgs) {
-    const { session, uid } = await requireUserSession(request);
+    const { uid } = await requireUserSession(request);
     const { limits } = await getTwitterClientForUser(uid);
 
     const currentRateLimitForFollowing = await limits.v2.getRateLimit('users/:id/following')

@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect } from 'react';
-import type { Integer } from 'neo4j-driver';
 import { Link, useParams, useTransition } from "@remix-run/react";
 import cn from 'classnames';
 

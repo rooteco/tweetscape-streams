@@ -2,13 +2,11 @@ import { useMatches } from "@remix-run/react";
 import { useMemo } from "react";
 import { getSession } from '~/session.server';
 import type { Session } from '@remix-run/node';
-
 import type { UserProperties } from "~/models/user.server";
+import { redirect } from "@remix-run/node";
+
 
 const DEFAULT_REDIRECT = "/streams";
-
-
-import { redirect } from "@remix-run/node";
 
 export function getUserIdFromSession(session: Session) {
   const userId = session.get('uid') as string | undefined;

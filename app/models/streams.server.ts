@@ -16,7 +16,7 @@ import type {
 } from 'twitter-api-v2';
 
 import { StreamError } from '~/models/streams.errors';
-import { tweetNode, annotationNode, entityNode, domainNode } from './tweets.server';
+import type { tweetNode, annotationNode, entityNode, domainNode } from './tweets.server';
 
 export type StreamProperties = {
     name: string,
@@ -320,7 +320,6 @@ export async function createStream(streamProperties: StreamProperties, username:
 }
 
 export async function deleteStreamByName(name: string) {
-    const stream = (await getStreamByName(name)).stream
     const session = driver.session()
     // Create a node within a write transaction
     await session.executeWrite((tx: any) => {
@@ -428,24 +427,6 @@ export async function getTweetsFromAuthorIdForStream(
     }
 
     return { tweets, refTweets, users, media }
-}
-
-async function streamContainsUser(username: string, streamName: string) {
-    const session = driver.session()
-    // Create a node within a write transaction
-    const res = await session.executeWrite((tx: any) => {
-        return tx.run(`
-        MATCH(u: User { username: $username }) 
-        MATCH(s: Stream { name: $streamName })
-        MERGE(s) - [r: CONTAINS] -> (u)
-        RETURN s, r, u`,
-            { username, streamName }
-        )
-    })
-    const singleRecord = res.records[0]
-    const node = { s: singleRecord.get("s"), r: singleRecord.get("r"), u: singleRecord.get("u") }
-    await session.close()
-    return node;
 }
 
 export async function getSavedFollows(username: string) {

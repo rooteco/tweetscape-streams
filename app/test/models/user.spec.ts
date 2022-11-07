@@ -1,6 +1,6 @@
 import * as dotenv from "dotenv";
-import { createUserNeo4j, UserProperties, deleteUserNeo4j, getUserNeo4j } from '~/models/user.server';
-
+import { createUserNeo4j, deleteUserNeo4j, getUserNeo4j } from '~/models/user.server';
+import type { UserProperties } from '~/models/user.server';
 
 dotenv.config();
 

@@ -12,7 +12,7 @@ import CompactProfile from '~/components/CompactProfile';
 export async function loader({ request, params }: LoaderArgs) {
     const url = new URL(request.url);
     invariant(params.username, "username not found");
-    const { session, uid } = await requireUserSession(request); // will automatically redirect to login if uid is not in the session
+    const { uid } = await requireUserSession(request); // will automatically redirect to login if uid is not in the session
     const { api } = await getTwitterClientForUser(uid)
     let user = await getUserNeo4j(params.username)
     if (url.searchParams.get("indexMoreTweets")) {

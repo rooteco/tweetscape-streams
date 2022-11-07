@@ -140,7 +140,7 @@ export const action: ActionFunction = async ({
 
     // structure from https://egghead.io/lessons/remix-add-delete-functionality-to-posts-page-in-remix, which was from https://github.com/remix-run/remix/discussions/3138
     invariant(params.streamName, "streamName not found");
-    const { session, uid } = await requireUserSession(request); // will automatically redirect to login if uid is not in the session
+    const { uid } = await requireUserSession(request); // will automatically redirect to login if uid is not in the session
 
     // Load More Data (page should never be part of user facing url, it is fetched with the fetcher as a non-navigation)
     const url = new URL(request.url);
