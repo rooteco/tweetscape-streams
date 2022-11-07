@@ -16,6 +16,7 @@ async function initDriver(uri: string, username: string, password: string) {
             notConnected = false;
         } catch (e) {
             console.log("Neo4j db not ready yet, sleeping for 2 seconds")
+            console.log(e)
             await new Promise(r => setTimeout(r, 2000))
         }
     }
