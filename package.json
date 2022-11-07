@@ -22,7 +22,7 @@
     "test": "run-s test:*",
     "test:docker": "docker-compose -f docker-compose-test.yml up -d; sleep 10",
     "test:seed": "dotenv -e .env.test ts-node neo4j/seed.ts",
-    "test:unit": "dotenv -e .env.test -- vitest --no-threads",
+    "test:unit": "dotenv -e .env.test -- vitest --no-threads --coverage",
     "test:e2e:dev": "start-server-and-test dev http://localhost:3000 \"npx cypress open\"",
     "pretest:e2e:run": "npm run build",
     "test:e2e:run": "cross-env PORT=8811 start-server-and-test start:mocks http://localhost:8811 \"npx cypress run\"",
