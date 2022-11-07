@@ -66,7 +66,6 @@ export const loader: LoaderFunction = async ({ request }: LoaderArgs) => {
 
     let { uid, session } = await optionalUid(request)
 
-    console.log(`UID = ${uid}`);
     try {
         if (process.env.test) { /// TODO: update how I'm creating client for testing... 
             const { api } = await getTwitterClientForUser(uid);
