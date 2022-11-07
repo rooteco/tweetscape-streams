@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect } from 'react';
-import type { Integer } from 'neo4j-driver';
 import { Link, useParams, useTransition } from "@remix-run/react";
 import cn from 'classnames';
 
@@ -7,37 +6,8 @@ import { MdKeyboardArrowRight } from "react-icons/md";
 
 import CompactProfile from './CompactProfile';
 import StreamConfig from './StreamConfig';
-
-export type streamNode = {
-  identity: Array<Integer>,
-  labels: any[],
-  properties: {
-    name: string,
-    startTime: string
-  },
-  elementId: string
-}
-
-export type userNode = {
-  identity: Integer,
-  labels: string[],
-  properties: {
-    verified: boolean,
-    created_at: string,
-    description: string,
-    profile_image_url: string,
-    'public_metrics.listed_count': Integer | null,
-    url: string,
-    'public_metrics.following_count': Integer | null,
-    'public_metrics.followers_count': Integer | null,
-    protected: Boolean,
-    name: string,
-    id: string,
-    'public_metrics.tweet_count': Integer | null,
-    username: string
-  },
-  elementId: string
-}
+import type { streamNode } from '~/models/streams.server';
+import type { userNode } from '~/models/user.server';
 
 // define stream type
 export type Stream = {

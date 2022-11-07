@@ -1,15 +1,16 @@
 import type { LoaderArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
-import { getClient, USER_FIELDS } from '~/twitter.server';
+import { USER_FIELDS } from '~/twitter.server';
 import { getUserContextAnnotationFrequency, getStreamsUserIn, getUserIndexedTweets } from '~/models/user.server';
 
-// import { D3BarChart, IData } from '~/components/barChart';
-
+import { getTwitterClientForUser } from '~/twitter.server';
+import { requireUserSession } from "~/utils";
 
 
 export async function loader({ request }: LoaderArgs) {
-    const { api } = await getClient(request);
+    const { uid } = await requireUserSession(request); // will automatically redirect to login if uid is not in the session
+    const { api } = await getTwitterClientForUser(uid)
     const meData = await api.v2.me({ "user.fields": USER_FIELDS });
     let user = meData.data;
     const streams = await getStreamsUserIn(user.username)

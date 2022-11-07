@@ -19,17 +19,17 @@ services:
     ports:
       - "6379:6379"
   neo4j:
-    image: neo4j:latest
+    image: neo4j:4.4.0
     restart: always
     ports:
       - "7687:7687"
       - "7474:7474"
     volumes:
-      - $HOME/neo4j-test/data:/data
-      - $HOME/neo4j-test/logs:/logs
-      - $HOME/neo4j-test/import:/var/lib/neo4j/import
-      - $HOME/neo4j-test/plugins:/plugins
-      - /home/nick/Documents/GitHub/tweetscape-streams/neo4j/seed-data:/var/lib/neo4j/import/seed-data
+      - ./neo4j/test/data:/data
+      - ./neo4j/test/logs:/logs
+      - ./neo4j/test/import:/var/lib/neo4j/import
+      - ./neo4j/test/plugins:/plugins
+      - ./neo4j/seed-data:/var/lib/neo4j/import/seed-data
     environment:
       - NEO4J_AUTH=neo4j/test
       - NEO4JLABS_PLUGINS=\[\"apoc\"\]

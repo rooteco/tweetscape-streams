@@ -1,16 +1,13 @@
 import type { LoaderArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
-import { getClient } from '~/twitter.server';
+import { getTwitterClientForUser } from '~/twitter.server';
+import { requireUserSession } from "~/utils";
 
-
-// type LoaderData = {
-//     // this is a handy way to say: "posts is whatever type getStreams resolves to"
-//     tweet: Awaited<ReturnType<typeof getTweet>>;
-// }
 
 export async function loader({ request, params }: LoaderArgs) {
-    const { limits } = await getClient(request);
+    const { uid } = await requireUserSession(request);
+    const { limits } = await getTwitterClientForUser(uid);
 
     const currentRateLimitForFollowing = await limits.v2.getRateLimit('users/:id/following')
     const timelineLimit = await limits.v2.getRateLimit('users/:id/tweets')

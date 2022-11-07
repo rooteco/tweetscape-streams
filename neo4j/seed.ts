@@ -9,8 +9,17 @@ const NEO4J_PASSWORD = process.env.NEO4J_PASSWORD as string;
 
 async function initDriver(uri: string, username: string, password: string) {
     driver = neo4j.driver(uri, neo4j.auth.basic(username, password))
-    // Verify connectivity
-    await driver.getServerInfo()
+    let notConnected = true;
+    while (notConnected) {
+        try {
+            await driver.getServerInfo();
+            notConnected = false;
+        } catch (e) {
+            console.log("Neo4j db not ready yet, sleeping for 2 seconds")
+            console.log(e)
+            await new Promise(r => setTimeout(r, 2000))
+        }
+    }
     return driver
 }
 
