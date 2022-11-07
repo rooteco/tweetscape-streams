@@ -17,7 +17,7 @@ The seed data for neo4j is in `neo4j/seed-data`. This data was pulled by running
 
 To seed the db with data in json file (which you should do every time you run the test suite), run
 ```
-npx ts-node neo4j/seed.ts
+npm run test:seed
 ``` 
 
 ### Local Creds
