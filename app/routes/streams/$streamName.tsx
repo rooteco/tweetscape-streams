@@ -32,8 +32,8 @@ const TWEET_LOAD_LIMIT = 25
 
 export async function loader({ request, params }: LoaderArgs) {
     invariant(params.streamName, "streamName not found");
-    const { uid, session } = await requireUserSession(request); // will automatically redirect to login if uid is not in the session
     const url = new URL(request.url);
+    const { uid } = await requireUserSession(request); // will automatically redirect to login if uid is not in the session
 
     console.time("getStreamByName")
     let { stream, creator, seedUsers } = await getStreamByName(params.streamName)
@@ -106,6 +106,7 @@ export async function loader({ request, params }: LoaderArgs) {
         // }
     }
 
+
     if (url.searchParams.get("indexMoreTweets")) {
         await indexMoreTweets(api, seedUsers)
         url.searchParams.delete("indexMoreTweets")
@@ -158,7 +159,7 @@ export const action: ActionFunction = async ({
 
     // Handle Seed User Operations
     const intent = formData.get("intent");
-    let seedUserHandle: string = formData.get("seedUserHandle");
+    let seedUserHandle: string = formData.get("seedUserHandle") as string;
     if (intent === "delete") {
         const { api } = await getTwitterClientForUser(uid);
         await deleteStreamByName(params.streamName);
@@ -180,7 +181,7 @@ export const action: ActionFunction = async ({
         if (hasErrors) {
             return json<ActionData>(errors);
         }
-        const { api } = await getTwitterClientForUser(uid);
+        const { api, limits } = await getTwitterClientForUser(uid);
         for (const seedUser of seedUsers) {
             console.log(`${seedUser.user.properties.username} == ${seedUserHandle}`);
             if (seedUser.user.username == seedUserHandle) {
