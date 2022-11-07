@@ -10,7 +10,7 @@ import { getUserNeo4j, createUserNeo4j } from "~/models/user.server";
 import { flattenTwitterUserPublicMetrics } from "~/models/user.server";
 import type { UserV2 } from 'twitter-api-v2';
 import { createList, getUserOwnedTwitterLists } from '~/twitter.server'
-import { optionalUid } from "~/utils";
+import { requireUserSession } from "~/utils";
 
 
 type ActionData =
@@ -30,13 +30,13 @@ export async function action({ request }: ActionArgs) {
         return json<ActionData>(errors);
     }
 
-    let uid = await optionalUid(request);
+    let { uid } = await requireUserSession(request);
 
     if (!uid) {
         console.log("YOU ARE NOT LOGGED IN")
         return null
     }
-    const { api } = await getTwitterClientForUser(String(uid));
+    const { api } = await getTwitterClientForUser(uid);
     const meData = await api.v2.me({ "user.fields": USER_FIELDS });
     let user = meData.data as UserV2;
 
