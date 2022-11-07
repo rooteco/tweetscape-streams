@@ -20,7 +20,6 @@
     "start": "cross-env NODE_ENV=production node ./build/server.js",
     "start:mocks": "cross-env NODE_ENV=production node --require ./mocks --require dotenv/config ./build/server.js",
     "test": "run-s test:*",
-    "test:docker": "docker-compose -f docker-compose-test.yml up -d",
     "test:seed": "dotenv -e .env.test ts-node neo4j/seed.ts",
     "test:unit": "dotenv -e .env.test -- vitest --no-threads --coverage",
     "test:e2e:dev": "start-server-and-test dev http://localhost:3000 \"npx cypress open\"",
