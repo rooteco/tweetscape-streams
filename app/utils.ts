@@ -5,7 +5,7 @@ import type { Session } from '@remix-run/node';
 
 import type { UserProperties } from "~/models/user.server";
 
-const DEFAULT_REDIRECT = "/";
+const DEFAULT_REDIRECT = "/streams";
 
 
 import { redirect } from "@remix-run/node";
@@ -24,17 +24,22 @@ export async function optionalUid(request: Request): Promise<{ session: Session,
 export async function requireUserSession(request: Request): Promise<{ session: Session, uid: string }> {
   // get the session
   const cookie = request.headers.get("cookie");
+
+  if (!cookie) {
+    throw redirect(DEFAULT_REDIRECT);
+  }
+
   const session = await getSession(cookie);
 
   if (!session) {
-    throw redirect("/streams");
+    throw redirect(DEFAULT_REDIRECT);
   }
 
   const uid = getUserIdFromSession(session);
 
   if (!uid) {
     // if there is no user session, redirect to login
-    throw redirect("/streams");
+    throw redirect(DEFAULT_REDIRECT);
   }
 
   return { session, uid };
