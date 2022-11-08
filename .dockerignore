@@ -5,3 +5,7 @@
 /.cache
 /public/build
 /build
+/data
+docker-compose.yml
+/python
+/postgres-data

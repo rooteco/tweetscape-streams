@@ -18,4 +18,5 @@ module.exports = {
       version: 28,
     },
   },
+  ignorePatterns: ["node_modules/", "dist/", "build/", "coverage/", "postgres-data/", "neo4j"],
 };

@@ -16,7 +16,7 @@ export function run() {
     let follows = ["hello", "goodbye"];
 
     for (let seedUser of seedUsers) {
-        follows.map((i: any) => {
+        follows.forEach((i: any) => {
             if (followingObj[i]) {
                 followingObj[i].push(seedUser["username"]);
             } else {

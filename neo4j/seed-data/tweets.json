@@ -1,0 +1,3447 @@
+[
+  {
+    "author_id": "803693608419422209",
+    "data": {
+      "data": [
+        {
+          "possibly_sensitive": false,
+          "created_at": "2022-11-02T19:56:20.000Z",
+          "text": "@deepfates this new pfp is sexy",
+          "reply_settings": "everyone",
+          "lang": "en",
+          "public_metrics": {
+            "retweet_count": 0,
+            "reply_count": 1,
+            "like_count": 1,
+            "quote_count": 0
+          },
+          "edit_history_tweet_ids": [
+            "1587896408203567112"
+          ],
+          "entities": {
+            "mentions": [
+              {
+                "start": 0,
+                "end": 10,
+                "username": "deepfates",
+                "id": "3315205122"
+              }
+            ]
+          },
+          "id": "1587896408203567112",
+          "author_id": "803693608419422209",
+          "referenced_tweets": [
+            {
+              "type": "replied_to",
+              "id": "1587881856778661889"
+            }
+          ],
+          "in_reply_to_user_id": "3315205122",
+          "source": "Twitter for iPhone",
+          "conversation_id": "1587881856778661889"
+        },
+        {
+          "possibly_sensitive": false,
+          "created_at": "2022-11-02T17:24:10.000Z",
+          "text": "@Jamesthesnake explain yourself",
+          "reply_settings": "everyone",
+          "lang": "en",
+          "public_metrics": {
+            "retweet_count": 0,
+            "reply_count": 0,
+            "like_count": 0,
+            "quote_count": 0
+          },
+          "edit_history_tweet_ids": [
+            "1587858114598277121"
+          ],
+          "entities": {
+            "mentions": [
+              {
+                "start": 0,
+                "end": 14,
+                "username": "Jamesthesnake",
+                "id": "193955867"
+              }
+            ]
+          },
+          "id": "1587858114598277121",
+          "author_id": "803693608419422209",
+          "referenced_tweets": [
+            {
+              "type": "replied_to",
+              "id": "1587638330262360064"
+            }
+          ],
+          "in_reply_to_user_id": "193955867",
+          "source": "Twitter for iPhone",
+          "conversation_id": "1587638330262360064"
+        },
+        {
+          "possibly_sensitive": false,
+          "created_at": "2022-11-02T17:23:20.000Z",
+          "text": "@gnopercept lists have a v close to connection to our existentialism https://t.co/IX71Apk0rq",
+          "reply_settings": "everyone",
+          "lang": "en",
+          "public_metrics": {
+            "retweet_count": 0,
+            "reply_count": 0,
+            "like_count": 0,
+            "quote_count": 0
+          },
+          "entities": {
+            "urls": [
+              {
+                "start": 69,
+                "end": 92,
+                "url": "https://t.co/IX71Apk0rq",
+                "expanded_url": "https://twitter.com/nicktorba/status/1484223639486701568",
+                "display_url": "twitter.com/nicktorba/stat…"
+              }
+            ],
+            "mentions": [
+              {
+                "start": 0,
+                "end": 11,
+                "username": "gnopercept",
+                "id": "2880789464"
+              }
+            ]
+          },
+          "edit_history_tweet_ids": [
+            "1587857907336593408"
+          ],
+          "id": "1587857907336593408",
+          "author_id": "803693608419422209",
+          "referenced_tweets": [
+            {
+              "type": "quoted",
+              "id": "1484223639486701568"
+            },
+            {
+              "type": "replied_to",
+              "id": "1587504786391318531"
+            }
+          ],
+          "in_reply_to_user_id": "2880789464",
+          "source": "Twitter for iPhone",
+          "conversation_id": "1587504786391318531"
+        },
+        {
+          "possibly_sensitive": false,
+          "created_at": "2022-11-02T17:21:31.000Z",
+          "text": "@joshcadorette Electric",
+          "reply_settings": "everyone",
+          "lang": "ca",
+          "public_metrics": {
+            "retweet_count": 0,
+            "reply_count": 1,
+            "like_count": 1,
+            "quote_count": 0
+          },
+          "edit_history_tweet_ids": [
+            "1587857450941943808"
+          ],
+          "entities": {
+            "mentions": [
+              {
+                "start": 0,
+                "end": 14,
+                "username": "joshcadorette",
+                "id": "1092170082837581824"
+              }
+            ]
+          },
+          "id": "1587857450941943808",
+          "author_id": "803693608419422209",
+          "referenced_tweets": [
+            {
+              "type": "replied_to",
+              "id": "1587824598074249217"
+            }
+          ],
+          "in_reply_to_user_id": "1092170082837581824",
+          "source": "Twitter for iPhone",
+          "conversation_id": "1587824598074249217"
+        },
+        {
+          "possibly_sensitive": false,
+          "created_at": "2022-11-02T16:01:11.000Z",
+          "text": "not related to this tweet but I need to start working “fella” into my everyday vocabulary https://t.co/UVeLsIO9SP",
+          "reply_settings": "everyone",
+          "lang": "en",
+          "public_metrics": {
+            "retweet_count": 0,
+            "reply_count": 0,
+            "like_count": 0,
+            "quote_count": 0
+          },
+          "entities": {
+            "urls": [
+              {
+                "start": 90,
+                "end": 113,
+                "url": "https://t.co/UVeLsIO9SP",
+                "expanded_url": "https://twitter.com/alterwyx/status/1587250382795071488",
+                "display_url": "twitter.com/alterwyx/statu…"
+              }
+            ]
+          },
+          "edit_history_tweet_ids": [
+            "1587837233159196679"
+          ],
+          "id": "1587837233159196679",
+          "author_id": "803693608419422209",
+          "referenced_tweets": [
+            {
+              "type": "quoted",
+              "id": "1587250382795071488"
+            }
+          ],
+          "source": "Twitter for iPhone",
+          "conversation_id": "1587837233159196679"
+        },
+        {
+          "possibly_sensitive": false,
+          "created_at": "2022-11-02T14:22:50.000Z",
+          "text": "you can really use a technology for months, feel pretty confident, then watch one youtube video and realize you were doing it wrong the whole time",
+          "reply_settings": "everyone",
+          "lang": "en",
+          "public_metrics": {
+            "retweet_count": 0,
+            "reply_count": 0,
+            "like_count": 1,
+            "quote_count": 0
+          },
+          "edit_history_tweet_ids": [
+            "1587812481568759808"
+          ],
+          "context_annotations": [
+            {
+              "domain": {
+                "id": "131",
+                "name": "Unified Twitter Taxonomy",
+                "description": "A taxonomy of user interests. "
+              },
+              "entity": {
+                "id": "1196446161223028736",
+                "name": "Social media"
+              }
+            },
+            {
+              "domain": {
+                "id": "165",
+                "name": "Technology",
+                "description": "for individual and types of technology, e.g., food technology, 3D printing"
+              },
+              "entity": {
+                "id": "1196446161223028736",
+                "name": "Social media"
+              }
+            },
+            {
+              "domain": {
+                "id": "30",
+                "name": "Entities [Entity Service]",
+                "description": "Entity Service top level domain, every item that is in Entity Service should be in this domain"
+              },
+              "entity": {
+                "id": "781974596752842752",
+                "name": "Services"
+              }
+            },
+            {
+              "domain": {
+                "id": "47",
+                "name": "Brand",
+                "description": "Brands and Companies"
+              },
+              "entity": {
+                "id": "10029382357",
+                "name": "YouTube"
+              }
+            },
+            {
+              "domain": {
+                "id": "131",
+                "name": "Unified Twitter Taxonomy",
+                "description": "A taxonomy of user interests. "
+              },
+              "entity": {
+                "id": "10029382357",
+                "name": "YouTube"
+              }
+            }
+          ],
+          "id": "1587812481568759808",
+          "author_id": "803693608419422209",
+          "entities": {
+            "annotations": [
+              {
+                "start": 82,
+                "end": 88,
+                "probability": 0.9615,
+                "type": "Other",
+                "normalized_text": "youtube"
+              }
+            ]
+          },
+          "source": "Twitter Web App",
+          "conversation_id": "1587812481568759808"
+        },
+        {
+          "possibly_sensitive": false,
+          "created_at": "2022-11-02T13:43:28.000Z",
+          "text": "many tools like that (read: tools in a similar vain to twitter) give me an ever so slight sense of \"wtf is going on here..\" which makes it hard to focus",
+          "reply_settings": "everyone",
+          "lang": "en",
+          "public_metrics": {
+            "retweet_count": 0,
+            "reply_count": 0,
+            "like_count": 1,
+            "quote_count": 0
+          },
+          "edit_history_tweet_ids": [
+            "1587802574576574464"
+          ],
+          "context_annotations": [
+            {
+              "domain": {
+                "id": "30",
+                "name": "Entities [Entity Service]",
+                "description": "Entity Service top level domain, every item that is in Entity Service should be in this domain"
+              },
+              "entity": {
+                "id": "781974596752842752",
+                "name": "Services"
+              }
+            },
+            {
+              "domain": {
+                "id": "47",
+                "name": "Brand",
+                "description": "Brands and Companies"
+              },
+              "entity": {
+                "id": "10045225402",
+                "name": "Twitter"
+              }
+            }
+          ],
+          "id": "1587802574576574464",
+          "author_id": "803693608419422209",
+          "referenced_tweets": [
+            {
+              "type": "replied_to",
+              "id": "1587802572529827842"
+            }
+          ],
+          "entities": {
+            "annotations": [
+              {
+                "start": 55,
+                "end": 61,
+                "probability": 0.9583,
+                "type": "Other",
+                "normalized_text": "twitter"
+              }
+            ]
+          },
+          "in_reply_to_user_id": "803693608419422209",
+          "source": "Twitter Web App",
+          "conversation_id": "1587802572529827842"
+        },
+        {
+          "possibly_sensitive": false,
+          "created_at": "2022-11-02T13:43:27.000Z",
+          "text": "i can't tell if the UX of new apps like https://t.co/efiLr69Syj are actually considerably worse than apps like twitter, or if i'm so familiar with twitter interface that new options feel weird and i need to work through that weirdness",
+          "reply_settings": "everyone",
+          "lang": "en",
+          "public_metrics": {
+            "retweet_count": 0,
+            "reply_count": 1,
+            "like_count": 1,
+            "quote_count": 0
+          },
+          "entities": {
+            "urls": [
+              {
+                "start": 40,
+                "end": 63,
+                "url": "https://t.co/efiLr69Syj",
+                "expanded_url": "http://wt.social",
+                "display_url": "wt.social",
+                "status": 200,
+                "title": "WT.Social",
+                "description": "The non-toxic social network",
+                "unwound_url": "https://wt.social/"
+              }
+            ],
+            "annotations": [
+              {
+                "start": 20,
+                "end": 21,
+                "probability": 0.6626,
+                "type": "Other",
+                "normalized_text": "UX"
+              },
+              {
+                "start": 111,
+                "end": 117,
+                "probability": 0.9667,
+                "type": "Other",
+                "normalized_text": "twitter"
+              },
+              {
+                "start": 147,
+                "end": 153,
+                "probability": 0.9649,
+                "type": "Other",
+                "normalized_text": "twitter"
+              }
+            ]
+          },
+          "edit_history_tweet_ids": [
+            "1587802572529827842"
+          ],
+          "context_annotations": [
+            {
+              "domain": {
+                "id": "30",
+                "name": "Entities [Entity Service]",
+                "description": "Entity Service top level domain, every item that is in Entity Service should be in this domain"
+              },
+              "entity": {
+                "id": "781974596752842752",
+                "name": "Services"
+              }
+            },
+            {
+              "domain": {
+                "id": "47",
+                "name": "Brand",
+                "description": "Brands and Companies"
+              },
+              "entity": {
+                "id": "10045225402",
+                "name": "Twitter"
+              }
+            }
+          ],
+          "id": "1587802572529827842",
+          "author_id": "803693608419422209",
+          "source": "Twitter Web App",
+          "conversation_id": "1587802572529827842"
+        },
+        {
+          "possibly_sensitive": false,
+          "created_at": "2022-11-02T13:37:32.000Z",
+          "text": "@ChielMuur @paulg prepare for the golden age https://t.co/jp2Nb0dI82",
+          "reply_settings": "everyone",
+          "lang": "en",
+          "public_metrics": {
+            "retweet_count": 0,
+            "reply_count": 1,
+            "like_count": 1,
+            "quote_count": 0
+          },
+          "entities": {
+            "urls": [
+              {
+                "start": 45,
+                "end": 68,
+                "url": "https://t.co/jp2Nb0dI82",
+                "expanded_url": "https://twitter.com/search?q=(from%3Avisakanv)%20golden%20age&src=typed_query",
+                "display_url": "twitter.com/search?q=(from…",
+                "status": 200,
+                "title": "(from:visakanv) golden age - Twitter Search / Twitter",
+                "description": "The latest Tweets on (from:visakanv) golden age. Read what people are saying and join the conversation.",
+                "unwound_url": "https://twitter.com/search?q=(from%3Avisakanv)%20golden%20age&src=typed_query"
+              }
+            ],
+            "mentions": [
+              {
+                "start": 0,
+                "end": 10,
+                "username": "ChielMuur",
+                "id": "14206651"
+              },
+              {
+                "start": 11,
+                "end": 17,
+                "username": "paulg",
+                "id": "183749519"
+              }
+            ]
+          },
+          "edit_history_tweet_ids": [
+            "1587801081618354176"
+          ],
+          "id": "1587801081618354176",
+          "author_id": "803693608419422209",
+          "referenced_tweets": [
+            {
+              "type": "replied_to",
+              "id": "1587763110827511808"
+            }
+          ],
+          "in_reply_to_user_id": "14206651",
+          "source": "Twitter Web App",
+          "conversation_id": "1587763110827511808"
+        },
+        {
+          "possibly_sensitive": false,
+          "created_at": "2022-11-02T13:35:10.000Z",
+          "text": "@reddy2go #FuckTheFuture lmaoooo go outside today folks",
+          "reply_settings": "everyone",
+          "lang": "en",
+          "public_metrics": {
+            "retweet_count": 0,
+            "reply_count": 1,
+            "like_count": 1,
+            "quote_count": 0
+          },
+          "edit_history_tweet_ids": [
+            "1587800487188996098"
+          ],
+          "entities": {
+            "mentions": [
+              {
+                "start": 0,
+                "end": 9,
+                "username": "reddy2go",
+                "id": "15659972"
+              }
+            ],
+            "hashtags": [
+              {
+                "start": 10,
+                "end": 24,
+                "tag": "FuckTheFuture"
+              }
+            ]
+          },
+          "id": "1587800487188996098",
+          "author_id": "803693608419422209",
+          "referenced_tweets": [
+            {
+              "type": "replied_to",
+              "id": "1587792072706179073"
+            }
+          ],
+          "in_reply_to_user_id": "15659972",
+          "source": "Twitter Web App",
+          "conversation_id": "1587792072706179073"
+        }
+      ],
+      "includes": {
+        "users": [
+          {
+            "username": "nicktorba",
+            "description": "everywhere I go, there I am | building @TweetscapeHQ | hanging @roote_ | writing https://t.co/PBxsLAX3Jg | reading https://t.co/n6w8cSpXBd",
+            "profile_image_url": "https://pbs.twimg.com/profile_images/1375548941538750465/kjPxgiWX_normal.jpg",
+            "created_at": "2016-11-29T20:14:22.000Z",
+            "name": "Nick Torba",
+            "id": "803693608419422209",
+            "entities": {
+              "description": {
+                "urls": [
+                  {
+                    "start": 81,
+                    "end": 104,
+                    "url": "https://t.co/PBxsLAX3Jg",
+                    "expanded_url": "http://cultivatingtaste.substack.com",
+                    "display_url": "cultivatingtaste.substack.com"
+                  },
+                  {
+                    "start": 115,
+                    "end": 138,
+                    "url": "https://t.co/n6w8cSpXBd",
+                    "expanded_url": "http://getmatter.app/torba",
+                    "display_url": "getmatter.app/torba"
+                  }
+                ],
+                "mentions": [
+                  {
+                    "start": 39,
+                    "end": 52,
+                    "username": "TweetscapeHQ"
+                  },
+                  {
+                    "start": 63,
+                    "end": 70,
+                    "username": "roote_"
+                  }
+                ]
+              }
+            },
+            "pinned_tweet_id": "1499774239922130946",
+            "public_metrics": {
+              "followers_count": 314,
+              "following_count": 595,
+              "tweet_count": 4553,
+              "listed_count": 29
+            },
+            "verified": false,
+            "location": "Philadelphia, PA",
+            "protected": false
+          },
+          {
+            "username": "deepfates",
+            "description": "bringer of light jackets",
+            "profile_image_url": "https://pbs.twimg.com/profile_images/1587523162836697092/kE69UoL4_normal.png",
+            "created_at": "2015-08-14T17:16:01.000Z",
+            "name": "fall angel",
+            "id": "3315205122",
+            "entities": {
+              "url": {
+                "urls": [
+                  {
+                    "start": 0,
+                    "end": 23,
+                    "url": "https://t.co/cpN92r073I",
+                    "expanded_url": "https://twitter.com/deepfates",
+                    "display_url": "twitter.com/deepfates"
+                  }
+                ]
+              }
+            },
+            "public_metrics": {
+              "followers_count": 7631,
+              "following_count": 973,
+              "tweet_count": 74181,
+              "listed_count": 117
+            },
+            "verified": false,
+            "url": "https://t.co/cpN92r073I",
+            "location": "inside your phone",
+            "protected": false
+          },
+          {
+            "username": "Jamesthesnake",
+            "description": "My tweets reflect the opinions and values of American Idol season 3 winner Fantasia Barrino. 29. https://t.co/juQ8fBWXk8 #BLM",
+            "profile_image_url": "https://pbs.twimg.com/profile_images/1334634116273242112/0oHwCCwu_normal.jpg",
+            "created_at": "2010-09-23T02:13:41.000Z",
+            "name": "J \"King Slime \" Hennessy",
+            "id": "193955867",
+            "entities": {
+              "description": {
+                "urls": [
+                  {
+                    "start": 97,
+                    "end": 120,
+                    "url": "https://t.co/juQ8fBWXk8",
+                    "expanded_url": "http://pronoun.is/he",
+                    "display_url": "pronoun.is/he"
+                  }
+                ],
+                "hashtags": [
+                  {
+                    "start": 121,
+                    "end": 125,
+                    "tag": "BLM"
+                  }
+                ]
+              }
+            },
+            "pinned_tweet_id": "1579723559492284421",
+            "public_metrics": {
+              "followers_count": 461,
+              "following_count": 4996,
+              "tweet_count": 21289,
+              "listed_count": 14
+            },
+            "verified": false,
+            "location": "Palo Alto, CA",
+            "protected": false
+          },
+          {
+            "username": "gnopercept",
+            "description": "The shepherd at night, a light in the harshness. Returning the flock, returning light to the darkness",
+            "profile_image_url": "https://pbs.twimg.com/profile_images/1580337781905162241/Rk681hgS_normal.jpg",
+            "created_at": "2014-10-28T13:18:56.000Z",
+            "name": "Gnopercept",
+            "id": "2880789464",
+            "pinned_tweet_id": "1557357554145132544",
+            "public_metrics": {
+              "followers_count": 320,
+              "following_count": 1014,
+              "tweet_count": 2855,
+              "listed_count": 3
+            },
+            "verified": false,
+            "protected": false
+          },
+          {
+            "username": "joshcadorette",
+            "description": "Obsessed with education and governance - https://t.co/UC0nNr873G",
+            "profile_image_url": "https://pbs.twimg.com/profile_images/1376614627036033026/XzBbIo0__normal.jpg",
+            "created_at": "2019-02-03T21:16:54.000Z",
+            "name": "Josh Cadorette",
+            "id": "1092170082837581824",
+            "entities": {
+              "url": {
+                "urls": [
+                  {
+                    "start": 0,
+                    "end": 23,
+                    "url": "https://t.co/Bg1G5fcW12",
+                    "expanded_url": "http://joshcadorette.com",
+                    "display_url": "joshcadorette.com"
+                  }
+                ]
+              },
+              "description": {
+                "urls": [
+                  {
+                    "start": 41,
+                    "end": 64,
+                    "url": "https://t.co/UC0nNr873G",
+                    "expanded_url": "http://readthebuild.com",
+                    "display_url": "readthebuild.com"
+                  }
+                ]
+              }
+            },
+            "pinned_tweet_id": "1587828199559516161",
+            "public_metrics": {
+              "followers_count": 616,
+              "following_count": 161,
+              "tweet_count": 2948,
+              "listed_count": 18
+            },
+            "verified": false,
+            "url": "https://t.co/Bg1G5fcW12",
+            "location": "Vanlife/Durham, NC",
+            "protected": false
+          },
+          {
+            "username": "alterwyx",
+            "description": "normie rockwell",
+            "profile_image_url": "https://pbs.twimg.com/profile_images/1583354447194832896/cR_jnQ-r_normal.jpg",
+            "created_at": "2022-01-01T07:11:22.000Z",
+            "name": "yung (14/?)",
+            "id": "1477175546630922241",
+            "pinned_tweet_id": "1587614143754153984",
+            "public_metrics": {
+              "followers_count": 186,
+              "following_count": 286,
+              "tweet_count": 9669,
+              "listed_count": 1
+            },
+            "verified": false,
+            "location": "green acres",
+            "protected": false
+          },
+          {
+            "username": "ChielMuur",
+            "description": "Peripatetic flaneur. Zetetic.\nMore wizardry, less prophecy.\n\nHelping build the Tao of Business @zokratiq.\n\nI got tinnitus listening to too many podcasts.",
+            "profile_image_url": "https://pbs.twimg.com/profile_images/1571071877644181505/tnq3dA3W_normal.jpg",
+            "created_at": "2008-03-24T10:51:28.000Z",
+            "name": "Chiel",
+            "id": "14206651",
+            "entities": {
+              "description": {
+                "mentions": [
+                  {
+                    "start": 95,
+                    "end": 104,
+                    "username": "zokratiq"
+                  }
+                ]
+              }
+            },
+            "public_metrics": {
+              "followers_count": 1154,
+              "following_count": 2928,
+              "tweet_count": 5350,
+              "listed_count": 118
+            },
+            "verified": false,
+            "location": "In the belly of the whale",
+            "protected": false
+          },
+          {
+            "username": "paulg",
+            "description": "",
+            "profile_image_url": "https://pbs.twimg.com/profile_images/1824002576/pg-railsconf_normal.jpg",
+            "created_at": "2010-08-27T20:13:59.000Z",
+            "name": "Paul Graham",
+            "id": "183749519",
+            "entities": {
+              "url": {
+                "urls": [
+                  {
+                    "start": 0,
+                    "end": 22,
+                    "url": "http://t.co/fDpOM1QB6e",
+                    "expanded_url": "http://paulgraham.com",
+                    "display_url": "paulgraham.com"
+                  }
+                ]
+              }
+            },
+            "public_metrics": {
+              "followers_count": 1561504,
+              "following_count": 703,
+              "tweet_count": 31923,
+              "listed_count": 15628
+            },
+            "verified": true,
+            "url": "http://t.co/fDpOM1QB6e",
+            "protected": false
+          },
+          {
+            "username": "reddy2go",
+            "description": "🥳 play is the way 🗓️ everyday is a funday",
+            "profile_image_url": "https://pbs.twimg.com/profile_images/1586754905544740866/JpgajahX_normal.jpg",
+            "created_at": "2008-07-30T13:28:57.000Z",
+            "name": "reddy2go",
+            "id": "15659972",
+            "entities": {
+              "url": {
+                "urls": [
+                  {
+                    "start": 0,
+                    "end": 23,
+                    "url": "https://t.co/5jH0mApZAi",
+                    "expanded_url": "https://reddy2go.com",
+                    "display_url": "reddy2go.com"
+                  }
+                ]
+              }
+            },
+            "pinned_tweet_id": "1587817699614158848",
+            "public_metrics": {
+              "followers_count": 2637,
+              "following_count": 3880,
+              "tweet_count": 40750,
+              "listed_count": 94
+            },
+            "verified": false,
+            "url": "https://t.co/5jH0mApZAi",
+            "location": "playpal 🥳 funfluencer",
+            "protected": false
+          }
+        ],
+        "tweets": [
+          {
+            "possibly_sensitive": false,
+            "created_at": "2022-11-02T18:58:30.000Z",
+            "text": "The secret to being a 10X programmer: don't work on a team",
+            "reply_settings": "everyone",
+            "lang": "en",
+            "public_metrics": {
+              "retweet_count": 7,
+              "reply_count": 8,
+              "like_count": 84,
+              "quote_count": 0
+            },
+            "edit_history_tweet_ids": [
+              "1587881856778661889"
+            ],
+            "context_annotations": [
+              {
+                "domain": {
+                  "id": "46",
+                  "name": "Business Taxonomy",
+                  "description": "Categories within Brand Verticals that narrow down the scope of Brands"
+                },
+                "entity": {
+                  "id": "1557697333571112960",
+                  "name": "Technology Business",
+                  "description": "Brands, companies, advertisers and every non-person handle with the profit intent related to softwares, apps, communication equipments, hardwares"
+                }
+              },
+              {
+                "domain": {
+                  "id": "30",
+                  "name": "Entities [Entity Service]",
+                  "description": "Entity Service top level domain, every item that is in Entity Service should be in this domain"
+                },
+                "entity": {
+                  "id": "848920371311001600",
+                  "name": "Technology",
+                  "description": "Technology and computing"
+                }
+              },
+              {
+                "domain": {
+                  "id": "66",
+                  "name": "Interests and Hobbies Category",
+                  "description": "A grouping of interests and hobbies entities, like Novelty Food or Destinations"
+                },
+                "entity": {
+                  "id": "848921413196984320",
+                  "name": "Computer programming",
+                  "description": "Computer programming"
+                }
+              },
+              {
+                "domain": {
+                  "id": "131",
+                  "name": "Unified Twitter Taxonomy",
+                  "description": "A taxonomy of user interests. "
+                },
+                "entity": {
+                  "id": "848921413196984320",
+                  "name": "Computer programming",
+                  "description": "Computer programming"
+                }
+              }
+            ],
+            "id": "1587881856778661889",
+            "author_id": "3315205122",
+            "source": "Twitter Web App",
+            "conversation_id": "1587881856778661889"
+          },
+          {
+            "possibly_sensitive": false,
+            "created_at": "2022-11-02T02:50:49.000Z",
+            "text": "Brett Favre is poo poo",
+            "reply_settings": "everyone",
+            "lang": "en",
+            "public_metrics": {
+              "retweet_count": 0,
+              "reply_count": 1,
+              "like_count": 0,
+              "quote_count": 0
+            },
+            "edit_history_tweet_ids": [
+              "1587638330262360064"
+            ],
+            "context_annotations": [
+              {
+                "domain": {
+                  "id": "10",
+                  "name": "Person",
+                  "description": "Named people in the world like Nelson Mandela"
+                },
+                "entity": {
+                  "id": "1287380177207492609",
+                  "name": "Brett Favre"
+                }
+              },
+              {
+                "domain": {
+                  "id": "46",
+                  "name": "Business Taxonomy",
+                  "description": "Categories within Brand Verticals that narrow down the scope of Brands"
+                },
+                "entity": {
+                  "id": "1557697289971322880",
+                  "name": "Sports & Fitness Business",
+                  "description": "Brands, companies, advertisers and every non-person handle with the profit intent related to sports nutrition, athletic apparel, sports apps, fitness venues"
+                }
+              },
+              {
+                "domain": {
+                  "id": "60",
+                  "name": "Athlete",
+                  "description": "An athlete in the world, like Serena Williams or Lionel Messi"
+                },
+                "entity": {
+                  "id": "1287380177207492609",
+                  "name": "Brett Favre"
+                }
+              },
+              {
+                "domain": {
+                  "id": "92",
+                  "name": "Sports Personality",
+                  "description": "A Sports Personality like 'Skip Bayless'"
+                },
+                "entity": {
+                  "id": "1202239681422774272",
+                  "name": "Sports icons"
+                }
+              },
+              {
+                "domain": {
+                  "id": "131",
+                  "name": "Unified Twitter Taxonomy",
+                  "description": "A taxonomy of user interests. "
+                },
+                "entity": {
+                  "id": "689566306014617600",
+                  "name": "American football"
+                }
+              },
+              {
+                "domain": {
+                  "id": "131",
+                  "name": "Unified Twitter Taxonomy",
+                  "description": "A taxonomy of user interests. "
+                },
+                "entity": {
+                  "id": "689566314835259392",
+                  "name": "NFL"
+                }
+              },
+              {
+                "domain": {
+                  "id": "131",
+                  "name": "Unified Twitter Taxonomy",
+                  "description": "A taxonomy of user interests. "
+                },
+                "entity": {
+                  "id": "847900493514891265",
+                  "name": "Sports",
+                  "description": "Sports"
+                }
+              },
+              {
+                "domain": {
+                  "id": "131",
+                  "name": "Unified Twitter Taxonomy",
+                  "description": "A taxonomy of user interests. "
+                },
+                "entity": {
+                  "id": "1285942425861545984",
+                  "name": "Sports figures"
+                }
+              },
+              {
+                "domain": {
+                  "id": "131",
+                  "name": "Unified Twitter Taxonomy",
+                  "description": "A taxonomy of user interests. "
+                },
+                "entity": {
+                  "id": "1287380177207492609",
+                  "name": "Brett Favre"
+                }
+              }
+            ],
+            "id": "1587638330262360064",
+            "author_id": "193955867",
+            "source": "Twitter for iPhone",
+            "conversation_id": "1587638330262360064"
+          },
+          {
+            "possibly_sensitive": false,
+            "created_at": "2022-01-20T17:57:45.000Z",
+            "text": "there feels like a funny connection between this and \"we like lists because we don't want to die,\" but I can't quite get it into words\nhttps://t.co/OGTriU0Mey https://t.co/RrD6dCXzeJ",
+            "reply_settings": "everyone",
+            "lang": "en",
+            "public_metrics": {
+              "retweet_count": 0,
+              "reply_count": 0,
+              "like_count": 2,
+              "quote_count": 2
+            },
+            "entities": {
+              "urls": [
+                {
+                  "start": 135,
+                  "end": 158,
+                  "url": "https://t.co/OGTriU0Mey",
+                  "expanded_url": "https://blansh.wordpress.com/2017/06/14/we-like-lists-because-we-dont-want-to-die/",
+                  "display_url": "blansh.wordpress.com/2017/06/14/we-…",
+                  "status": 200,
+                  "unwound_url": "https://blansh.wordpress.com/2017/06/14/we-like-lists-because-we-dont-want-to-die/"
+                },
+                {
+                  "start": 159,
+                  "end": 182,
+                  "url": "https://t.co/RrD6dCXzeJ",
+                  "expanded_url": "https://twitter.com/m_ashcroft/status/1481325439109013506",
+                  "display_url": "twitter.com/m_ashcroft/sta…"
+                }
+              ]
+            },
+            "edit_history_tweet_ids": [
+              "1484223639486701568"
+            ],
+            "id": "1484223639486701568",
+            "author_id": "803693608419422209",
+            "referenced_tweets": [
+              {
+                "type": "quoted",
+                "id": "1481325439109013506"
+              }
+            ],
+            "source": "Twitter Web App",
+            "conversation_id": "1484223639486701568"
+          },
+          {
+            "possibly_sensitive": false,
+            "created_at": "2022-11-01T18:00:10.000Z",
+            "text": "the thing about buddhism is like, why is there so much stuff that’s numbered",
+            "reply_settings": "everyone",
+            "lang": "en",
+            "public_metrics": {
+              "retweet_count": 11,
+              "reply_count": 45,
+              "like_count": 315,
+              "quote_count": 3
+            },
+            "edit_history_tweet_ids": [
+              "1587504786391318531"
+            ],
+            "id": "1587504786391318531",
+            "author_id": "2880789464",
+            "entities": {
+              "annotations": [
+                {
+                  "start": 16,
+                  "end": 23,
+                  "probability": 0.6606,
+                  "type": "Other",
+                  "normalized_text": "buddhism"
+                }
+              ]
+            },
+            "source": "Twitter for iPhone",
+            "conversation_id": "1587504786391318531"
+          },
+          {
+            "possibly_sensitive": false,
+            "created_at": "2022-11-02T15:10:59.000Z",
+            "text": "Best game of my life last night.\n\nPhillies in 5 https://t.co/k9LJHezV8f",
+            "reply_settings": "everyone",
+            "attachments": {
+              "media_keys": [
+                "3_1587824594437767168",
+                "3_1587824594437685250"
+              ]
+            },
+            "lang": "en",
+            "public_metrics": {
+              "retweet_count": 0,
+              "reply_count": 3,
+              "like_count": 10,
+              "quote_count": 0
+            },
+            "entities": {
+              "urls": [
+                {
+                  "start": 48,
+                  "end": 71,
+                  "url": "https://t.co/k9LJHezV8f",
+                  "expanded_url": "https://twitter.com/joshcadorette/status/1587824598074249217/photo/1",
+                  "display_url": "pic.twitter.com/k9LJHezV8f",
+                  "media_key": "3_1587824594437767168"
+                },
+                {
+                  "start": 48,
+                  "end": 71,
+                  "url": "https://t.co/k9LJHezV8f",
+                  "expanded_url": "https://twitter.com/joshcadorette/status/1587824598074249217/photo/1",
+                  "display_url": "pic.twitter.com/k9LJHezV8f",
+                  "media_key": "3_1587824594437685250"
+                }
+              ],
+              "annotations": [
+                {
+                  "start": 34,
+                  "end": 41,
+                  "probability": 0.7682,
+                  "type": "Other",
+                  "normalized_text": "Phillies"
+                }
+              ]
+            },
+            "edit_history_tweet_ids": [
+              "1587824598074249217"
+            ],
+            "context_annotations": [
+              {
+                "domain": {
+                  "id": "3",
+                  "name": "TV Shows",
+                  "description": "Television shows from around the world"
+                },
+                "entity": {
+                  "id": "10001466882",
+                  "name": "MLB Baseball",
+                  "description": "All the latest action from Major League Baseball."
+                }
+              },
+              {
+                "domain": {
+                  "id": "3",
+                  "name": "TV Shows",
+                  "description": "Television shows from around the world"
+                },
+                "entity": {
+                  "id": "10029304618",
+                  "name": "MLB Baseball"
+                }
+              },
+              {
+                "domain": {
+                  "id": "11",
+                  "name": "Sport",
+                  "description": "Types of sports, like soccer and basketball"
+                },
+                "entity": {
+                  "id": "769193663230468096",
+                  "name": "Baseball"
+                }
+              },
+              {
+                "domain": {
+                  "id": "11",
+                  "name": "Sport",
+                  "description": "Types of sports, like soccer and basketball"
+                },
+                "entity": {
+                  "id": "897814293395103744",
+                  "name": "Cricket"
+                }
+              },
+              {
+                "domain": {
+                  "id": "12",
+                  "name": "Sports Team",
+                  "description": "A sports team organization, like Arsenal and the Boston Celtics"
+                },
+                "entity": {
+                  "id": "769193691411992576",
+                  "name": "Philadelphia Phillies"
+                }
+              },
+              {
+                "domain": {
+                  "id": "26",
+                  "name": "Sports League",
+                  "description": ""
+                },
+                "entity": {
+                  "id": "769193602169704448",
+                  "name": "MLB"
+                }
+              },
+              {
+                "domain": {
+                  "id": "46",
+                  "name": "Business Taxonomy",
+                  "description": "Categories within Brand Verticals that narrow down the scope of Brands"
+                },
+                "entity": {
+                  "id": "1557697289971322880",
+                  "name": "Sports & Fitness Business",
+                  "description": "Brands, companies, advertisers and every non-person handle with the profit intent related to sports nutrition, athletic apparel, sports apps, fitness venues"
+                }
+              },
+              {
+                "domain": {
+                  "id": "131",
+                  "name": "Unified Twitter Taxonomy",
+                  "description": "A taxonomy of user interests. "
+                },
+                "entity": {
+                  "id": "769193602169704448",
+                  "name": "MLB"
+                }
+              },
+              {
+                "domain": {
+                  "id": "131",
+                  "name": "Unified Twitter Taxonomy",
+                  "description": "A taxonomy of user interests. "
+                },
+                "entity": {
+                  "id": "769193663230468096",
+                  "name": "Baseball"
+                }
+              },
+              {
+                "domain": {
+                  "id": "131",
+                  "name": "Unified Twitter Taxonomy",
+                  "description": "A taxonomy of user interests. "
+                },
+                "entity": {
+                  "id": "769193691411992576",
+                  "name": "Philadelphia Phillies"
+                }
+              },
+              {
+                "domain": {
+                  "id": "131",
+                  "name": "Unified Twitter Taxonomy",
+                  "description": "A taxonomy of user interests. "
+                },
+                "entity": {
+                  "id": "847900493514891265",
+                  "name": "Sports",
+                  "description": "Sports"
+                }
+              },
+              {
+                "domain": {
+                  "id": "131",
+                  "name": "Unified Twitter Taxonomy",
+                  "description": "A taxonomy of user interests. "
+                },
+                "entity": {
+                  "id": "897814293395103744",
+                  "name": "Cricket"
+                }
+              }
+            ],
+            "id": "1587824598074249217",
+            "author_id": "1092170082837581824",
+            "source": "Twitter for iPhone",
+            "conversation_id": "1587824598074249217"
+          },
+          {
+            "possibly_sensitive": false,
+            "created_at": "2022-11-01T01:09:15.000Z",
+            "text": "still blows my mind that an erection is caused by muscle relaxation. does that mean flaccid length is indicative of how tightly wound the fella is",
+            "reply_settings": "everyone",
+            "lang": "en",
+            "public_metrics": {
+              "retweet_count": 3,
+              "reply_count": 10,
+              "like_count": 159,
+              "quote_count": 5
+            },
+            "edit_history_tweet_ids": [
+              "1587250382795071488"
+            ],
+            "context_annotations": [
+              {
+                "domain": {
+                  "id": "65",
+                  "name": "Interests and Hobbies Vertical",
+                  "description": "Top level interests and hobbies groupings, like Food or Travel"
+                },
+                "entity": {
+                  "id": "847896364256067584",
+                  "name": "Society",
+                  "description": "Society"
+                }
+              },
+              {
+                "domain": {
+                  "id": "30",
+                  "name": "Entities [Entity Service]",
+                  "description": "Entity Service top level domain, every item that is in Entity Service should be in this domain"
+                },
+                "entity": {
+                  "id": "847896364256067584",
+                  "name": "Society",
+                  "description": "Society"
+                }
+              }
+            ],
+            "id": "1587250382795071488",
+            "author_id": "1477175546630922241",
+            "source": "Twitter for iPhone",
+            "conversation_id": "1587250382795071488"
+          },
+          {
+            "possibly_sensitive": false,
+            "created_at": "2022-11-02T13:43:27.000Z",
+            "text": "i can't tell if the UX of new apps like https://t.co/efiLr69Syj are actually considerably worse than apps like twitter, or if i'm so familiar with twitter interface that new options feel weird and i need to work through that weirdness",
+            "reply_settings": "everyone",
+            "lang": "en",
+            "public_metrics": {
+              "retweet_count": 0,
+              "reply_count": 1,
+              "like_count": 1,
+              "quote_count": 0
+            },
+            "entities": {
+              "urls": [
+                {
+                  "start": 40,
+                  "end": 63,
+                  "url": "https://t.co/efiLr69Syj",
+                  "expanded_url": "http://wt.social",
+                  "display_url": "wt.social",
+                  "status": 200,
+                  "title": "WT.Social",
+                  "description": "The non-toxic social network",
+                  "unwound_url": "https://wt.social/"
+                }
+              ],
+              "annotations": [
+                {
+                  "start": 20,
+                  "end": 21,
+                  "probability": 0.6626,
+                  "type": "Other",
+                  "normalized_text": "UX"
+                },
+                {
+                  "start": 111,
+                  "end": 117,
+                  "probability": 0.9667,
+                  "type": "Other",
+                  "normalized_text": "twitter"
+                },
+                {
+                  "start": 147,
+                  "end": 153,
+                  "probability": 0.9649,
+                  "type": "Other",
+                  "normalized_text": "twitter"
+                }
+              ]
+            },
+            "edit_history_tweet_ids": [
+              "1587802572529827842"
+            ],
+            "context_annotations": [
+              {
+                "domain": {
+                  "id": "30",
+                  "name": "Entities [Entity Service]",
+                  "description": "Entity Service top level domain, every item that is in Entity Service should be in this domain"
+                },
+                "entity": {
+                  "id": "781974596752842752",
+                  "name": "Services"
+                }
+              },
+              {
+                "domain": {
+                  "id": "47",
+                  "name": "Brand",
+                  "description": "Brands and Companies"
+                },
+                "entity": {
+                  "id": "10045225402",
+                  "name": "Twitter"
+                }
+              }
+            ],
+            "id": "1587802572529827842",
+            "author_id": "803693608419422209",
+            "source": "Twitter Web App",
+            "conversation_id": "1587802572529827842"
+          },
+          {
+            "possibly_sensitive": false,
+            "created_at": "2022-11-02T11:06:39.000Z",
+            "text": "Reminded of a quote by @paulg while reading this truly magnificent and much-needed exploration of how we might get to a New Golden Age (the road will be bumpy, but we'll get there):\n\n\"In the future, every day will be Sunday.\"\n\nhttps://t.co/UeBKcOPs0V",
+            "reply_settings": "everyone",
+            "lang": "en",
+            "public_metrics": {
+              "retweet_count": 0,
+              "reply_count": 2,
+              "like_count": 5,
+              "quote_count": 1
+            },
+            "entities": {
+              "urls": [
+                {
+                  "start": 227,
+                  "end": 250,
+                  "url": "https://t.co/UeBKcOPs0V",
+                  "expanded_url": "https://bigthink.com/progress/the-great-progression-peter-leyden/",
+                  "display_url": "bigthink.com/progress/the-g…",
+                  "status": 200,
+                  "title": " The Great Progression, 2025-2050",
+                  "description": "The world isn’t ending! But we are likely at the beginning of a profound transformation.",
+                  "unwound_url": "https://bigthink.com/progress/the-great-progression-peter-leyden/"
+                }
+              ],
+              "mentions": [
+                {
+                  "start": 23,
+                  "end": 29,
+                  "username": "paulg",
+                  "id": "183749519"
+                }
+              ]
+            },
+            "edit_history_tweet_ids": [
+              "1587763110827511808"
+            ],
+            "id": "1587763110827511808",
+            "author_id": "14206651",
+            "source": "Twitter Web App",
+            "conversation_id": "1587763110827511808"
+          },
+          {
+            "possibly_sensitive": false,
+            "created_at": "2022-11-02T13:01:44.000Z",
+            "text": "fuck the future 😂 how might we make today a fun day? https://t.co/M9Y8jyDG0M",
+            "reply_settings": "everyone",
+            "lang": "en",
+            "public_metrics": {
+              "retweet_count": 0,
+              "reply_count": 3,
+              "like_count": 5,
+              "quote_count": 0
+            },
+            "entities": {
+              "urls": [
+                {
+                  "start": 53,
+                  "end": 76,
+                  "url": "https://t.co/M9Y8jyDG0M",
+                  "expanded_url": "https://twitter.com/chielmuur/status/1587763110827511808",
+                  "display_url": "twitter.com/chielmuur/stat…"
+                }
+              ]
+            },
+            "edit_history_tweet_ids": [
+              "1587792072706179073"
+            ],
+            "id": "1587792072706179073",
+            "author_id": "15659972",
+            "referenced_tweets": [
+              {
+                "type": "quoted",
+                "id": "1587763110827511808"
+              }
+            ],
+            "source": "Twitter for iPhone",
+            "conversation_id": "1587792072706179073"
+          }
+        ]
+      },
+      "meta": {
+        "next_token": "7140dibdnow9c7btw423x7b27afgbq4pv8ld00effd2k8",
+        "result_count": 10,
+        "newest_id": "1587896408203567112",
+        "oldest_id": "1587800487188996098"
+      }
+    }
+  },
+  {
+    "author_id": "1917349034",
+    "data": {
+      "data": [
+        {
+          "conversation_id": "1587908504878125056",
+          "possibly_sensitive": false,
+          "id": "1587908504878125056",
+          "author_id": "1917349034",
+          "entities": {
+            "urls": [
+              {
+                "start": 121,
+                "end": 144,
+                "url": "https://t.co/BRoy7Zk0zd",
+                "expanded_url": "https://twitter.com/soundstrue/status/1587447143698255883",
+                "display_url": "twitter.com/soundstrue/sta…"
+              }
+            ],
+            "mentions": [
+              {
+                "start": 22,
+                "end": 35,
+                "username": "j_asminewang",
+                "id": "1295193837258727424"
+              },
+              {
+                "start": 36,
+                "end": 52,
+                "username": "RealIainSThomas",
+                "id": "107639385"
+              }
+            ]
+          },
+          "context_annotations": [
+            {
+              "domain": {
+                "id": "46",
+                "name": "Business Taxonomy",
+                "description": "Categories within Brand Verticals that narrow down the scope of Brands"
+              },
+              "entity": {
+                "id": "1557697333571112960",
+                "name": "Technology Business",
+                "description": "Brands, companies, advertisers and every non-person handle with the profit intent related to softwares, apps, communication equipments, hardwares"
+              }
+            }
+          ],
+          "source": "Twitter Web App",
+          "created_at": "2022-11-02T20:44:24.000Z",
+          "reply_settings": "everyone",
+          "text": "Amazing new book from @j_asminewang @RealIainSThomas and GPT-3.\n\nAI as co-author going to happen a lot more this decade. https://t.co/BRoy7Zk0zd",
+          "edit_history_tweet_ids": [
+            "1587908504878125056"
+          ],
+          "referenced_tweets": [
+            {
+              "type": "quoted",
+              "id": "1587447143698255883"
+            }
+          ],
+          "lang": "en",
+          "public_metrics": {
+            "retweet_count": 0,
+            "reply_count": 0,
+            "like_count": 0,
+            "quote_count": 0
+          }
+        },
+        {
+          "conversation_id": "1587843527727194112",
+          "entities": {
+            "annotations": [
+              {
+                "start": 36,
+                "end": 43,
+                "probability": 0.5774,
+                "type": "Other",
+                "normalized_text": "Midterms"
+              },
+              {
+                "start": 97,
+                "end": 103,
+                "probability": 0.9874,
+                "type": "Other",
+                "normalized_text": "Twitter"
+              }
+            ],
+            "mentions": [
+              {
+                "start": 3,
+                "end": 12,
+                "username": "noUpside",
+                "id": "24254084"
+              }
+            ]
+          },
+          "possibly_sensitive": false,
+          "id": "1587843527727194112",
+          "author_id": "1917349034",
+          "context_annotations": [
+            {
+              "domain": {
+                "id": "30",
+                "name": "Entities [Entity Service]",
+                "description": "Entity Service top level domain, every item that is in Entity Service should be in this domain"
+              },
+              "entity": {
+                "id": "781974596752842752",
+                "name": "Services"
+              }
+            },
+            {
+              "domain": {
+                "id": "47",
+                "name": "Brand",
+                "description": "Brands and Companies"
+              },
+              "entity": {
+                "id": "10045225402",
+                "name": "Twitter"
+              }
+            }
+          ],
+          "source": "Twitter Web App",
+          "created_at": "2022-11-02T16:26:12.000Z",
+          "reply_settings": "everyone",
+          "text": "RT @noUpside: Happy one week before Midterms! Here's a report we just put out on 6 networks that Twitter released to  outside researchers.…",
+          "edit_history_tweet_ids": [
+            "1587843527727194112"
+          ],
+          "referenced_tweets": [
+            {
+              "type": "retweeted",
+              "id": "1587570454583250947"
+            }
+          ],
+          "lang": "en",
+          "public_metrics": {
+            "retweet_count": 519,
+            "reply_count": 0,
+            "like_count": 0,
+            "quote_count": 0
+          }
+        },
+        {
+          "conversation_id": "1587842359311540224",
+          "entities": {
+            "annotations": [
+              {
+                "start": 69,
+                "end": 71,
+                "probability": 0.537,
+                "type": "Organization",
+                "normalized_text": "DAO"
+              }
+            ],
+            "urls": [
+              {
+                "start": 88,
+                "end": 111,
+                "url": "https://t.co/9XMJ7JFPVV",
+                "expanded_url": "https://constitutions.metagov.org/",
+                "display_url": "constitutions.metagov.org",
+                "images": [
+                  {
+                    "url": "https://pbs.twimg.com/news_img/1585551311059271681/3gl2wljM?format=jpg&name=orig",
+                    "width": 2970,
+                    "height": 1408
+                  },
+                  {
+                    "url": "https://pbs.twimg.com/news_img/1585551311059271681/3gl2wljM?format=jpg&name=150x150",
+                    "width": 150,
+                    "height": 150
+                  }
+                ],
+                "status": 200,
+                "title": "Constitutions of Web3",
+                "description": "Smart contracts are promising tools for governing DAOs but they alone aren't enough. In this artifact, we describe how written constitutions are an interface for a community’s shared values and must complement programmatic tools like smart contracts.",
+                "unwound_url": "https://constitutions.metagov.org/"
+              }
+            ],
+            "mentions": [
+              {
+                "start": 3,
+                "end": 11,
+                "username": "theobtl",
+                "id": "153106754"
+              },
+              {
+                "start": 22,
+                "end": 38,
+                "username": "metagov_project",
+                "id": "1193288515678883841"
+              }
+            ]
+          },
+          "possibly_sensitive": false,
+          "id": "1587842359311540224",
+          "author_id": "1917349034",
+          "source": "Twitter Web App",
+          "created_at": "2022-11-02T16:21:33.000Z",
+          "reply_settings": "everyone",
+          "text": "RT @theobtl: Kudos to @metagov_project for curating this resource on DAO constitutions.\nhttps://t.co/9XMJ7JFPVV\n\nWhat are best practices to…",
+          "edit_history_tweet_ids": [
+            "1587842359311540224"
+          ],
+          "referenced_tweets": [
+            {
+              "type": "retweeted",
+              "id": "1585551264871550977"
+            }
+          ],
+          "lang": "en",
+          "public_metrics": {
+            "retweet_count": 11,
+            "reply_count": 0,
+            "like_count": 0,
+            "quote_count": 0
+          }
+        },
+        {
+          "conversation_id": "1587838471095271427",
+          "possibly_sensitive": false,
+          "id": "1587838471095271427",
+          "author_id": "1917349034",
+          "source": "Twitter Web App",
+          "created_at": "2022-11-02T16:06:06.000Z",
+          "reply_settings": "everyone",
+          "entities": {
+            "mentions": [
+              {
+                "start": 3,
+                "end": 15,
+                "username": "anniefryman",
+                "id": "705472150409326592"
+              },
+              {
+                "start": 42,
+                "end": 57,
+                "username": "urbenschneider",
+                "id": "1681316725"
+              },
+              {
+                "start": 72,
+                "end": 85,
+                "username": "Scott_Wiener",
+                "id": "26703365"
+              }
+            ]
+          },
+          "text": "RT @anniefryman: Great story out today by @urbenschneider about Senator @Scott_Wiener's SB 828, the 2018 gift that keeps on giving.\n\n\"No ma…",
+          "edit_history_tweet_ids": [
+            "1587838471095271427"
+          ],
+          "referenced_tweets": [
+            {
+              "type": "retweeted",
+              "id": "1587566975114350593"
+            }
+          ],
+          "lang": "en",
+          "public_metrics": {
+            "retweet_count": 25,
+            "reply_count": 0,
+            "like_count": 0,
+            "quote_count": 0
+          }
+        },
+        {
+          "conversation_id": "1587829790257487872",
+          "possibly_sensitive": false,
+          "id": "1587838214441603072",
+          "author_id": "1917349034",
+          "source": "Twitter Web App",
+          "created_at": "2022-11-02T16:05:05.000Z",
+          "reply_settings": "everyone",
+          "entities": {
+            "mentions": [
+              {
+                "start": 0,
+                "end": 7,
+                "username": "owocki",
+                "id": "8705962"
+              }
+            ]
+          },
+          "text": "@owocki gigabrain energy\n\nno need to buy the actual book *taps head*",
+          "edit_history_tweet_ids": [
+            "1587838214441603072"
+          ],
+          "referenced_tweets": [
+            {
+              "type": "replied_to",
+              "id": "1587834004253745152"
+            }
+          ],
+          "lang": "en",
+          "in_reply_to_user_id": "8705962",
+          "public_metrics": {
+            "retweet_count": 0,
+            "reply_count": 1,
+            "like_count": 0,
+            "quote_count": 0
+          }
+        },
+        {
+          "conversation_id": "1587829790257487872",
+          "possibly_sensitive": false,
+          "id": "1587833742415912961",
+          "author_id": "1917349034",
+          "entities": {
+            "urls": [
+              {
+                "start": 10,
+                "end": 33,
+                "url": "https://t.co/8vVhocPCIT",
+                "expanded_url": "https://twitter.com/RhysLindmark/status/1587833742415912961/photo/1",
+                "display_url": "pic.twitter.com/8vVhocPCIT",
+                "media_key": "3_1587833733377187840"
+              }
+            ],
+            "mentions": [
+              {
+                "start": 0,
+                "end": 7,
+                "username": "owocki",
+                "id": "8705962"
+              }
+            ]
+          },
+          "source": "Twitter Web App",
+          "created_at": "2022-11-02T15:47:19.000Z",
+          "reply_settings": "everyone",
+          "text": "@owocki 😉 https://t.co/8vVhocPCIT",
+          "attachments": {
+            "media_keys": [
+              "3_1587833733377187840"
+            ]
+          },
+          "edit_history_tweet_ids": [
+            "1587833742415912961"
+          ],
+          "referenced_tweets": [
+            {
+              "type": "replied_to",
+              "id": "1587832517213634560"
+            }
+          ],
+          "lang": "und",
+          "in_reply_to_user_id": "8705962",
+          "public_metrics": {
+            "retweet_count": 0,
+            "reply_count": 1,
+            "like_count": 2,
+            "quote_count": 0
+          }
+        },
+        {
+          "conversation_id": "1587829790257487872",
+          "possibly_sensitive": false,
+          "id": "1587829790257487872",
+          "author_id": "1917349034",
+          "source": "Twitter Web App",
+          "created_at": "2022-11-02T15:31:37.000Z",
+          "reply_settings": "everyone",
+          "text": "I meme, therefore I am.",
+          "edit_history_tweet_ids": [
+            "1587829790257487872"
+          ],
+          "lang": "en",
+          "public_metrics": {
+            "retweet_count": 0,
+            "reply_count": 1,
+            "like_count": 0,
+            "quote_count": 0
+          }
+        },
+        {
+          "conversation_id": "1587671586512900096",
+          "possibly_sensitive": false,
+          "id": "1587671586512900096",
+          "author_id": "1917349034",
+          "source": "Twitter Web App",
+          "created_at": "2022-11-02T05:02:58.000Z",
+          "reply_settings": "everyone",
+          "entities": {
+            "mentions": [
+              {
+                "start": 3,
+                "end": 9,
+                "username": "kvogt",
+                "id": "3349531"
+              }
+            ]
+          },
+          "text": "RT @kvogt: Tonight our driverless service area in SF expands to cover almost all of SF. Today is also exactly one year since my first ride,…",
+          "edit_history_tweet_ids": [
+            "1587671586512900096"
+          ],
+          "referenced_tweets": [
+            {
+              "type": "retweeted",
+              "id": "1587589014525448192"
+            }
+          ],
+          "lang": "en",
+          "public_metrics": {
+            "retweet_count": 220,
+            "reply_count": 0,
+            "like_count": 0,
+            "quote_count": 0
+          }
+        },
+        {
+          "conversation_id": "1587668040904151041",
+          "possibly_sensitive": false,
+          "id": "1587668040904151041",
+          "author_id": "1917349034",
+          "entities": {
+            "urls": [
+              {
+                "start": 8,
+                "end": 31,
+                "url": "https://t.co/xwtQZJJ4km",
+                "expanded_url": "https://twitter.com/RhysLindmark/status/1587668040904151041/photo/1",
+                "display_url": "pic.twitter.com/xwtQZJJ4km",
+                "media_key": "3_1587668012684914688"
+              }
+            ]
+          },
+          "source": "Twitter Web App",
+          "created_at": "2022-11-02T04:48:53.000Z",
+          "reply_settings": "everyone",
+          "text": "dis gud https://t.co/xwtQZJJ4km",
+          "attachments": {
+            "media_keys": [
+              "3_1587668012684914688"
+            ]
+          },
+          "edit_history_tweet_ids": [
+            "1587668040904151041"
+          ],
+          "lang": "en",
+          "public_metrics": {
+            "retweet_count": 0,
+            "reply_count": 0,
+            "like_count": 1,
+            "quote_count": 0
+          }
+        },
+        {
+          "conversation_id": "1587569833738117121",
+          "possibly_sensitive": false,
+          "id": "1587645225240973314",
+          "author_id": "1917349034",
+          "entities": {
+            "urls": [
+              {
+                "start": 86,
+                "end": 109,
+                "url": "https://t.co/meVFnYpmxO",
+                "expanded_url": "https://www.notboring.co/p/if-we-ruled-the-tweets?s=w",
+                "display_url": "notboring.co/p/if-we-ruled-…",
+                "images": [
+                  {
+                    "url": "https://pbs.twimg.com/news_img/1587645226620841984/3IJILynI?format=jpg&name=orig",
+                    "width": 1196,
+                    "height": 600
+                  },
+                  {
+                    "url": "https://pbs.twimg.com/news_img/1587645226620841984/3IJILynI?format=jpg&name=150x150",
+                    "width": 150,
+                    "height": 150
+                  }
+                ],
+                "status": 200,
+                "title": "If We Ruled the Tweets",
+                "description": "Twitter's Power Users, the WeChat Opportunity, and TweeterDAO",
+                "unwound_url": "https://www.notboring.co/p/if-we-ruled-the-tweets?s=w"
+              },
+              {
+                "start": 110,
+                "end": 133,
+                "url": "https://t.co/bjpp6Zq9SG",
+                "expanded_url": "https://twitter.com/RhysLindmark/status/1587645225240973314/photo/1",
+                "display_url": "pic.twitter.com/bjpp6Zq9SG",
+                "media_key": "3_1587645055132610561"
+              }
+            ],
+            "mentions": [
+              {
+                "start": 0,
+                "end": 14,
+                "username": "eriktorenberg",
+                "id": "1475495658"
+              },
+              {
+                "start": 76,
+                "end": 83,
+                "username": "packyM",
+                "id": "21306324"
+              }
+            ]
+          },
+          "context_annotations": [
+            {
+              "domain": {
+                "id": "30",
+                "name": "Entities [Entity Service]",
+                "description": "Entity Service top level domain, every item that is in Entity Service should be in this domain"
+              },
+              "entity": {
+                "id": "781974596752842752",
+                "name": "Services"
+              }
+            },
+            {
+              "domain": {
+                "id": "47",
+                "name": "Brand",
+                "description": "Brands and Companies"
+              },
+              "entity": {
+                "id": "10045225402",
+                "name": "Twitter"
+              }
+            }
+          ],
+          "source": "Twitter Web App",
+          "created_at": "2022-11-02T03:18:13.000Z",
+          "reply_settings": "everyone",
+          "text": "@eriktorenberg Twitter is elite level at leaving money on the table 😂 \n\nh/t @packyM \n\nhttps://t.co/meVFnYpmxO https://t.co/bjpp6Zq9SG",
+          "attachments": {
+            "media_keys": [
+              "3_1587645055132610561"
+            ]
+          },
+          "edit_history_tweet_ids": [
+            "1587645225240973314"
+          ],
+          "referenced_tweets": [
+            {
+              "type": "replied_to",
+              "id": "1587569833738117121"
+            }
+          ],
+          "lang": "en",
+          "in_reply_to_user_id": "1475495658",
+          "public_metrics": {
+            "retweet_count": 0,
+            "reply_count": 0,
+            "like_count": 2,
+            "quote_count": 0
+          }
+        }
+      ],
+      "includes": {
+        "users": [
+          {
+            "pinned_tweet_id": "1271229547053150208",
+            "protected": false,
+            "profile_image_url": "https://pbs.twimg.com/profile_images/1578089460121538561/4-Oy0as4_normal.jpg",
+            "description": "Co-building the Wisdom Age @roote_. Hiring https://t.co/mYM8pbcD4v. Prev @mitDCI @medialab. @EthereumDenver co-founder. Newsletter on solarpunk pluralism in bio 👇",
+            "public_metrics": {
+              "followers_count": 5430,
+              "following_count": 1686,
+              "tweet_count": 10519,
+              "listed_count": 239
+            },
+            "username": "RhysLindmark",
+            "verified": false,
+            "name": "Rhys Lindmark",
+            "id": "1917349034",
+            "entities": {
+              "url": {
+                "urls": [
+                  {
+                    "start": 0,
+                    "end": 23,
+                    "url": "https://t.co/9fWmqYPH37",
+                    "expanded_url": "https://rhyslindmark.substack.com/",
+                    "display_url": "rhyslindmark.substack.com"
+                  }
+                ]
+              },
+              "description": {
+                "urls": [
+                  {
+                    "start": 43,
+                    "end": 66,
+                    "url": "https://t.co/mYM8pbcD4v",
+                    "expanded_url": "http://roote.co/careers",
+                    "display_url": "roote.co/careers"
+                  }
+                ],
+                "mentions": [
+                  {
+                    "start": 27,
+                    "end": 34,
+                    "username": "roote_"
+                  },
+                  {
+                    "start": 73,
+                    "end": 80,
+                    "username": "mitDCI"
+                  },
+                  {
+                    "start": 81,
+                    "end": 90,
+                    "username": "medialab"
+                  },
+                  {
+                    "start": 92,
+                    "end": 107,
+                    "username": "EthereumDenver"
+                  }
+                ]
+              }
+            },
+            "location": "San Francisco Bay Area, CA",
+            "created_at": "2013-09-29T15:01:58.000Z",
+            "url": "https://t.co/9fWmqYPH37"
+          },
+          {
+            "protected": false,
+            "profile_image_url": "https://pbs.twimg.com/profile_images/1585656256446222336/8pU-UspD_normal.jpg",
+            "description": "seeking language for worlds to come. wrote things @verses_xyz @kernel_magazine @OpenAI @PartnershipAI. \nbook coming out in nov: https://t.co/xtYuVIlKhg",
+            "public_metrics": {
+              "followers_count": 5251,
+              "following_count": 1143,
+              "tweet_count": 1454,
+              "listed_count": 127
+            },
+            "username": "j_asminewang",
+            "verified": false,
+            "name": "jasmine wang✨",
+            "id": "1295193837258727424",
+            "entities": {
+              "url": {
+                "urls": [
+                  {
+                    "start": 0,
+                    "end": 23,
+                    "url": "https://t.co/8tlGzqVKzb",
+                    "expanded_url": "https://jasminew.me",
+                    "display_url": "jasminew.me"
+                  }
+                ]
+              },
+              "description": {
+                "urls": [
+                  {
+                    "start": 128,
+                    "end": 151,
+                    "url": "https://t.co/xtYuVIlKhg",
+                    "expanded_url": "http://whatmakesushuman.ai",
+                    "display_url": "whatmakesushuman.ai"
+                  }
+                ],
+                "mentions": [
+                  {
+                    "start": 50,
+                    "end": 61,
+                    "username": "verses_xyz"
+                  },
+                  {
+                    "start": 62,
+                    "end": 78,
+                    "username": "kernel_magazine"
+                  },
+                  {
+                    "start": 79,
+                    "end": 86,
+                    "username": "OpenAI"
+                  },
+                  {
+                    "start": 87,
+                    "end": 101,
+                    "username": "PartnershipAI"
+                  }
+                ]
+              }
+            },
+            "location": "there is a field",
+            "created_at": "2020-08-17T03:01:00.000Z",
+            "url": "https://t.co/8tlGzqVKzb"
+          },
+          {
+            "pinned_tweet_id": "1570482915426942980",
+            "protected": false,
+            "profile_image_url": "https://pbs.twimg.com/profile_images/1425820205607919629/lyYgz96S_normal.jpg",
+            "description": "What Makes Us Human? A book written by myself, Jasmine Wang and the AI GPT-3 is available for preorder in the link below.",
+            "public_metrics": {
+              "followers_count": 28136,
+              "following_count": 3339,
+              "tweet_count": 27442,
+              "listed_count": 636
+            },
+            "username": "RealIainSThomas",
+            "verified": false,
+            "name": "Iain S. Thomas",
+            "id": "107639385",
+            "entities": {
+              "url": {
+                "urls": [
+                  {
+                    "start": 0,
+                    "end": 23,
+                    "url": "https://t.co/ZyK78fp6Wk",
+                    "expanded_url": "http://whatmakesushuman.ai",
+                    "display_url": "whatmakesushuman.ai"
+                  }
+                ]
+              }
+            },
+            "location": "United States",
+            "created_at": "2010-01-23T06:32:45.000Z",
+            "url": "https://t.co/ZyK78fp6Wk"
+          },
+          {
+            "protected": false,
+            "profile_image_url": "https://pbs.twimg.com/profile_images/1064570953835913216/MahpFnJm_normal.jpg",
+            "description": "Sounds True exists to inspire, support, & serve personal transformation & spiritual awakening. Get TWO Free Gifts: http://t.co/gzFwdVMkJi #meditation",
+            "public_metrics": {
+              "followers_count": 52801,
+              "following_count": 7375,
+              "tweet_count": 12372,
+              "listed_count": 1056
+            },
+            "username": "soundstrue",
+            "verified": true,
+            "name": "Sounds True",
+            "id": "16826425",
+            "entities": {
+              "url": {
+                "urls": [
+                  {
+                    "start": 0,
+                    "end": 22,
+                    "url": "http://t.co/g64aC2M0aT",
+                    "expanded_url": "http://www.soundstrue.com",
+                    "display_url": "soundstrue.com"
+                  }
+                ]
+              },
+              "description": {
+                "urls": [
+                  {
+                    "start": 115,
+                    "end": 137,
+                    "url": "http://t.co/gzFwdVMkJi",
+                    "expanded_url": "http://bit.ly/1iMa3Tj",
+                    "display_url": "bit.ly/1iMa3Tj"
+                  }
+                ],
+                "hashtags": [
+                  {
+                    "start": 138,
+                    "end": 149,
+                    "tag": "meditation"
+                  }
+                ]
+              }
+            },
+            "location": "Boulder, Colorado",
+            "created_at": "2008-10-17T16:01:31.000Z",
+            "url": "http://t.co/g64aC2M0aT"
+          },
+          {
+            "pinned_tweet_id": "1446934702779256832",
+            "protected": false,
+            "profile_image_url": "https://pbs.twimg.com/profile_images/1510281596959666183/pZerx9D1_normal.jpg",
+            "description": "studying pathological information systems and how narratives spread @ Stanford Internet Observatory. Prev: quant finance (Jane Street), VC, startups.",
+            "public_metrics": {
+              "followers_count": 76502,
+              "following_count": 1460,
+              "tweet_count": 31277,
+              "listed_count": 2038
+            },
+            "username": "noUpside",
+            "verified": true,
+            "name": "Renee DiResta",
+            "id": "24254084",
+            "entities": {
+              "url": {
+                "urls": [
+                  {
+                    "start": 0,
+                    "end": 23,
+                    "url": "https://t.co/3ENCInD2Ws",
+                    "expanded_url": "http://reneediresta.com",
+                    "display_url": "reneediresta.com"
+                  }
+                ]
+              }
+            },
+            "created_at": "2009-03-13T21:06:13.000Z",
+            "url": "https://t.co/3ENCInD2Ws"
+          },
+          {
+            "pinned_tweet_id": "1575080846994046976",
+            "protected": false,
+            "profile_image_url": "https://pbs.twimg.com/profile_images/1575059549349986304/hKNciYCJ_normal.jpg",
+            "description": "DAO Coordination Lead @Safe, follow SafeDAO at @SafeGovernance | Supporting #DeSci #ReFi #impactDAOs | Governance research | Opinions are my own, not any DAO's",
+            "public_metrics": {
+              "followers_count": 1775,
+              "following_count": 1297,
+              "tweet_count": 3032,
+              "listed_count": 106
+            },
+            "username": "theobtl",
+            "verified": false,
+            "name": "Theo Beutel | theobtl.eth",
+            "id": "153106754",
+            "entities": {
+              "url": {
+                "urls": [
+                  {
+                    "start": 0,
+                    "end": 23,
+                    "url": "https://t.co/ZLADbNpf6t",
+                    "expanded_url": "https://theodorbeutel.de/",
+                    "display_url": "theodorbeutel.de"
+                  }
+                ]
+              },
+              "description": {
+                "hashtags": [
+                  {
+                    "start": 76,
+                    "end": 82,
+                    "tag": "DeSci"
+                  },
+                  {
+                    "start": 83,
+                    "end": 88,
+                    "tag": "ReFi"
+                  },
+                  {
+                    "start": 89,
+                    "end": 100,
+                    "tag": "impactDAOs"
+                  }
+                ],
+                "mentions": [
+                  {
+                    "start": 22,
+                    "end": 27,
+                    "username": "Safe"
+                  },
+                  {
+                    "start": 47,
+                    "end": 62,
+                    "username": "SafeGovernance"
+                  }
+                ]
+              }
+            },
+            "location": "Stuttgart, Germany",
+            "created_at": "2010-06-07T18:08:41.000Z",
+            "url": "https://t.co/ZLADbNpf6t"
+          },
+          {
+            "protected": false,
+            "profile_image_url": "https://pbs.twimg.com/profile_images/1405958117444173831/JUsPuQdZ_normal.png",
+            "description": "The Metagovernance Project is an interdisciplinary research collective. We build standards and infrastructure for digital self-governance.",
+            "public_metrics": {
+              "followers_count": 2094,
+              "following_count": 29,
+              "tweet_count": 69,
+              "listed_count": 91
+            },
+            "username": "metagov_project",
+            "verified": false,
+            "name": "The Metagovernance Project",
+            "id": "1193288515678883841",
+            "entities": {
+              "url": {
+                "urls": [
+                  {
+                    "start": 0,
+                    "end": 23,
+                    "url": "https://t.co/fXk4VuHrqj",
+                    "expanded_url": "https://www.metagov.org",
+                    "display_url": "metagov.org"
+                  }
+                ]
+              }
+            },
+            "location": "Cambridge, MA",
+            "created_at": "2019-11-09T22:05:35.000Z",
+            "url": "https://t.co/fXk4VuHrqj"
+          },
+          {
+            "pinned_tweet_id": "783374120054423552",
+            "protected": false,
+            "profile_image_url": "https://pbs.twimg.com/profile_images/1282452321759145984/0AOI2DaL_normal.jpg",
+            "description": "building homes faster @myabodu 🏗✨🌎 prev policy @scott_wiener, design @q_arch. wayward Kentuckian; more fun in person. my mom calls me “the unguided missile.”",
+            "public_metrics": {
+              "followers_count": 8826,
+              "following_count": 1419,
+              "tweet_count": 19564,
+              "listed_count": 172
+            },
+            "username": "anniefryman",
+            "verified": false,
+            "name": "fry",
+            "id": "705472150409326592",
+            "entities": {
+              "description": {
+                "mentions": [
+                  {
+                    "start": 22,
+                    "end": 30,
+                    "username": "myabodu"
+                  },
+                  {
+                    "start": 47,
+                    "end": 60,
+                    "username": "scott_wiener"
+                  },
+                  {
+                    "start": 69,
+                    "end": 76,
+                    "username": "q_arch"
+                  }
+                ]
+              }
+            },
+            "location": "san francisco",
+            "created_at": "2016-03-03T19:17:22.000Z"
+          },
+          {
+            "pinned_tweet_id": "1400500244966633475",
+            "protected": false,
+            "profile_image_url": "https://pbs.twimg.com/profile_images/1093554399899611136/RBWCYy7x_normal.jpg",
+            "description": "Staff writer @sfexaminer covering San Francisco politics and urbanism.  bschneider@sfexaminer.com",
+            "public_metrics": {
+              "followers_count": 2616,
+              "following_count": 1322,
+              "tweet_count": 2633,
+              "listed_count": 104
+            },
+            "username": "urbenschneider",
+            "verified": true,
+            "name": "Benjamin Schneider",
+            "id": "1681316725",
+            "entities": {
+              "url": {
+                "urls": [
+                  {
+                    "start": 0,
+                    "end": 23,
+                    "url": "https://t.co/cKnL4KXklJ",
+                    "expanded_url": "http://urbenschneider.com",
+                    "display_url": "urbenschneider.com"
+                  }
+                ]
+              },
+              "description": {
+                "mentions": [
+                  {
+                    "start": 13,
+                    "end": 24,
+                    "username": "sfexaminer"
+                  }
+                ]
+              }
+            },
+            "location": "San Francisco, CA",
+            "created_at": "2013-08-18T18:00:28.000Z",
+            "url": "https://t.co/cKnL4KXklJ"
+          },
+          {
+            "pinned_tweet_id": "1585620606703108096",
+            "protected": false,
+            "profile_image_url": "https://pbs.twimg.com/profile_images/1460685102988496901/TrpZXENJ_normal.jpg",
+            "description": "CA State Senator. Chair, Housing Committee. Former Chair, Legislative LGBTQ Caucus. Housing/transit/climate/criminal justice reform/health. Democrat.🏳️‍🌈",
+            "public_metrics": {
+              "followers_count": 86280,
+              "following_count": 798,
+              "tweet_count": 15593,
+              "listed_count": 1379
+            },
+            "username": "Scott_Wiener",
+            "verified": true,
+            "name": "Senator Scott Wiener",
+            "id": "26703365",
+            "entities": {
+              "url": {
+                "urls": [
+                  {
+                    "start": 0,
+                    "end": 23,
+                    "url": "https://t.co/tkoXmd6BFx",
+                    "expanded_url": "http://scottwiener.com",
+                    "display_url": "scottwiener.com"
+                  }
+                ]
+              }
+            },
+            "location": "San Francisco, California",
+            "created_at": "2009-03-26T06:43:23.000Z",
+            "url": "https://t.co/tkoXmd6BFx"
+          },
+          {
+            "pinned_tweet_id": "1569727500791709696",
+            "protected": false,
+            "profile_image_url": "https://pbs.twimg.com/profile_images/1486812438750121984/zpLPRpbS_normal.jpg",
+            "description": "internet citizen, DAO cartographer, EVM whisperer & chaos magician @supermodularxyz (ex @gitcoin) I spin bits for fun/profit, watch out for my MegaByte!",
+            "public_metrics": {
+              "followers_count": 85094,
+              "following_count": 2620,
+              "tweet_count": 42954,
+              "listed_count": 1435
+            },
+            "username": "owocki",
+            "verified": true,
+            "name": "Ξwocki (🤖,💚)",
+            "id": "8705962",
+            "entities": {
+              "url": {
+                "urls": [
+                  {
+                    "start": 0,
+                    "end": 23,
+                    "url": "https://t.co/FlorWNApRe",
+                    "expanded_url": "http://owocki.com",
+                    "display_url": "owocki.com"
+                  }
+                ]
+              },
+              "description": {
+                "mentions": [
+                  {
+                    "start": 67,
+                    "end": 83,
+                    "username": "supermodularxyz"
+                  },
+                  {
+                    "start": 88,
+                    "end": 96,
+                    "username": "gitcoin"
+                  }
+                ]
+              }
+            },
+            "location": "/home/ubuntu",
+            "created_at": "2007-09-06T19:32:40.000Z",
+            "url": "https://t.co/FlorWNApRe"
+          },
+          {
+            "pinned_tweet_id": "1455992698242953219",
+            "protected": false,
+            "profile_image_url": "https://pbs.twimg.com/profile_images/1083535786685825024/SJdamaOA_normal.jpg",
+            "description": "CEO and Co-founder at Cruise. Co-founder at Twitch. Board member at food tech co's Upside Foods & Nobell Foods.",
+            "public_metrics": {
+              "followers_count": 37985,
+              "following_count": 152,
+              "tweet_count": 362,
+              "listed_count": 503
+            },
+            "username": "kvogt",
+            "verified": true,
+            "name": "Kyle Vogt",
+            "id": "3349531",
+            "entities": {
+              "url": {
+                "urls": [
+                  {
+                    "start": 0,
+                    "end": 23,
+                    "url": "https://t.co/dj7iiiHeuX",
+                    "expanded_url": "http://getcruise.com",
+                    "display_url": "getcruise.com"
+                  }
+                ]
+              }
+            },
+            "location": "SF",
+            "created_at": "2007-04-03T18:52:25.000Z",
+            "url": "https://t.co/dj7iiiHeuX"
+          },
+          {
+            "pinned_tweet_id": "1250313333707665409",
+            "protected": false,
+            "profile_image_url": "https://pbs.twimg.com/profile_images/1449117890955788292/x3DIqECG_normal.jpg",
+            "description": "Co-founder @beondeck & @villageglobal. Considering starting or joining your next company? Join ODF: https://t.co/p35CSrcSJF",
+            "public_metrics": {
+              "followers_count": 103157,
+              "following_count": 2081,
+              "tweet_count": 19361,
+              "listed_count": 2283
+            },
+            "username": "eriktorenberg",
+            "verified": true,
+            "name": "Erik Torenberg",
+            "id": "1475495658",
+            "entities": {
+              "url": {
+                "urls": [
+                  {
+                    "start": 0,
+                    "end": 23,
+                    "url": "https://t.co/mAIV7M1ZI9",
+                    "expanded_url": "https://eriktorenberg.substack.com/",
+                    "display_url": "eriktorenberg.substack.com"
+                  }
+                ]
+              },
+              "description": {
+                "urls": [
+                  {
+                    "start": 100,
+                    "end": 123,
+                    "url": "https://t.co/p35CSrcSJF",
+                    "expanded_url": "http://beondeck.com/founders",
+                    "display_url": "beondeck.com/founders"
+                  }
+                ],
+                "mentions": [
+                  {
+                    "start": 11,
+                    "end": 20,
+                    "username": "beondeck"
+                  },
+                  {
+                    "start": 23,
+                    "end": 37,
+                    "username": "villageglobal"
+                  }
+                ]
+              }
+            },
+            "location": "The Internet",
+            "created_at": "2013-06-01T19:36:52.000Z",
+            "url": "https://t.co/mAIV7M1ZI9"
+          },
+          {
+            "protected": false,
+            "profile_image_url": "https://pbs.twimg.com/profile_images/1582829894383374341/J2J3rmXw_normal.jpg",
+            "description": "Boyboss @ Not Boring: https://t.co/sjRMEhnEpJ || Not Boring Capital || Advisor @a16z crypto || Drop Optimistic Links Here: https://t.co/NOXGTnGkVJ",
+            "public_metrics": {
+              "followers_count": 169661,
+              "following_count": 2598,
+              "tweet_count": 27554,
+              "listed_count": 3218
+            },
+            "username": "packyM",
+            "verified": false,
+            "name": "Packy McCormick",
+            "id": "21306324",
+            "entities": {
+              "url": {
+                "urls": [
+                  {
+                    "start": 0,
+                    "end": 23,
+                    "url": "https://t.co/Ai62ur7EyQ",
+                    "expanded_url": "https://beacons.page/packy",
+                    "display_url": "beacons.page/packy"
+                  }
+                ]
+              },
+              "description": {
+                "urls": [
+                  {
+                    "start": 22,
+                    "end": 45,
+                    "url": "https://t.co/sjRMEhnEpJ",
+                    "expanded_url": "http://notboring.co",
+                    "display_url": "notboring.co"
+                  },
+                  {
+                    "start": 123,
+                    "end": 146,
+                    "url": "https://t.co/NOXGTnGkVJ",
+                    "expanded_url": "https://airtable.com/shrs9xfp12VS4sq3Y",
+                    "display_url": "airtable.com/shrs9xfp12VS4s…"
+                  }
+                ],
+                "mentions": [
+                  {
+                    "start": 79,
+                    "end": 84,
+                    "username": "a16z"
+                  }
+                ]
+              }
+            },
+            "location": "New York",
+            "created_at": "2009-02-19T15:15:49.000Z",
+            "url": "https://t.co/Ai62ur7EyQ"
+          }
+        ],
+        "tweets": [
+          {
+            "conversation_id": "1587447143698255883",
+            "possibly_sensitive": false,
+            "id": "1587447143698255883",
+            "author_id": "16826425",
+            "entities": {
+              "urls": [
+                {
+                  "start": 17,
+                  "end": 40,
+                  "url": "https://t.co/5CvOet3D9N",
+                  "expanded_url": "https://bit.ly/3FzwRr2",
+                  "display_url": "bit.ly/3FzwRr2",
+                  "images": [
+                    {
+                      "url": "https://pbs.twimg.com/news_img/1585601457038008322/ChqZLM4y?format=jpg&name=orig",
+                      "width": 2560,
+                      "height": 1280
+                    },
+                    {
+                      "url": "https://pbs.twimg.com/news_img/1585601457038008322/ChqZLM4y?format=jpg&name=150x150",
+                      "width": 150,
+                      "height": 150
+                    }
+                  ],
+                  "status": 200,
+                  "title": "An AI Answers Life's Big Questions - Sounds True",
+                  "description": "A book unlike any before, What Makes Us Human? is a contemporary exploration of human spirituality and life's biggest questions using OpenAI’s GPT-3, an advanced artificial intelligence.",
+                  "unwound_url": "https://product.soundstrue.com/what-makes-us-human/"
+                },
+                {
+                  "start": 228,
+                  "end": 251,
+                  "url": "https://t.co/ipJATebdpf",
+                  "expanded_url": "https://twitter.com/soundstrue/status/1587447143698255883/video/1",
+                  "display_url": "pic.twitter.com/ipJATebdpf",
+                  "media_key": "7_1587447119891374080"
+                }
+              ],
+              "mentions": [
+                {
+                  "start": 189,
+                  "end": 205,
+                  "username": "RealIainSThomas",
+                  "id": "107639385"
+                },
+                {
+                  "start": 206,
+                  "end": 219,
+                  "username": "j_asminewang",
+                  "id": "1295193837258727424"
+                },
+                {
+                  "start": 220,
+                  "end": 227,
+                  "username": "OpenAI",
+                  "id": "4398626122"
+                }
+              ]
+            },
+            "context_annotations": [
+              {
+                "domain": {
+                  "id": "46",
+                  "name": "Business Taxonomy",
+                  "description": "Categories within Brand Verticals that narrow down the scope of Brands"
+                },
+                "entity": {
+                  "id": "1557697333571112960",
+                  "name": "Technology Business",
+                  "description": "Brands, companies, advertisers and every non-person handle with the profit intent related to softwares, apps, communication equipments, hardwares"
+                }
+              }
+            ],
+            "source": "Sprout Social",
+            "created_at": "2022-11-01T14:11:07.000Z",
+            "reply_settings": "everyone",
+            "text": "AVAILABLE TODAY! https://t.co/5CvOet3D9N What happens when an AI is prompted with the world’s great spiritual, philosophical, and literary works that have formed the basis of human belief? @RealIainSThomas @j_asminewang @openai https://t.co/ipJATebdpf",
+            "attachments": {
+              "media_keys": [
+                "7_1587447119891374080"
+              ]
+            },
+            "edit_history_tweet_ids": [
+              "1587447143698255883"
+            ],
+            "lang": "en",
+            "public_metrics": {
+              "retweet_count": 2,
+              "reply_count": 0,
+              "like_count": 3,
+              "quote_count": 1
+            }
+          },
+          {
+            "conversation_id": "1587570454583250947",
+            "entities": {
+              "annotations": [
+                {
+                  "start": 22,
+                  "end": 29,
+                  "probability": 0.4313,
+                  "type": "Other",
+                  "normalized_text": "Midterms"
+                },
+                {
+                  "start": 83,
+                  "end": 89,
+                  "probability": 0.9837,
+                  "type": "Other",
+                  "normalized_text": "Twitter"
+                }
+              ],
+              "urls": [
+                {
+                  "start": 259,
+                  "end": 282,
+                  "url": "https://t.co/jrI5SSOaSw",
+                  "expanded_url": "https://www.eipartnership.net/blog/inauthentic-foreign-networks",
+                  "display_url": "eipartnership.net/blog/inauthent…",
+                  "images": [
+                    {
+                      "url": "https://pbs.twimg.com/news_img/1587506810600058880/n6di7fYm?format=jpg&name=orig",
+                      "width": 1500,
+                      "height": 855
+                    },
+                    {
+                      "url": "https://pbs.twimg.com/news_img/1587506810600058880/n6di7fYm?format=jpg&name=150x150",
+                      "width": 150,
+                      "height": 150
+                    }
+                  ],
+                  "status": 200,
+                  "title": "Assessing Inauthentic Networks Commenting on the US Midterms — Election Integrity Partnership",
+                  "description": "An assessment of five inauthentic networks on Twitter reveals techniques used by foreign actors targeting domestic US political discourse in the leadup to the 2022 midterm elections. The networks within the dataset were taken down under Twitter’s Platform Manipulation and Spam Policy. In this post,",
+                  "unwound_url": "https://www.eipartnership.net/blog/inauthentic-foreign-networks"
+                }
+              ]
+            },
+            "possibly_sensitive": false,
+            "id": "1587570454583250947",
+            "author_id": "24254084",
+            "context_annotations": [
+              {
+                "domain": {
+                  "id": "29",
+                  "name": "Events [Entity Service]",
+                  "description": "Real world events. "
+                },
+                "entity": {
+                  "id": "1526278121527205889",
+                  "name": "2022 United States midterm elections"
+                }
+              },
+              {
+                "domain": {
+                  "id": "38",
+                  "name": "Political Race",
+                  "description": ""
+                },
+                "entity": {
+                  "id": "1526278121527205889",
+                  "name": "2022 United States midterm elections"
+                }
+              },
+              {
+                "domain": {
+                  "id": "131",
+                  "name": "Unified Twitter Taxonomy",
+                  "description": "A taxonomy of user interests. "
+                },
+                "entity": {
+                  "id": "847878884917886977",
+                  "name": "Politics",
+                  "description": "Politics"
+                }
+              },
+              {
+                "domain": {
+                  "id": "131",
+                  "name": "Unified Twitter Taxonomy",
+                  "description": "A taxonomy of user interests. "
+                },
+                "entity": {
+                  "id": "1046545033657081857",
+                  "name": "News",
+                  "description": "News"
+                }
+              },
+              {
+                "domain": {
+                  "id": "131",
+                  "name": "Unified Twitter Taxonomy",
+                  "description": "A taxonomy of user interests. "
+                },
+                "entity": {
+                  "id": "1291447199595782144",
+                  "name": "United States politics"
+                }
+              },
+              {
+                "domain": {
+                  "id": "131",
+                  "name": "Unified Twitter Taxonomy",
+                  "description": "A taxonomy of user interests. "
+                },
+                "entity": {
+                  "id": "1518940645343125504",
+                  "name": "United States political events"
+                }
+              },
+              {
+                "domain": {
+                  "id": "131",
+                  "name": "Unified Twitter Taxonomy",
+                  "description": "A taxonomy of user interests. "
+                },
+                "entity": {
+                  "id": "1526278121527205889",
+                  "name": "2022 United States midterm elections"
+                }
+              },
+              {
+                "domain": {
+                  "id": "30",
+                  "name": "Entities [Entity Service]",
+                  "description": "Entity Service top level domain, every item that is in Entity Service should be in this domain"
+                },
+                "entity": {
+                  "id": "781974596752842752",
+                  "name": "Services"
+                }
+              },
+              {
+                "domain": {
+                  "id": "47",
+                  "name": "Brand",
+                  "description": "Brands and Companies"
+                },
+                "entity": {
+                  "id": "10045225402",
+                  "name": "Twitter"
+                }
+              }
+            ],
+            "source": "Twitter Web App",
+            "created_at": "2022-11-01T22:21:06.000Z",
+            "reply_settings": "everyone",
+            "text": "Happy one week before Midterms! Here's a report we just put out on 6 networks that Twitter released to  outside researchers. 5 of the 6 had a fair bit to say ab American politics, incl the election; they varied bt fake-Dem &amp; fake-Republican perspectives. https://t.co/jrI5SSOaSw",
+            "edit_history_tweet_ids": [
+              "1587570454583250947"
+            ],
+            "lang": "en",
+            "public_metrics": {
+              "retweet_count": 519,
+              "reply_count": 295,
+              "like_count": 1605,
+              "quote_count": 133
+            }
+          },
+          {
+            "conversation_id": "1585551264871550977",
+            "entities": {
+              "annotations": [
+                {
+                  "start": 56,
+                  "end": 58,
+                  "probability": 0.5697,
+                  "type": "Organization",
+                  "normalized_text": "DAO"
+                },
+                {
+                  "start": 212,
+                  "end": 215,
+                  "probability": 0.3853,
+                  "type": "Organization",
+                  "normalized_text": "DAOs"
+                }
+              ],
+              "urls": [
+                {
+                  "start": 75,
+                  "end": 98,
+                  "url": "https://t.co/9XMJ7JFPVV",
+                  "expanded_url": "https://constitutions.metagov.org/",
+                  "display_url": "constitutions.metagov.org",
+                  "images": [
+                    {
+                      "url": "https://pbs.twimg.com/news_img/1585551311059271681/3gl2wljM?format=jpg&name=orig",
+                      "width": 2970,
+                      "height": 1408
+                    },
+                    {
+                      "url": "https://pbs.twimg.com/news_img/1585551311059271681/3gl2wljM?format=jpg&name=150x150",
+                      "width": 150,
+                      "height": 150
+                    }
+                  ],
+                  "status": 200,
+                  "title": "Constitutions of Web3",
+                  "description": "Smart contracts are promising tools for governing DAOs but they alone aren't enough. In this artifact, we describe how written constitutions are an interface for a community’s shared values and must complement programmatic tools like smart contracts.",
+                  "unwound_url": "https://constitutions.metagov.org/"
+                }
+              ],
+              "mentions": [
+                {
+                  "start": 9,
+                  "end": 25,
+                  "username": "metagov_project",
+                  "id": "1193288515678883841"
+                },
+                {
+                  "start": 162,
+                  "end": 175,
+                  "username": "SnapshotLabs",
+                  "id": "1297470992491540481"
+                },
+                {
+                  "start": 263,
+                  "end": 273,
+                  "username": "Kleros_io",
+                  "id": "897536642159972352"
+                }
+              ]
+            },
+            "possibly_sensitive": false,
+            "id": "1585551264871550977",
+            "author_id": "153106754",
+            "context_annotations": [
+              {
+                "domain": {
+                  "id": "46",
+                  "name": "Business Taxonomy",
+                  "description": "Categories within Brand Verticals that narrow down the scope of Brands"
+                },
+                "entity": {
+                  "id": "1557696848252391426",
+                  "name": "Financial Services Business",
+                  "description": "Brands, companies, advertisers and every non-person handle with the profit intent related to Banks, Credit cards, Insurance, Investments, Stocks "
+                }
+              },
+              {
+                "domain": {
+                  "id": "131",
+                  "name": "Unified Twitter Taxonomy",
+                  "description": "A taxonomy of user interests. "
+                },
+                "entity": {
+                  "id": "1461476432551366659",
+                  "name": "DAOs"
+                }
+              },
+              {
+                "domain": {
+                  "id": "131",
+                  "name": "Unified Twitter Taxonomy",
+                  "description": "A taxonomy of user interests. "
+                },
+                "entity": {
+                  "id": "1492162686204854274",
+                  "name": "Digital assets & cryptocurrency",
+                  "description": "Cryptocurrency"
+                }
+              }
+            ],
+            "source": "Twitter for iPhone",
+            "created_at": "2022-10-27T08:37:34.000Z",
+            "reply_settings": "everyone",
+            "text": "Kudos to @metagov_project for curating this resource on DAO constitutions.\nhttps://t.co/9XMJ7JFPVV\n\nWhat are best practices to implement constitutions, e.g. does @SnapshotLabs support 2/3 majority votes?\n\nHow do DAOs keep their constitutions in check, e.g. using @Kleros_io Court?",
+            "edit_history_tweet_ids": [
+              "1585551264871550977"
+            ],
+            "lang": "en",
+            "public_metrics": {
+              "retweet_count": 11,
+              "reply_count": 3,
+              "like_count": 47,
+              "quote_count": 0
+            }
+          },
+          {
+            "conversation_id": "1587566975114350593",
+            "entities": {
+              "annotations": [
+                {
+                  "start": 182,
+                  "end": 187,
+                  "probability": 0.5868,
+                  "type": "Other",
+                  "normalized_text": "YIMBYs"
+                },
+                {
+                  "start": 224,
+                  "end": 229,
+                  "probability": 0.3755,
+                  "type": "Person",
+                  "normalized_text": "Fryman"
+                }
+              ],
+              "urls": [
+                {
+                  "start": 233,
+                  "end": 256,
+                  "url": "https://t.co/GKt7p1aNr9",
+                  "expanded_url": "https://www.sfexaminer.com/news/california-housing-laws-to-bring-new-homes-to-sf/article_ef5670c4-5973-11ed-890f-73259491abec.html",
+                  "display_url": "sfexaminer.com/news/californi…",
+                  "images": [
+                    {
+                      "url": "https://pbs.twimg.com/news_img/1587566975877672960/Cqcww2yP?format=jpg&name=orig",
+                      "width": 438,
+                      "height": 230
+                    },
+                    {
+                      "url": "https://pbs.twimg.com/news_img/1587566975877672960/Cqcww2yP?format=jpg&name=150x150",
+                      "width": 150,
+                      "height": 150
+                    }
+                  ],
+                  "status": 200,
+                  "title": "Inside California’s quiet housing policy revolution",
+                  "description": "How the state blew up its zoning codes and embraced new development. Over the past five years, state legislators have passed a raft of housing laws that completely transform urban planning in California.",
+                  "unwound_url": "https://www.sfexaminer.com/news/california-housing-laws-to-bring-new-homes-to-sf/article_ef5670c4-5973-11ed-890f-73259491abec.html"
+                }
+              ],
+              "mentions": [
+                {
+                  "start": 25,
+                  "end": 40,
+                  "username": "urbenschneider",
+                  "id": "1681316725"
+                },
+                {
+                  "start": 55,
+                  "end": 68,
+                  "username": "Scott_Wiener",
+                  "id": "26703365"
+                }
+              ]
+            },
+            "possibly_sensitive": false,
+            "id": "1587566975114350593",
+            "author_id": "705472150409326592",
+            "source": "Twitter Web App",
+            "created_at": "2022-11-01T22:07:17.000Z",
+            "reply_settings": "everyone",
+            "text": "Great story out today by @urbenschneider about Senator @Scott_Wiener's SB 828, the 2018 gift that keeps on giving.\n\n\"No matter what happens, because of how we've set up this engine, YIMBYs are going to win either way,” said Fryman.\n\nhttps://t.co/GKt7p1aNr9",
+            "edit_history_tweet_ids": [
+              "1587566975114350593"
+            ],
+            "lang": "en",
+            "public_metrics": {
+              "retweet_count": 25,
+              "reply_count": 3,
+              "like_count": 144,
+              "quote_count": 1
+            }
+          },
+          {
+            "conversation_id": "1587829790257487872",
+            "possibly_sensitive": false,
+            "id": "1587834004253745152",
+            "author_id": "8705962",
+            "source": "Twitter Web App",
+            "created_at": "2022-11-02T15:48:21.000Z",
+            "reply_settings": "everyone",
+            "entities": {
+              "mentions": [
+                {
+                  "start": 0,
+                  "end": 13,
+                  "username": "RhysLindmark",
+                  "id": "1917349034"
+                }
+              ]
+            },
+            "text": "@RhysLindmark releasing the cliffs notes before the book eh",
+            "edit_history_tweet_ids": [
+              "1587834004253745152"
+            ],
+            "referenced_tweets": [
+              {
+                "type": "replied_to",
+                "id": "1587833742415912961"
+              }
+            ],
+            "lang": "en",
+            "in_reply_to_user_id": "1917349034",
+            "public_metrics": {
+              "retweet_count": 0,
+              "reply_count": 1,
+              "like_count": 0,
+              "quote_count": 0
+            }
+          },
+          {
+            "conversation_id": "1587829790257487872",
+            "possibly_sensitive": false,
+            "id": "1587832517213634560",
+            "author_id": "8705962",
+            "source": "Twitter Web App",
+            "created_at": "2022-11-02T15:42:27.000Z",
+            "reply_settings": "everyone",
+            "entities": {
+              "mentions": [
+                {
+                  "start": 0,
+                  "end": 13,
+                  "username": "RhysLindmark",
+                  "id": "1917349034"
+                }
+              ]
+            },
+            "text": "@RhysLindmark is this what information wants?",
+            "edit_history_tweet_ids": [
+              "1587832517213634560"
+            ],
+            "referenced_tweets": [
+              {
+                "type": "replied_to",
+                "id": "1587829790257487872"
+              }
+            ],
+            "lang": "en",
+            "in_reply_to_user_id": "1917349034",
+            "public_metrics": {
+              "retweet_count": 0,
+              "reply_count": 1,
+              "like_count": 0,
+              "quote_count": 0
+            }
+          },
+          {
+            "conversation_id": "1587589014525448192",
+            "possibly_sensitive": false,
+            "id": "1587589014525448192",
+            "author_id": "3349531",
+            "entities": {
+              "urls": [
+                {
+                  "start": 175,
+                  "end": 198,
+                  "url": "https://t.co/82PnXXRd5t",
+                  "expanded_url": "https://twitter.com/kvogt/status/1587589014525448192/photo/1",
+                  "display_url": "pic.twitter.com/82PnXXRd5t",
+                  "media_key": "3_1587588401133674496"
+                }
+              ]
+            },
+            "source": "Twitter Web App",
+            "created_at": "2022-11-01T23:34:51.000Z",
+            "reply_settings": "everyone",
+            "text": "Tonight our driverless service area in SF expands to cover almost all of SF. Today is also exactly one year since my first ride, the first driverless ride in a major US city. https://t.co/82PnXXRd5t",
+            "attachments": {
+              "media_keys": [
+                "3_1587588401133674496"
+              ]
+            },
+            "edit_history_tweet_ids": [
+              "1587589014525448192"
+            ],
+            "lang": "en",
+            "public_metrics": {
+              "retweet_count": 220,
+              "reply_count": 107,
+              "like_count": 2672,
+              "quote_count": 89
+            }
+          },
+          {
+            "conversation_id": "1587569833738117121",
+            "entities": {
+              "annotations": [
+                {
+                  "start": 15,
+                  "end": 21,
+                  "probability": 0.9834,
+                  "type": "Other",
+                  "normalized_text": "Twitter"
+                },
+                {
+                  "start": 63,
+                  "end": 69,
+                  "probability": 0.9766,
+                  "type": "Other",
+                  "normalized_text": "Twitter"
+                },
+                {
+                  "start": 111,
+                  "end": 117,
+                  "probability": 0.9834,
+                  "type": "Other",
+                  "normalized_text": "Twitter"
+                }
+              ],
+              "urls": [
+                {
+                  "start": 248,
+                  "end": 271,
+                  "url": "https://t.co/Ozq5evgQVB",
+                  "expanded_url": "https://twitter.com/antoniogm/status/1586929759119822848",
+                  "display_url": "twitter.com/antoniogm/stat…"
+                }
+              ]
+            },
+            "possibly_sensitive": false,
+            "id": "1587569833738117121",
+            "author_id": "1475495658",
+            "context_annotations": [
+              {
+                "domain": {
+                  "id": "46",
+                  "name": "Business Taxonomy",
+                  "description": "Categories within Brand Verticals that narrow down the scope of Brands"
+                },
+                "entity": {
+                  "id": "1557696848252391426",
+                  "name": "Financial Services Business",
+                  "description": "Brands, companies, advertisers and every non-person handle with the profit intent related to Banks, Credit cards, Insurance, Investments, Stocks "
+                }
+              },
+              {
+                "domain": {
+                  "id": "67",
+                  "name": "Interests and Hobbies",
+                  "description": "Interests, opinions, and behaviors of individuals, groups, or cultures; like Speciality Cooking or Theme Parks"
+                },
+                "entity": {
+                  "id": "1486470043353239552",
+                  "name": "Jobs"
+                }
+              },
+              {
+                "domain": {
+                  "id": "30",
+                  "name": "Entities [Entity Service]",
+                  "description": "Entity Service top level domain, every item that is in Entity Service should be in this domain"
+                },
+                "entity": {
+                  "id": "781974596752842752",
+                  "name": "Services"
+                }
+              },
+              {
+                "domain": {
+                  "id": "47",
+                  "name": "Brand",
+                  "description": "Brands and Companies"
+                },
+                "entity": {
+                  "id": "10045225402",
+                  "name": "Twitter"
+                }
+              },
+              {
+                "domain": {
+                  "id": "65",
+                  "name": "Interests and Hobbies Vertical",
+                  "description": "Top level interests and hobbies groupings, like Food or Travel"
+                },
+                "entity": {
+                  "id": "781974596148793345",
+                  "name": "Business & finance"
+                }
+              },
+              {
+                "domain": {
+                  "id": "66",
+                  "name": "Interests and Hobbies Category",
+                  "description": "A grouping of interests and hobbies entities, like Novelty Food or Destinations"
+                },
+                "entity": {
+                  "id": "857878402157629440",
+                  "name": "Investors and patents",
+                  "description": "Investors and patents"
+                }
+              },
+              {
+                "domain": {
+                  "id": "131",
+                  "name": "Unified Twitter Taxonomy",
+                  "description": "A taxonomy of user interests. "
+                },
+                "entity": {
+                  "id": "781974596148793345",
+                  "name": "Business & finance"
+                }
+              }
+            ],
+            "source": "Twitter Web App",
+            "created_at": "2022-11-01T22:18:38.000Z",
+            "reply_settings": "everyone",
+            "text": "$8 a month for Twitter is leaving too much value on the table\n\nTwitter power users would pay $100-$1K a month\n\nTwitter creates a ton of value by helping people find jobs, investors, friends, etc — the platform should capture some of that value too https://t.co/Ozq5evgQVB",
+            "edit_history_tweet_ids": [
+              "1587569833738117121"
+            ],
+            "referenced_tweets": [
+              {
+                "type": "quoted",
+                "id": "1586929759119822848"
+              }
+            ],
+            "lang": "en",
+            "public_metrics": {
+              "retweet_count": 1,
+              "reply_count": 14,
+              "like_count": 35,
+              "quote_count": 2
+            }
+          }
+        ],
+        "media": [
+          {
+            "media_key": "3_1587833733377187840",
+            "type": "photo",
+            "height": 694,
+            "url": "https://pbs.twimg.com/media/FgkeXihUYAA_KC2.png",
+            "width": 1258
+          },
+          {
+            "media_key": "3_1587668012684914688",
+            "type": "photo",
+            "height": 1390,
+            "url": "https://pbs.twimg.com/media/FgiHpU1VsAAOIij.jpg",
+            "width": 1930
+          },
+          {
+            "media_key": "3_1587645055132610561",
+            "type": "photo",
+            "height": 776,
+            "url": "https://pbs.twimg.com/media/FghyxBSVsAEQ4FU.png",
+            "width": 840
+          }
+        ]
+      },
+      "meta": {
+        "result_count": 10,
+        "newest_id": "1587908504878125056",
+        "oldest_id": "1587645225240973314",
+        "next_token": "7140dibdnow9c7btw423x7agsj8gickek5rmagathk304"
+      }
+    }
+  }
+]

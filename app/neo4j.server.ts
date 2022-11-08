@@ -1,4 +1,5 @@
-import neo4j, { Driver, Session } from 'neo4j-driver'
+import type { Driver } from 'neo4j-driver';
+import neo4j from 'neo4j-driver'
 // import { int, isInt } from 'neo4j-driver'
 
 let driver: Driver;
@@ -24,13 +25,11 @@ let driver: Driver;
 //     driver = global.__neo4jClient__;
 // }
 
-function initDriver(uri: string, username: string, password: string) {
+async function initDriver(uri: string, username: string, password: string) {
     driver = neo4j.driver(uri, neo4j.auth.basic(username, password))
-
     // Verify connectivity
-    return driver.verifyConnectivity()
-        // Resolve with an instance of the driver
-        .then(() => driver)
+    await driver.getServerInfo()
+    return driver
 }
 export function closeDriver() {
     return driver && driver.close()

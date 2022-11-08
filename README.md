@@ -1,5 +1,41 @@
+# Setting Up Local Environment with Docker 
 
-I had to do this at one point: https://stackoverflow.com/questions/55763428/react-native-error-enospc-system-limit-for-number-of-file-watchers-reached
+## Prepare Local Env to run Neo4j
+#### APOC Plugin 
+You need to download the APOC plugin, we are using it for some aggregation calculations (like recommended Users). 
+
+[Here](https://neo4j.com/labs/apoc/4.0/installation/#docker) are docs for APOC install on docker image
+
+In the docker-compose, under neo4j, you will see we mount a few volumes, one of with is `$HOME/neo4j/plugins:/plugins`. We need to download the apoc jar and put it there
+```
+cd $HOME/neo4j/plugins:/plugins
+sudo wget https://github.com/neo4j-contrib/neo4j-apoc-procedures/releases/download/4.4.0.9/apoc-4.4.0.9-all.jar
+```
+
+#### Seed DB
+The seed data for neo4j is in `neo4j/seed-data`. This data was pulled by running `npx ts-node neo4j/saveSeedData.ts`, which pulls data from twitter and stores it in json files. You can pull new data from twitter by running that script again. 
+
+To seed the db with data in json file (which you should do every time you run the test suite), run
+```
+npm run test:seed
+``` 
+
+### Local Creds
+Also, make sure you update your `.env` file: 
+You can see these settings in the `docker-compose.yml` file.
+```
+NEO4J_URI=neo4j://localhost:7687
+NEO4J_USERNAME=neo4j
+NEO4J_PASSWORD=test
+```
+
+Now you should be good to run 
+```
+npm run docker
+(wait a few seconds for neo4j to spin all the way up, you'll know it's not up if you get an error when you run dev)
+npm run dev
+```
+And you are ready to dev! 
 
 # Remix Blues Stack
 
