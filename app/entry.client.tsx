@@ -10,6 +10,7 @@ const hydrate = () => {
         <RemixBrowser />
       </StrictMode>
     );
+
   });
 };
 

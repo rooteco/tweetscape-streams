@@ -17,3 +17,7 @@ tweetscape-streams-postgres.env
 *.env
 neo4j/cluster_credentials.env
 *.code-workspace
+.env.test
+data/
+coverage
+neo4j/test/logs

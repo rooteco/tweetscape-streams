@@ -1,30 +1,49 @@
-import { redirect } from "@remix-run/node";
 import type { LoaderArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { Form, Link, NavLink, Outlet, useLoaderData } from "@remix-run/react";
-import invariant from "tiny-invariant";
-import { getClient } from '~/twitter.server';
+import { useLoaderData } from "@remix-run/react";
+import { USER_FIELDS } from '~/twitter.server';
+import { getUserContextAnnotationFrequency, getStreamsUserIn, getUserIndexedTweets } from '~/models/user.server';
+
+import { getTwitterClientForUser } from '~/twitter.server';
+import { requireUserSession } from "~/utils";
 
 
-// type LoaderData = {
-//     // this is a handy way to say: "posts is whatever type getStreams resolves to"
-//     tweet: Awaited<ReturnType<typeof getTweet>>;
-// }
-
-export async function loader({ request, params }: LoaderArgs) {
-    const { api, uid, session } = await getClient(request);
-    const meData = await api.v2.me({ "user.fields": "created_at,description,entities,id,location,name,pinned_tweet_id,profile_image_url,protected,public_metrics,url,username,verified,withheld", });
+export async function loader({ request }: LoaderArgs) {
+    const { uid } = await requireUserSession(request); // will automatically redirect to login if uid is not in the session
+    const { api } = await getTwitterClientForUser(uid)
+    const meData = await api.v2.me({ "user.fields": USER_FIELDS });
     let user = meData.data;
-    return json(user)
+    const streams = await getStreamsUserIn(user.username)
+    const tweets = await getUserIndexedTweets(user.username)
+    const frequencies = await getUserContextAnnotationFrequency(user.username)
+    frequencies[0].forEach((item: any) => { item.count = item.count.toInt() })
+    return json({ user, frequencies: frequencies[0], streams, tweets })
 };
 
 export default function StreamsPage() {
-    const user = useLoaderData();
-    console.log("-----")
-    console.log(user);
+    const data = useLoaderData();
+    const user = data.user
+    const frequencies = data.frequencies
+    frequencies.sort((a, b) => b.count - a.count);
     return (
         <div>
+            <h1>Streams You are Included In</h1>
+            <ol>
+                {data.streams.map((stream: Node) => {
+                    return (
+                        <li key={stream.properties.name}>
+                            {stream.properties.name}
+                        </li>
+                    )
+                })}
+            </ol>
+            <p>We've indexed {data.tweets.length} tweets, in date ranges for {data.streams.length} streams</p>
+            <br />
+            <section>
+                <h2>Top Tags From Your Tweets</h2>
+                {/* <D3BarChart data={data.frequencies.slice(0, 5)} /> */}
+            </section>
             <pre>{JSON.stringify(user, null, 2)}</pre>
-        </div>
+        </div >
     );
 }

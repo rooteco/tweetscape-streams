@@ -1,4 +1,5 @@
-import { objectEnumValues } from "@prisma/client/runtime";
+
+import { PrismaClient } from '@prisma/client';
 
 const twitterUserData = [
     {
@@ -91,8 +92,6 @@ const followsData = [
     },
 ]
 
-import { PrismaClient } from '@prisma/client';
-
 const prisma = new PrismaClient();
 export async function seed() {
     // let streamsLoadedHere = await prisma.streams.findMany();
@@ -164,7 +163,7 @@ export async function seed() {
     }
 
     for (const stream of streams) {
-        const streamUp = await prisma.streams.create({
+        await prisma.streams.create({
             data: {
                 ...stream,
                 seedUsers: {

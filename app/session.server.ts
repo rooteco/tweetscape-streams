@@ -1,6 +1,4 @@
-import { createCookieSessionStorage, redirect } from "@remix-run/node";
-
-import invariant from "tiny-invariant";
+import { createCookieSessionStorage } from "@remix-run/node";
 
 // `href` - restore the last-visited cluster, filter, etc. when visiting /
 // `state` - a random string sent with OAuth2 requests to protect against CSRF
