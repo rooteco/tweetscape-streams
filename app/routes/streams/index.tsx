@@ -41,7 +41,7 @@ export async function action({ request }: ActionArgs) {
 
     let userDb = await getUserNeo4j(user.username)
     if (!userDb) {
-        createUserNeo4j(flattenTwitterUserPublicMetrics([user])[0])
+        await createUserNeo4j(flattenTwitterUserPublicMetrics([user])[0])
     }
 
     const userOwnedListsNames = (await getUserOwnedTwitterLists(api, user)).map((row) => (row.name));
