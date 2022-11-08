@@ -17,6 +17,7 @@ import {
     createStream,
     updateStreamTweets,
     indexMoreTweets,
+    tweetAndRelatedEntities,
 } from "~/models/streams.server";
 import Overview from "~/components/Overview";
 import { indexUser } from "~/models/user.server";
@@ -113,7 +114,7 @@ export async function loader({ request, params }: LoaderArgs) {
         return redirect(url.toString())
     }
     await updateStreamTweets(api, seedUsers)
-    let tweets = await getStreamTweetsNeo4j(stream.properties.name, 0, TWEET_LOAD_LIMIT)
+    let tweets: Array<tweetAndRelatedEntities> = await getStreamTweetsNeo4j(stream.properties.name, 0, TWEET_LOAD_LIMIT)
     return json(
         {
             "stream": stream,
@@ -150,7 +151,7 @@ export const action: ActionFunction = async ({
     if (nextpage) {
         console.log("fetching data for next page")
         console.log(nextpage)
-        let tweets = await getStreamTweetsNeo4j(stream.properties.name, TWEET_LOAD_LIMIT * int(nextpage), TWEET_LOAD_LIMIT)
+        let tweets: Array<tweetAndRelatedEntities> = await getStreamTweetsNeo4j(stream.properties.name, TWEET_LOAD_LIMIT * int(nextpage), TWEET_LOAD_LIMIT)
         return { "tweets": tweets }
     }
     const formData = await request.formData();

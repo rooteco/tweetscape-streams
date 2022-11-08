@@ -1,4 +1,6 @@
-export default function Overview({ tweets }) {
+import type { tweetAndRelatedEntities } from "~/models/streams.server";
+
+export default function Overview({ tweets }: { tweets: Array<tweetAndRelatedEntities> }) {
     // Responsible for rendering the overview page for a stream
     const tweetAuthorCount = new Map()
     tweets.forEach((row) => {

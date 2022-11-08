@@ -38,6 +38,19 @@ export type relNode = {
     properties: any,
 }
 
+export type tweetAndRelatedEntities = {
+    tweet: tweetNode,
+    author: userNode,
+    annotation: annotationNode,
+    refTweets: Array<tweetNode>,
+    refTweetRels: Array<relNode>,
+    refTweetAuthors: Array<userNode>,
+    entities: Array<entityNode>,
+    domains: Array<domainNode>,
+    media: Array<domainNode>,
+    mediaRels: Array<relNode>
+}
+
 export function flattenTwitterUserPublicMetrics(data: Array<any>) {
     for (const obj of data) {
         // obj.username = obj.username.toLowerCase();
@@ -798,18 +811,7 @@ export async function getStreamTweetsNeo4j(
     skip: number = 0,
     limit: number = 50,
     tags: string[] = []
-): Promise<Array<{
-    tweet: tweetNode,
-    author: userNode,
-    annotation: annotationNode,
-    refTweets: Array<tweetNode>,
-    refTweetRels: Array<relNode>,
-    refTweetAuthors: Array<userNode>,
-    entities: Array<entityNode>,
-    domains: Array<domainNode>,
-    media: Array<domainNode>,
-    mediaRels: Array<relNode>,
-}>> {
+): Promise<Array<tweetAndRelatedEntities>> {
     const noTagsQuery = `
         MATCH (s:Stream {name: $name} )-[:CONTAINS]->(u:User)-[:POSTED]->(t:Tweet)
         OPTIONAL MATCH (t)-[r:REFERENCED]->(ref_t:Tweet)<-[:POSTED]-(ref_a:User)

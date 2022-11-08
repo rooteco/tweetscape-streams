@@ -1,6 +1,6 @@
 import { deleteStreamByName, createStream, getStreamByName, deleteAllStreams, addSeedUserToStream, getStreamTweetsNeo4j } from "~/models/streams.server";
 import * as dotenv from "dotenv";
-import type { StreamProperties } from "~/models/streams.server";
+import type { StreamProperties, tweetAndRelatedEntities } from "~/models/streams.server";
 import { StreamError } from '~/models/streams.errors';
 
 dotenv.config();
@@ -115,7 +115,7 @@ describe("Testing Streams Functions", () => {
         let { stream } = await getStreamByName(streamProperties.name)
         await addSeedUserToStream(stream.properties.name, "nicktorba")
         await addSeedUserToStream(stream.properties.name, "RhysLindmark")
-        let tweets = await getStreamTweetsNeo4j(stream.properties.name)
+        let tweets: Array<tweetAndRelatedEntities> = await getStreamTweetsNeo4j(stream.properties.name)
         expect(tweets.length).toBe(21) // 21 tweets from Rhys and Nick, 1 of those tweets is included from ref tweets of seed data
         expect(tweets[0].author.properties.username).toBe("RhysLindmark") // Rhys has the most recent tweet of seed data
 
