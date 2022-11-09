@@ -21,3 +21,4 @@ neo4j/cluster_credentials.env
 data/
 coverage
 neo4j/test/logs
+*.egg-info
