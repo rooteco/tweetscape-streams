@@ -4,5 +4,5 @@ __author__ = """Nick Torba"""
 __email__ = 'nicholastorba@gmail.com'
 __version__ = '0.1.0'
 
-from .tweet_processing import *
-from .user_processing import * 
+from .twitter.tweet_processing import *
+from .twitter.user_processing import * 

@@ -1,27 +1,6 @@
 from neo4j import GraphDatabase
 from neo4j.exceptions import ServiceUnavailable
-import logging
 
-uri = "neo4j://localhost:7687"
-driver = GraphDatabase.driver(uri, auth=("neo4j", "test"))
-
-def create_person(tx, name):
-    tx.run("CREATE (a:Person {name: $name})", name=name)
-
-def create_friend_of(tx, name, friend):
-    tx.run("MATCH (a:Person) WHERE a.name = $name "
-           "CREATE (a)-[:KNOWS]->(:Person {name: $friend})",name=name, friend=friend)
-
-def _get_user(tx, username):
-    result = tx.run("MATCH (u:User {username: $username})RETURN u", username=username)
-    breakpoint()
-    return result
-    
-def get_user(username):
-    with driver.session() as session:
-        result = session.read_transaction(_get_user, username)
-        breakpoint()
-        return result
 
 class UserService:
     # built from this example: https://neo4j.com/docs/api/python-driver/current/ 
